@@ -7,11 +7,9 @@ from django.core.exceptions import ValidationError
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    confirm_password = serializers.CharField(write_only=True, required=True)
-    
     class Meta:
         model = User
-        fields = ['email', 'password', 'confirm_password', 'first_name', 
+        fields = ['email', 'password', 'first_name', 
                  'last_name', 'phone', 'accept_terms', 'newsletter']
         extra_kwargs = {
             'password': {'write_only': True},
@@ -22,9 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        if data['password'] != data['confirm_password']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-        
         try:
             validate_password(data['password'])
         except ValidationError as e:
@@ -38,7 +33,6 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        validated_data.pop('confirm_password')
         user = User.objects.create_user(**validated_data)
         Token.objects.create(user=user)
         return user

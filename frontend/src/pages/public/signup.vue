@@ -370,7 +370,7 @@ const router = useRouter();
       password: form.value.password,
       accept_terms: form.value.acceptTerms,
       newsletter: form.value.newsletter
-    };
+  };
 
     const response = await api.post("users/register/", payload);
     
@@ -394,19 +394,25 @@ const router = useRouter();
     console.warn('Unexpected status:', response.status);
     errors.value.general = 'Registration successful, but unexpected response';
     
-  } catch (error) {
-    console.error('Registration error:', error);
-    
-    if (error.response?.data) {
-      // Convert snake_case errors to camelCase
-      for (const [field, message] of Object.entries(error.response.data)) {
-        const camelCaseField = field.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-        errors.value[camelCaseField] = Array.isArray(message) ? message.join(' ') : message;
-      }
-    } else {
-      errors.value.general = error.message || 'Registration failed';
+  } 
+  catch (error) {
+  console.error('Registration error:', error);
+
+  const errorData = error.response?.data;
+
+  if (errorData?.errors) {
+    for (const [field, messages] of Object.entries(errorData.errors)) {
+      // Convert snake_case to camelCase
+      const camelCaseField = field.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+      errors.value[camelCaseField] = Array.isArray(messages) ? messages.join(' ') : messages;
     }
-  } finally {
+  } else if (errorData?.message) {
+    errors.value.general = errorData.message;
+  } else {
+    errors.value.general = error.message || 'Registration failed';
+  }
+}
+ finally {
     isSubmitting.value = false;
   }
 };

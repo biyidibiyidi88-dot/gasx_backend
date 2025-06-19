@@ -270,7 +270,9 @@
   
   <script setup>
   import { ref, watch } from 'vue';
+  import { useRouter } from 'vue-router';
   import api from './api'
+  const router = useRouter()
   const form = ref({
     email: '',
     password: '',
@@ -334,28 +336,40 @@
     localStorage.setItem('authToken', response.data.token);
     
     // Redirect to dashboard or home
-    router.push('/dashboard');
+    await router.push('admin/analytics');
     
   } catch (error) {
-    if (error.response) {
-      // Handle different error statuses
-      if (error.response.status === 401) {
-        loginError.value = 'Invalid email or password';
-      } else if (error.response.status === 400) {
-        // Handle validation errors from server
-        for (const field in error.response.data) {
-          errors.value[field] = error.response.data[field].join(' ');
-         
-        }
+  console.error('Login error:', error);
+
+  const errorData = error.response?.data;
+
+  if (error.response?.status === 401) {
+    loginError.value = 'Invalid email or password';
+  } else if (error.response?.status === 400 && errorData) {
+    // Handle field-specific errors from 400 response
+    for (const field in errorData) {
+      const messages = errorData[field];
+      const camelCaseField = field.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+
+      if (Array.isArray(messages)) {
+        errors.value[camelCaseField] = messages.join(' ');
+      } else if (typeof messages === 'string') {
+        errors.value[camelCaseField] = messages;
       } else {
-        loginError.value = 'An error occurred. Please try again.';
+        loginError.value = 'Invalid input. Please check your data.';
       }
-    } else if (error.request) {
-      loginError.value = 'No response from server. Please check your connection.';
-    } else {
-      loginError.value = 'An unexpected error occurred.';
     }
-  } finally {
+  } else if (errorData?.message) {
+    loginError.value = errorData.message;
+  } else if (error.request) {
+    loginError.value = 'No response from server. Please check your connection.';
+  } else {
+    console.error('Unexpected error', error);
+   
+  }
+}
+
+ finally {
     isSubmitting.value = false;
   }
 };

@@ -10,7 +10,7 @@ class RegisterView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            token = Token.objects.get(user=user)  # Token was created in serializer
+            token = Token.objects.get(user=user)
             
             return Response({
                 'user': {
@@ -25,7 +25,7 @@ class RegisterView(APIView):
             'errors': serializer.errors,
             'message': 'Registration failed'
         }, status=status.HTTP_400_BAD_REQUEST)
-
+        
 class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
