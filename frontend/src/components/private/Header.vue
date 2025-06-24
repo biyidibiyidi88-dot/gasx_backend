@@ -8,11 +8,6 @@
       ]"
     >
       <!-- Mobile menu button -->
-      <li v-for="product in products" :key="product.id">
-        <h3>{{ product.name }}</h3>
-        <p>{{ product.description }}</p>
-        <strong>${{ product.price }}</strong>
-      </li>
       <button 
         v-if="isMobile" 
         @click="$emit('toggle-sidebar', !sidebarCollapsed)" 

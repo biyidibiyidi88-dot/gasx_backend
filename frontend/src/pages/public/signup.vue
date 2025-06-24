@@ -94,6 +94,7 @@
             </div>
 
             <!-- Phone -->
+            
             <div>
               <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number *
@@ -102,6 +103,42 @@
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-amber-50"
                 :class="{ 'border-red-500': errors.phone }" placeholder="+237 678808831">
               <p v-if="errors.phone" class="mt-1 text-sm text-red-600">{{ errors.phone }}</p>
+            </div>
+
+                  <!-- Address -->
+
+            <div>
+              <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                Address
+              </label>
+              <input id="address" v-model="form.address" type="text"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-amber-50"
+                placeholder="123 Main St">
+            </div>
+
+          <!-- City and Country -->
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
+                  City
+                </label>
+                <input id="city" v-model="form.city" type="text"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-amber-50"
+                  placeholder="New York">
+              </div>
+              <div>
+                <label for="country" class="block text-sm font-medium text-gray-700 mb-2">
+                  Country *
+                </label>
+                <select id="country" v-model="form.country" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 text-amber-50">
+                  <option value="">Select Country</option>
+                  <option value="US">United States</option>
+                  <option value="CM">Cameroon</option>
+                  <!-- Add more countries as needed -->
+                </select>
+              </div>
             </div>
 
             <!-- Password -->
@@ -236,16 +273,19 @@ import { ref, computed, watch } from 'vue';
 import { useRouter,} from 'vue-router';
 import api from './api'
 const router = useRouter();
-  const form = ref({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    acceptTerms: false,
-    newsletter: false
-  });
+const form = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  address: '',
+  city: '',
+  country: '',
+  acceptTerms: false,
+  newsletter: false
+});
   
   const errors = ref({});
   const isSubmitting = ref(false);
@@ -339,6 +379,11 @@ const router = useRouter();
   } else if (!validateEmail(form.value.email)) {
     errors.value.email = 'Please enter a valid email address';
   }
+
+  if (!form.value.country) {
+  errors.value.country = 'Country is required';
+  }
+
   if (!form.value.phone) {
     errors.value.phone = 'Phone number is required';
   } else if (!validatePhone(form.value.phone)) {
@@ -363,16 +408,20 @@ const router = useRouter();
   
   try {
     const payload = {
-      first_name: form.value.firstName,
-      last_name: form.value.lastName,
-      email: form.value.email,
-      phone: form.value.phone,
-      password: form.value.password,
-      accept_terms: form.value.acceptTerms,
-      newsletter: form.value.newsletter
-  };
+    first_name: form.value.firstName,
+    last_name: form.value.lastName,
+    email: form.value.email,
+    phone_number: form.value.phone, 
+    password: form.value.password,
+    address: form.value.address,
+    city: form.value.city,
+    country: form.value.country,
+    accept_terms: form.value.acceptTerms,
+    newsletter_subscription: form.value.newsletter
+};
 
-    const response = await api.post("users/register/", payload);
+
+    const response = await api.post("auth/register/", payload);
     
     if (response.status === 201) {
       // Reset form and redirect
