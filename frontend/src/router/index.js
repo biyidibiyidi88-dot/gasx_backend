@@ -1,107 +1,116 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import DefaultLayout from '../layouts/Defaultlayout.vue';
-import Dashboard from '../pages/private/dashboard.vue';
-import GasTank from '../pages/private/GasTank.vue';
-import usermanagmment from '../pages/private/Usermanagment.vue'
-import Analytics from '../pages/private/Analitics.vue'; // Assuming the file is actually spelled Analitics.vue
-import systemsetting from '../pages/private/Systemsetting.vue'
-import notification from '../pages/private/notification.vue'
-import PublicLayout from '../layouts/PublicLayout.vue';
-import landing from '../pages/public/Landing.vue'
-import about from '../pages/public/About.vue' 
-import signup from '../pages/public/signup.vue'
-import login from '../pages/public/Login.vue'
-import contact from "../pages/public/Contact.vue"
-import  Features  from '../pages/public/Features.vue';
-import pricing from "../pages/public/Pricing.vue"
+import { createRouter, createWebHistory } from 'vue-router'
+
 const routes = [
   {
     path: '/admin',
-    component: DefaultLayout,
+    component: () => import('../layouts/Defaultlayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       {
-        path: '', // Default child route
+        path: '',
         name: 'dashboard',
-        component: Dashboard,
+        component: () => import('../pages/private/dashboard.vue'),
       },
       {
         path: 'analytics',
         name: 'analytics',
-        component: Analytics,
+        component: () => import('../pages/private/Analitics.vue'),
       },
       {
         path: 'tanks',
         name: 'tanks',
-        component: GasTank,
+        component: () => import('../pages/private/GasTank.vue'),
       },
       {
         path: 'settings',
-        name: 'Setting',
-        component: systemsetting,
+        name: 'settings',
+        component: () => import('../pages/private/Systemsetting.vue'),
       },
       {
-        path: '/users',
-        name: '/users',
-        component: usermanagmment,
+        path: 'users',
+        name: 'users',
+        component: () => import('../pages/private/Usermanagment.vue'),
       },
       {
-        path: '/alerts',
-        name: '/alerts',
-        component: notification
+        path: 'alerts',
+        name: 'alerts',
+        component: () => import('../pages/private/notification.vue'),
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('../pages/private/Profile.vue'),
       },
     ],
   },
   {
-    path:"/",
-    component:PublicLayout ,
-    children:[
+    path: '/',
+    component: () => import('../layouts/PublicLayout.vue'),
+    children: [
       {
         path: '',
         name: 'landing',
-        component: landing
+        component: () => import('../pages/public/Landing.vue'),
       },
       {
-        path:'/about',
-        name: '/about',
-        component: about,
+        path: 'about',
+        name: 'about',
+        component: () => import('../pages/public/About.vue'),
       },
       {
-        path:'/register',
+        path: 'register',
         name: 'signup',
-        component: signup,
+        component: () => import('../pages/public/signup.vue'),
       },
       {
-        path:'/login',
+        path: 'login',
         name: 'login',
-        component:login,
+        component: () => import('../pages/public/Login.vue'),
       },
       {
-        path:"/contact",
-        name:"contact",
-        component: contact,
+        path: 'contact',
+        name: 'contact',
+        component: () => import('../pages/public/Contact.vue'),
       },
       {
-        path:"/features",
-        name:"features",
-        component: Features,
+        path: 'features',
+        name: 'features',
+        component: () => import('../pages/public/Features.vue'),
       },
       {
-        path:"/pricing",
-        name:"pricing",
-        component: pricing,
+        path: 'pricing',
+        name: 'pricing',
+        component: () => import('../pages/public/Pricing.vue'),
       },
+     
     ],
   },
-
-
-];
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior() {
-    return { top: 0 };
+    return { top: 0 }
   },
+})
+
+// Authentication guard
+router.beforeEach((to, from, next) => {
+  const isAuthenticated = localStorage.getItem('authToken');
+  
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      next({
+        name: 'login',
+        query: { redirect: to.fullPath } // Store the attempted URL for redirect after login
+      });
+    } else {
+      next();
+    }
+  } else {
+    next(); // Always call next()!
+  }
 });
 
 export default router;

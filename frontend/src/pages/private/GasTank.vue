@@ -256,189 +256,159 @@
   </template>
   
   <script setup>
-  import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// Tank state
+const tank = ref({ 
+  level: 75, 
+  status: 'Normal' 
+});
+
+// Bubbles animation
+const bubbles = ref([]);
+let bubbleInterval = null;
+let animationFrameId = null;
+
+// Generate bubbles with safety checks
+const generateBubbles = () => {
+  if (!tank.value || tank.value.level <= 0) return;
   
-  const tank = ref({ 
-    level: 75, 
-    status: 'Normal' 
-  });
+  const newBubbles = [];
+  const bubbleCount = Math.floor(tank.value.level / 5) + 5;
   
-  const bubbles = ref([]);
+  for (let i = 0; i < bubbleCount; i++) {
+    newBubbles.push({
+      id: `bubble-${Date.now()}-${i}`,
+      left: `${Math.random() * 80 + 10}%`,
+      size: `${Math.random() * 12 + 4}px`,
+      animationDuration: `${Math.random() * 5 + 3}s`,
+      delay: `${Math.random() * 4}s`,
+      opacity: Math.random() * 0.6 + 0.3
+    });
+  }
   
-  // More dynamic bubble generation
-  const generateBubbles = () => {
-    const newBubbles = [];
-    const bubbleCount = Math.floor(tank.value.level / 5) + 5; // More bubbles when fuller
-    
-    for (let i = 0; i < bubbleCount; i++) {
-      const size = Math.random() * 12 + 4;
-      newBubbles.push({
-        id: `bubble-${Date.now()}-${i}`,
-        left: `${Math.random() * 80 + 10}%`,
-        size: `${size}px`,
-        animationDuration: `${Math.random() * 5 + 3}s`,
-        delay: `${Math.random() * 4}s`,
-        opacity: Math.random() * 0.6 + 0.3
-      });
-    }
-    
-    bubbles.value = newBubbles;
-  };
-  
-  const updateTankStatus = () => {
-    let newStatus = tank.value.level > 40 ? 'Normal' : tank.value.level > 15 ? 'Low' : 'Critical';
-    if (tank.value.status !== newStatus) {
-      tank.value.status = newStatus;
-      // Add bubble burst effect when status changes to critical
-      if (newStatus === 'Critical') {
-        generateBubbleBurst();
-      }
-    }
-  };
-  
-  // Special bubble burst effect for critical status
-  const generateBubbleBurst = () => {
-    const burstBubbles = [];
-    for (let i = 0; i < 15; i++) {
-      burstBubbles.push({
-        id: `burst-${Date.now()}-${i}`,
-        left: `${Math.random() * 60 + 20}%`,
-        size: `${Math.random() * 6 + 2}px`,
-        animationDuration: `${Math.random() * 1 + 0.5}s`,
-        delay: '0s',
-        opacity: Math.random() * 0.8 + 0.2
-      });
-    }
-    bubbles.value = [...bubbles.value, ...burstBubbles];
-  };
-  
-  const refillTank = () => {
-    // Animate the refill
-    const startLevel = tank.value.level;
-    const duration = 1500; // ms
-    const startTime = performance.now();
-    
-    const animateRefill = (timestamp) => {
-      const progress = Math.min(1, (timestamp - startTime) / duration);
-      tank.value.level = startLevel + (100 - startLevel) * progress;
-      
-      // Generate more bubbles during refill
-      if (progress < 0.5) {
-        generateBubbles();
-      }
-      
-      if (progress < 1) {
-        requestAnimationFrame(animateRefill);
-      } else {
-        tank.value.status = 'Normal';
-      }
-    };
-    
-    requestAnimationFrame(animateRefill);
-  };
-  
-  const getStatusColor = () => {
-    switch (tank.value.status) {
-      case 'Normal': return 'bg-gradient-to-b from-green-400/90 to-green-600/90';
-      case 'Low': return 'bg-gradient-to-b from-yellow-400/90 to-yellow-600/90';
-      case 'Critical': return 'bg-gradient-to-b from-red-400/90 to-red-600/90';
-      default: return 'bg-gradient-to-b from-green-400/90 to-green-600/90';
-    }
-  };
-  
-  // Computed properties for the information panel
-  const statusBadgeClass = computed(() => {
-    return {
-      'Normal': 'bg-green-100 text-green-800',
-      'Low': 'bg-yellow-100 text-yellow-800',
-      'Critical': 'bg-red-100 text-red-800'
-    }[tank.value.status];
-  });
-  
-  const statusCardClass = computed(() => {
-    return {
-      'Normal': 'bg-green-50 border border-green-200',
-      'Low': 'bg-yellow-50 border border-yellow-200',
-      'Critical': 'bg-red-50 border border-red-200'
-    }[tank.value.status];
-  });
-  
-  const statusTextClass = computed(() => {
-    return {
-      'Normal': 'text-green-800',
-      'Low': 'text-yellow-800',
-      'Critical': 'text-red-800'
-    }[tank.value.status];
-  });
-  
-  const statusSubtextClass = computed(() => {
-    return {
-      'Normal': 'text-green-600',
-      'Low': 'text-yellow-600',
-      'Critical': 'text-red-600'
-    }[tank.value.status];
-  });
-  
-  const statusIconPath = computed(() => {
-    return {
-      'Normal': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-      'Low': 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
-      'Critical': 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-    }[tank.value.status];
-  });
-  
-  const statusMessage = computed(() => {
-    return {
-      'Normal': 'Normal Operation',
-      'Low': 'Low Gas Level',
-      'Critical': 'Critical Level - Refill Needed!'
-    }[tank.value.status];
-  });
-  
-  const statusSubmessage = computed(() => {
-    return {
-      'Normal': 'Your gas level is sufficient for normal usage',
-      'Low': 'Consider scheduling a refill in the next few days',
-      'Critical': 'Immediate refill required to avoid running out'
-    }[tank.value.status];
-  });
-  
-  const levelTextClass = computed(() => {
-    return {
-      'Normal': 'text-green-600',
-      'Low': 'text-yellow-600',
-      'Critical': 'text-red-600'
-    }[tank.value.status];
-  });
-  
-  const levelColorClass = computed(() => {
-    return {
-      'Normal': 'bg-gradient-to-r from-green-400 to-green-500',
-      'Low': 'bg-gradient-to-r from-yellow-400 to-yellow-500',
-      'Critical': 'bg-gradient-to-r from-red-400 to-red-500'
-    }[tank.value.status];
-  });
-  
-  const estimatedRemaining = computed(() => {
-    return Math.round((tank.value.level / 100) * 48); // 48 hours at full capacity
-  });
-  
-  watch(() => tank.value.level, () => {
-    updateTankStatus();
-  });
-  
-  let bubbleInterval;
-  
-  onMounted(() => {
-    updateTankStatus();
-    generateBubbles();
-    bubbleInterval = setInterval(generateBubbles, 4000);
-  });
-  
-  onUnmounted(() => {
+  bubbles.value = newBubbles;
+};
+
+// Cleanup all animations
+const cleanupAnimations = () => {
+  if (bubbleInterval) {
     clearInterval(bubbleInterval);
-  });
-  </script>
+    bubbleInterval = null;
+  }
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+};
+
+// Update tank status
+const updateTankStatus = () => {
+  if (!tank.value) return;
+  
+  let newStatus = 'Normal';
+  if (tank.value.level <= 15) {
+    newStatus = 'Critical';
+  } else if (tank.value.level <= 40) {
+    newStatus = 'Low';
+  }
+  
+  if (tank.value.status !== newStatus) {
+    tank.value.status = newStatus;
+    if (newStatus === 'Critical') {
+      generateBubbleBurst();
+    }
+  }
+};
+
+// Bubble burst effect
+const generateBubbleBurst = () => {
+  const burstBubbles = [];
+  for (let i = 0; i < 15; i++) {
+    burstBubbles.push({
+      id: `burst-${Date.now()}-${i}`,
+      left: `${Math.random() * 60 + 20}%`,
+      size: `${Math.random() * 6 + 2}px`,
+      animationDuration: `${Math.random() * 1 + 0.5}s`,
+      delay: '0s',
+      opacity: Math.random() * 0.8 + 0.2
+    });
+  }
+  bubbles.value = [...bubbles.value, ...burstBubbles];
+};
+
+// Refill tank animation
+const refillTank = () => {
+  const startLevel = tank.value.level;
+  const duration = 1500;
+  const startTime = performance.now();
+  
+  const animateRefill = (timestamp) => {
+    const progress = Math.min(1, (timestamp - startTime) / duration);
+    tank.value.level = startLevel + (100 - startLevel) * progress;
+    
+    if (progress < 0.5) {
+      generateBubbles();
+    }
+    
+    if (progress < 1) {
+      animationFrameId = requestAnimationFrame(animateRefill);
+    } else {
+      tank.value.status = 'Normal';
+    }
+  };
+  
+  animationFrameId = requestAnimationFrame(animateRefill);
+};
+
+// Status color helpers
+const getStatusColor = () => {
+  switch (tank.value.status) {
+    case 'Normal': return 'bg-gradient-to-b from-green-400/90 to-green-600/90';
+    case 'Low': return 'bg-gradient-to-b from-yellow-400/90 to-yellow-600/90';
+    case 'Critical': return 'bg-gradient-to-b from-red-400/90 to-red-600/90';
+    default: return 'bg-gradient-to-b from-green-400/90 to-green-600/90';
+  }
+};
+
+// Computed properties
+const statusBadgeClass = computed(() => ({
+  'Normal': 'bg-green-100 text-green-800',
+  'Low': 'bg-yellow-100 text-yellow-800',
+  'Critical': 'bg-red-100 text-red-800'
+}[tank.value.status]));
+
+const statusCardClass = computed(() => ({
+  'Normal': 'bg-green-50 border border-green-200',
+  'Low': 'bg-yellow-50 border border-yellow-200',
+  'Critical': 'bg-red-50 border border-red-200'
+}[tank.value.status]));
+
+const statusMessage = computed(() => ({
+  'Normal': 'Normal Operation',
+  'Low': 'Low Gas Level',
+  'Critical': 'Critical Level - Refill Needed!'
+}[tank.value.status]));
+
+const estimatedRemaining = computed(() => Math.round((tank.value.level / 100) * 48));
+
+// Watch for level changes
+watch(() => tank.value.level, updateTankStatus);
+
+// Component lifecycle
+onMounted(() => {
+  updateTankStatus();
+  generateBubbles();
+  bubbleInterval = setInterval(generateBubbles, 2000);
+});
+
+onUnmounted(() => {
+  cleanupAnimations();
+});
+</script>
   
   <style scoped>
   /* Base Styles */

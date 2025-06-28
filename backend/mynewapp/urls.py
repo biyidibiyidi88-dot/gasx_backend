@@ -8,7 +8,12 @@ from .views import (
     HouseListCreateView,
     HouseDetailView,
     GasSensorListView,
-    AlertListView
+    AlertListView,
+    ProfileImageView ,
+    UserListView,
+    UserDetailView,
+    UserInviteView,
+    UserStatusUpdateView
 )
 
 urlpatterns = [
@@ -20,14 +25,17 @@ urlpatterns = [
     # User endpoints
     path('auth/password-change/', PasswordChangeView.as_view(), name='password-change'),
     path('users/profile/', UserProfileView.as_view(), name='user-profile'),
+    path('users/profile/image/', ProfileImageView.as_view(), name='profile-image'),  # Add this line
     
-    # House endpoints
+     # User management endpoints
+    path('users/', UserListView.as_view(), name='user-list'),
+    path('users/<int:id>/', UserDetailView.as_view(), name='user-detail'),
+    path('users/invite/', UserInviteView.as_view(), name='user-invite'),
+    path('users/<int:id>/status/', UserStatusUpdateView.as_view(), name='user-status'),
+
+    # Other endpoints...
     path('houses/', HouseListCreateView.as_view(), name='house-list'),
     path('houses/<uuid:pk>/', HouseDetailView.as_view(), name='house-detail'),
-    
-    # Sensor endpoints
     path('sensors/', GasSensorListView.as_view(), name='sensor-list'),
-    
-    # Alert endpoints
     path('alerts/', AlertListView.as_view(), name='alert-list'),
 ]

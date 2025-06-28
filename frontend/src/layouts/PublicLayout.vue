@@ -3,9 +3,9 @@
     <!-- Three.js canvas for 3D glowing spheres and particles background -->
     <canvas ref="threeCanvas" class="fixed inset-0 z-0"></canvas>
     <!-- Main content with semi-transparent backgrounds for header/footer, transparent for body -->
-    <public-header class="relative z-20 backdrop-blur-sm"></public-header>
+    <public-header class="relative z-20"></public-header>
     <Body class="flex-1 relative z-10"></Body>
-    <public-footer class="relative z-20 backdrop-blur-sm"></public-footer>
+    <public-footer class="relative z-20"></public-footer>
   </div>
 </template>
 

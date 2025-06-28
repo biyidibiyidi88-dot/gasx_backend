@@ -1,7 +1,7 @@
 <template>
     <div class="pricing-page min-h-[calc(100vh-7rem)]">
       <!-- Hero Section -->
-      <section class="relative py-16 sm:py-24 bg-gradient-to-b from-gray-900 to-transparent">
+      <section class="relative py-16 sm:py-24 ">
         <div class="container mx-auto px-4 sm:px-6 text-center">
           <h1 class="text-3xl sm:text-5xl font-bold text-gray-300 mb-4">Simple, Transparent Pricing</h1>
           <p class="text-xl text-gray-400 max-w-3xl mx-auto">
@@ -233,7 +233,7 @@
       </section>
   
       <!-- CTA Section -->
-      <section class="py-16 sm:py-24 bg-gradient-to-b from-transparent to-gray-900/50">
+      <section class="py-16 sm:py-24 bg-gradient-to-b ">
         <div class="container mx-auto px-4 sm:px-6 text-center">
           <h2 class="text-3xl sm:text-4xl font-bold text-gray-300 mb-6">Ready to Get Started?</h2>
           <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">

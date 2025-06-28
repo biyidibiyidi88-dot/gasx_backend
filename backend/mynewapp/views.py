@@ -3,7 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
+from django.contrib.auth import get_user_model
 from .models import CustomUser, House, GasSensor, Alert
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.storage import default_storage
 from .serializers import (
     UserSerializer,
     LoginSerializer,
@@ -11,8 +14,12 @@ from .serializers import (
     PasswordChangeSerializer,
     HouseSerializer,
     GasSensorSerializer,
-    AlertSerializer
+    AlertSerializer,
+    UserManagementSerializer
 )
+User = get_user_model()
+
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -109,3 +116,89 @@ class AlertListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Alert.objects.filter(user=self.request.user).order_by('-triggered_at')
+class ProfileImageView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        user = request.user
+        if 'profile_image' not in request.data:
+            return Response(
+                {'error': 'No image provided'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Delete old image if exists
+        if user.profile_image:
+            default_storage.delete(user.profile_image.path)
+            
+        user.profile_image = request.data['profile_image']
+        user.save()
+        return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        user = request.user
+        if user.profile_image:
+            # Delete the file from storage
+            default_storage.delete(user.profile_image.path)
+            # Clear the field
+            user.profile_image = None
+            user.save()
+            return Response(
+                {'message': 'Profile image removed successfully'},
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            {'error': 'No profile image to remove'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+#user managment 
+class UserListView(generics.ListAPIView):
+    serializer_class = UserManagementSerializer
+    permission_classes = [permissions.IsAdminUser]
+    
+    def get_queryset(self):
+        return User.objects.all().order_by('-created_at')
+
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = UserManagementSerializer
+    permission_classes = [permissions.IsAdminUser]
+    queryset = User.objects.all()
+    lookup_field = 'id'
+
+class UserInviteView(generics.CreateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]
+    
+    def perform_create(self, serializer):
+        user = serializer.save(is_active=False)  # Create inactive user
+        # Here you would typically send an invitation email
+        # with an activation link
+        return user
+
+class UserStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    
+    def patch(self, request, id):
+        try:
+            user = User.objects.get(id=id)
+            is_active = request.data.get('is_active', None)
+            
+            if is_active is not None:
+                user.is_active = is_active
+                user.save()
+                return Response(
+                    {'message': f'User {"activated" if is_active else "suspended"} successfully'},
+                    status=status.HTTP_200_OK
+                )
+            return Response(
+                {'error': 'is_active field is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )

@@ -1,7 +1,7 @@
 <template>
   <div class="about-page min-h-[calc(100vh-7rem)]">
     <!-- Hero Section -->
-    <section class="relative py-16 sm:py-24 bg-gradient-to-b from-gray-900 to-transparent">
+    <section class="relative py-16 sm:py-24 bg-gradient-to-b">
       <div class="container mx-auto px-4 sm:px-6 text-center">
         <h1 class="text-3xl sm:text-5xl font-bold text-gray-300 mb-4">About GasMonitor</h1>
         <p class="text-xl text-gray-400 max-w-3xl mx-auto">

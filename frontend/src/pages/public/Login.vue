@@ -303,73 +303,76 @@
   });
   
   const handleLogin = async () => {
-    // Clear previous errors
-    errors.value = {};
-    loginError.value = '';
-  
-    // Validate fields
-    if (!form.value.email) {
-      errors.value.email = 'Email is required';
-    } else if (!validateEmail(form.value.email)) {
-      errors.value.email = 'Please enter a valid email address';
-    }
-  
-    if (!form.value.password) {
-      errors.value.password = 'Password is required';
-    }
-  
-    // If there are validation errors, stop submission
-    if (Object.keys(errors.value).length > 0) {
-      return;
-    }
-  
-    isSubmitting.value = true;
-  
-   
+  // Clear previous errors
+  errors.value = {};
+  loginError.value = '';
+
+  // Validate fields
+  if (!form.value.email) {
+    errors.value.email = 'Email is required';
+  } else if (!validateEmail(form.value.email)) {
+    errors.value.email = 'Please enter a valid email address';
+  }
+
+  if (!form.value.password) {
+    errors.value.password = 'Password is required';
+  }
+
+  if (Object.keys(errors.value).length > 0) {
+    return;
+  }
+
+  isSubmitting.value = true;
+
   try {
     const response = await api.post("auth/login/", {
       email: form.value.email,
       password: form.value.password
     });
 
-    // Store token if using JWT
+    // Store token and user data
     localStorage.setItem('authToken', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+     // Store the user's role in localStorage
+     if (response.data.user && response.data.user.role) {
+      localStorage.setItem('userRole', response.data.user.role);
+    } else {
+      console.warn('No role information in user data');
+      // Set a default role if none is provided
+      localStorage.setItem('userRole', 'user');
+    }
+   
+    // Set the default Authorization header
+    api.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
     
-    // Redirect to dashboard or home
+    // Redirect to dashboard
     await router.push('admin/analytics');
     
   } catch (error) {
-  console.error('Login error:', error);
+    console.error('Login error:', error);
 
-  const errorData = error.response?.data;
+    const errorData = error.response?.data;
 
-  if (error.response?.status === 401) {
-    loginError.value = 'Invalid email or password';
-  } else if (error.response?.status === 400 && errorData) {
-    // Handle field-specific errors from 400 response
-    for (const field in errorData) {
-      const messages = errorData[field];
-      const camelCaseField = field.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    if (error.response?.status === 400) {
+      loginError.value = 'Invalid email or password';
+    } else if (error.response?.status === 400 && errorData) {
+      // Handle field-specific errors
+      for (const field in errorData) {
+        const messages = errorData[field];
+        const camelCaseField = field.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 
-      if (Array.isArray(messages)) {
-        errors.value[camelCaseField] = messages.join(' ');
-      } else if (typeof messages === 'string') {
-        errors.value[camelCaseField] = messages;
-      } else {
-        loginError.value = 'Invalid input. Please check your data.';
+        if (Array.isArray(messages)) {
+          errors.value[camelCaseField] = messages.join(' ');
+        } else if (typeof messages === 'string') {
+          errors.value[camelCaseField] = messages;
+        }
       }
+    } else if (error.request) {
+      loginError.value = 'No response from server. Please check your connection.';
+    } else {
+      loginError.value = 'An unexpected error occurred. Please try again.';
     }
-  } else if (errorData?.message) {
-    loginError.value = errorData.message;
-  } else if (error.request) {
-    loginError.value = 'No response from server. Please check your connection.';
-  } else {
-    console.error('Unexpected error', error);
-   
-  }
-}
-
- finally {
+  } finally {
     isSubmitting.value = false;
   }
 };

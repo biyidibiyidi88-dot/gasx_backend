@@ -58,6 +58,14 @@ class CustomUser(AbstractUser, PermissionsMixin):
         blank=True,
         default=''
     )
+    profile_image = models.ImageField(
+        _('profile image'),
+        upload_to='profile_images/',
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_('Upload a profile picture')
+    )
     is_verified = models.BooleanField(_('verified'), default=False)
     is_admin = models.BooleanField(_('admin'), default=False)
     accept_terms = models.BooleanField(_('terms accepted'), default=False)
@@ -102,6 +110,12 @@ class CustomUser(AbstractUser, PermissionsMixin):
 
     def get_short_name(self):
         return self.first_name
+       
+    @property
+    def profile_image_url(self):
+        if self.profile_image and hasattr(self.profile_image, 'url'):
+            return self.profile_image.url
+        return '/static/images/default-profile.png'  # Add a default image
 
 class AdminActivityLog(models.Model):
     ACTION_CHOICES = [
