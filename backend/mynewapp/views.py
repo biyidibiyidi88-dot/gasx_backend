@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from .models import CustomUser, House, GasSensor, Alert
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.files.storage import default_storage
+from .models import Notification  
 from .serializers import (
     UserSerializer,
     LoginSerializer,
@@ -15,7 +16,8 @@ from .serializers import (
     HouseSerializer,
     GasSensorSerializer,
     AlertSerializer,
-    UserManagementSerializer
+    UserManagementSerializer,
+    NotificationSerializer,
 )
 User = get_user_model()
 
@@ -202,3 +204,61 @@ class UserStatusUpdateView(APIView):
                 {'error': 'User not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Get all notifications for the current user
+        return Notification.objects.filter(
+            alert__user=self.request.user
+        ).select_related(
+            'alert', 
+            'alert__sensor', 
+            'alert__sensor__house'
+        ).order_by('-sent_at')
+
+class MarkNotificationAsReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, notification_id):
+        try:
+            notification = Notification.objects.get(
+                id=notification_id,
+                alert__user=request.user
+            )
+            # In a real app, you might want to mark this as read in some way
+            # For now, we'll just return the notification
+            return Response(
+                NotificationSerializer(notification).data,
+                status=status.HTTP_200_OK
+            )
+        except Notification.DoesNotExist:
+            return Response(
+                {'error': 'Notification not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+class NotificationSettingsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Return the current user's notification settings
+        user = request.user
+        settings = {
+            'email_enabled': True,  # Default values - replace with actual user settings
+            'push_enabled': True,
+            'sms_enabled': False,
+            'critical_alerts': 'all',
+            'warning_alerts': 'all',
+            'info_alerts': 'important',
+            'quiet_start': 22,
+            'quiet_end': 6
+        }
+        return Response(settings, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        # Update the user's notification settings
+        # In a real app, you would save these to the user's profile
+        # For now, we'll just return the received settings
+        return Response(request.data, status=status.HTTP_200_OK)

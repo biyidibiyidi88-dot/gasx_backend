@@ -176,12 +176,18 @@ class AlertSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     alert_message = serializers.CharField(source='alert.alert_message', read_only=True)
     alert_type = serializers.CharField(source='alert.alert_type', read_only=True)
-
+    severity_level = serializers.CharField(source='alert.severity_level', read_only=True)
+    is_resolved = serializers.BooleanField(source='alert.is_resolved', read_only=True)
+    triggered_at = serializers.DateTimeField(source='alert.triggered_at', read_only=True)
+    sensor_name = serializers.CharField(source='alert.sensor.sensor_name', read_only=True)
+    house_address = serializers.CharField(source='alert.sensor.house.address_line_1', read_only=True)
+    
     class Meta:
         model = Notification
         fields = [
             'id', 'alert', 'alert_message', 'alert_type', 'notification_method',
-            'recipient_address', 'notification_status', 'sent_at', 'error_message'
+            'recipient_address', 'notification_status', 'sent_at', 'error_message',
+            'severity_level', 'is_resolved', 'triggered_at', 'sensor_name', 'house_address'
         ]
         read_only_fields = ['sent_at']
 

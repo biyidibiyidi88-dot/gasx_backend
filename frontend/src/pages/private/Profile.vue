@@ -262,6 +262,7 @@ const removeProfileImage = async () => {
     user.value = response.data
     showImageModal.value = false
     showNotificationMessage('Profile image removed successfully')
+    localStorage.removeItem('profile_image');
   } catch (error) {
     showNotificationMessage('Failed to remove profile image', 'error')
     console.error('Failed to remove profile image:', error)

@@ -13,7 +13,11 @@ from .views import (
     UserListView,
     UserDetailView,
     UserInviteView,
-    UserStatusUpdateView
+    UserStatusUpdateView,
+    NotificationListView,
+    MarkNotificationAsReadView,
+    NotificationSettingsView,
+    
 )
 
 urlpatterns = [
@@ -32,6 +36,11 @@ urlpatterns = [
     path('users/<int:id>/', UserDetailView.as_view(), name='user-detail'),
     path('users/invite/', UserInviteView.as_view(), name='user-invite'),
     path('users/<int:id>/status/', UserStatusUpdateView.as_view(), name='user-status'),
+
+    # Notification endpoints
+    path('notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('notifications/<int:notification_id>/read/', MarkNotificationAsReadView.as_view(), name='mark-notification-read'),
+    path('notifications/settings/', NotificationSettingsView.as_view(), name='notification-settings'),
 
     # Other endpoints...
     path('houses/', HouseListCreateView.as_view(), name='house-list'),
