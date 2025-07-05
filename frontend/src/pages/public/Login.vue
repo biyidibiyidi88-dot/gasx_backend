@@ -336,6 +336,7 @@
      // Store the user's role in localStorage
      if (response.data.user && response.data.user.role) {
       localStorage.setItem('userRole', response.data.user.role);
+      console.log(response.data.user)
     } else {
       console.warn('No role information in user data');
       // Set a default role if none is provided

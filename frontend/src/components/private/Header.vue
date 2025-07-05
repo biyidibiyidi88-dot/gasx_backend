@@ -201,11 +201,15 @@ const fetchUserProfile = async () => {
     
     // Construct the full URL if profile_image_url exists
     if (response.data.profile_image_url) {
-      const backendUrl = 'http://localhost:8000/'; // Replace with your actual backend URL
-      userProfile.value.profile_image_url = backendUrl + response.data.profile_image_url;
+      
+      const backendUrl = import.meta.env.VITE_BACKEND_URL
+      userProfile.value.profile_image_url = backendUrl + response.data.profile_image_url
+      console.log(response.data)
       localStorage.setItem('profile_image', response.data.profile_image_url)
     }
-    
+    const backendUrl = import.meta.env.VITE_BACKEND_URL
+user.value.profile_image_url = backendUrl + response.data.profile_image_url
+
    
   } catch (error) {
     console.error('Failed to fetch user profile:', error)

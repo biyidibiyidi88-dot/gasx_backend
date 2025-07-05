@@ -369,3 +369,24 @@ class ProfileImageSerializer(serializers.ModelSerializer):
         
         instance.save()
         return instance
+
+
+class GasReadingSerializer(serializers.ModelSerializer):
+    sensor_name = serializers.CharField(source='sensor.sensor_name', read_only=True)
+    sensor_type = serializers.CharField(source='sensor.sensor_type', read_only=True)
+    date = serializers.SerializerMethodField()
+    is_weekend = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GasReading
+        fields = [
+            'id', 'sensor', 'sensor_name', 'sensor_type', 'remaining_gas',
+            'reading_timestamp', 'is_alert_triggered', 'date', 'is_weekend'
+        ]
+        read_only_fields = ['date', 'is_weekend']
+
+    def get_date(self, obj):
+        return obj.reading_timestamp.date().isoformat()
+
+    def get_is_weekend(self, obj):
+        return obj.reading_timestamp.weekday() >= 5  # Saturday or Sunday

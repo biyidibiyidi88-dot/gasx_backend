@@ -4,7 +4,7 @@ from rest_framework import status, generics, permissions
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
 from django.contrib.auth import get_user_model
-from .models import CustomUser, House, GasSensor, Alert
+from .models import CustomUser, House, GasSensor, Alert, GasReading
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.files.storage import default_storage
 from .models import Notification  
@@ -18,10 +18,15 @@ from .serializers import (
     AlertSerializer,
     UserManagementSerializer,
     NotificationSerializer,
+    GasReadingSerializer,
 )
+from datetime import datetime, timedelta
+from django.utils import timezone
+from .services.ai_service import AIPredictionService
+from rest_framework.permissions import IsAuthenticated
+import json
+
 User = get_user_model()
-
-
 
 class RegisterView(APIView):
     def post(self, request):
@@ -262,3 +267,106 @@ class NotificationSettingsView(APIView):
         # In a real app, you would save these to the user's profile
         # For now, we'll just return the received settings
         return Response(request.data, status=status.HTTP_200_OK)
+
+
+class GasPredictionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Get the user's primary sensor (or first sensor if multiple)
+            sensor = GasSensor.objects.filter(house__user=request.user).first()
+            if not sensor:
+                return Response(
+                    {"error": "No gas sensor found for this user"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Get readings from the last 7 days
+            end_date = timezone.now()
+            start_date = end_date - timedelta(days=7)
+            
+            readings = GasReading.objects.filter(
+                sensor=sensor,
+                reading_timestamp__gte=start_date
+            ).order_by('reading_timestamp')
+
+            if not readings.exists():
+                return Response(
+                    {"error": "No gas readings available for prediction"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Prepare history data for AI prediction
+            history_data = []
+            previous_reading = None
+            
+            for reading in readings:
+                if previous_reading:
+                    # Calculate consumption between readings
+                    time_diff = (reading.reading_timestamp - previous_reading.reading_timestamp).total_seconds() / 86400  # days
+                    if time_diff > 0:
+                        consumption = float(previous_reading.remaining_gas) - float(reading.remaining_gas)
+                        is_weekend = reading.reading_timestamp.weekday() >= 5  # Saturday or Sunday
+                        
+                        history_data.append({
+                            'date': reading.reading_timestamp.date().isoformat(),
+                            'consumption_kg': consumption / time_diff,  # kg per day
+                            'is_weekend': is_weekend
+                        })
+                
+                previous_reading = reading
+
+            if not history_data:
+                return Response(
+                    {"error": "Insufficient data for prediction"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Get prediction from AI service
+            prediction = AIPredictionService.predict_days_remaining(history_data)
+            
+            # Format response
+            response_data = {
+                'status_code': 200,
+                'message': 'Prediction successful',
+                'projected_days': prediction.get('projected_days', 0),
+                'confidence': prediction.get('confidence', 0),
+                'trend': prediction.get('trend', 'stable'),
+                'recommendation': prediction.get('recommendation', 'No specific recommendation'),
+                'calculation': prediction.get('calculation', 'No calculation details'),
+                'history_data': history_data
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e), "details": "Failed to generate prediction"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class GasReadingListView(generics.ListAPIView):
+    serializer_class = GasReadingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = GasReading.objects.filter(
+            sensor__house__user=self.request.user
+        ).select_related('sensor', 'sensor__house')
+
+        # Handle date filtering if provided
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+
+        if start_date:
+            queryset = queryset.filter(reading_timestamp__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(reading_timestamp__lte=end_date)
+
+        # Default to last 7 days if no dates provided
+        if not start_date and not end_date:
+            default_start = timezone.now() - timedelta(days=7)
+            queryset = queryset.filter(reading_timestamp__gte=default_start)
+
+        return queryset.order_by('-reading_timestamp')

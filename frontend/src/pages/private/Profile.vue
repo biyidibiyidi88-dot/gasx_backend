@@ -192,8 +192,9 @@ const fetchUserProfile = async () => {
     user.value = response.data
     
     if (response.data.profile_image_url) {
-      const backendUrl = 'http://localhost:8000/'
+      const backendUrl = import.meta.env.VITE_BACKEND_URL
       user.value.profile_image_url = backendUrl + response.data.profile_image_url
+
     }
   } catch (error) {
     showNotificationMessage('Failed to load profile', 'error')
@@ -243,6 +244,9 @@ const uploadProfileImage = async () => {
       }
     })
     user.value = response.data
+
+    localStorage.setItem('profile_image', response.data)
+
     showNotificationMessage('Profile image updated successfully')
   } catch (error) {
     showNotificationMessage('Failed to update profile image', 'error')

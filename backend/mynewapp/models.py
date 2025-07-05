@@ -193,6 +193,7 @@ class GasSensor(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
     is_active = models.BooleanField(_('active'), default=True)
+    ai_enabled = models.BooleanField(default=True) 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
