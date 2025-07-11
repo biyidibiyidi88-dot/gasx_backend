@@ -263,12 +263,7 @@ const handleImageError = () => {
 }
 
 onMounted(async () => {
-  try {
-    await userStore.fetchUserProfile()
-  } catch (error) {
-    showNotificationMessage('Failed to load profile', 'error')
-    console.error('Failed to fetch user profile:', error)
-  }
+
 })
 </script>
 
