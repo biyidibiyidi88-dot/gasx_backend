@@ -88,10 +88,6 @@
             </div>
             <div class="mt-4">
               <p class="text-3xl font-bold" :class="levelTextColorClass">{{ tank.level }}%</p>
-              <p class="text-sm text-gray-500 mt-1">Estimated remaining: {{ estimatedRemaining }} days</p>
-              <p class="text-sm text-gray-500 mt-1">Confidence: {{ (prediction.confidence * 100).toFixed(0) }}%</p>
-              <p class="text-sm text-gray-500 mt-1">Trend: {{ prediction.trend }}</p>
-              <p class="text-sm text-gray-500 mt-1">{{ prediction.recommendation }}</p>
             </div>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
@@ -135,6 +131,47 @@
             <button @click="showUsageHistory = true" class="text-sm text-blue-600 hover:text-blue-500">
               View Detailed Usage History
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Prediction Section -->
+      <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-medium text-gray-900">AI Consumption Prediction</h3>
+        </div>
+        <div class="p-6">
+          <div v-if="isPredicting" class="flex flex-col items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p class="text-gray-500 text-center">
+              Analyzing usage patterns...<br>
+              AI predictions may take some time
+            </p>
+          </div>
+          
+          <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-50 p-4 rounded-lg">
+              <p class="text-sm text-blue-800">Predicted Days Remaining</p>
+              <p class="text-2xl font-bold text-blue-600">{{ prediction.days_remaining }}</p>
+              <p class="text-xs text-blue-500 mt-1">Based on current usage</p>
+            </div>
+            
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <p class="text-sm text-purple-800">Prediction Confidence</p>
+              <p class="text-2xl font-bold text-purple-600">{{ (prediction.confidence * 100).toFixed(0) }}%</p>
+              <p class="text-xs text-purple-500 mt-1">Accuracy of forecast</p>
+            </div>
+            
+            <div class="bg-green-50 p-4 rounded-lg">
+              <p class="text-sm text-green-800">Consumption Trend</p>
+              <p class="text-2xl font-bold text-green-600 capitalize">{{ prediction.trend }}</p>
+              <p class="text-xs text-green-500 mt-1">Compared to last week</p>
+            </div>
+            
+            <div class="md:col-span-3 bg-gray-50 p-4 rounded-lg mt-2">
+              <p class="text-sm text-gray-800 font-medium">AI Recommendation</p>
+              <p class="text-gray-700 mt-1">{{ prediction.recommendation }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -294,6 +331,7 @@ const alert = ref(null)
 const usageHistory = ref([])
 const levelChartInstance = ref(null)
 const consumptionChartInstance = ref(null)
+const isPredicting = ref(false)
 
 // Tank data
 const tank = ref({
@@ -346,8 +384,10 @@ const levelStatusText = computed(() => {
 
 const dailyUsage = computed(() => {
   if (usageHistory.value.length < 2) return 0
-  const totalConsumption = usageHistory.value[0].level - usageHistory.value[usageHistory.value.length - 1].level
-  const totalDays = (new Date(usageHistory.value[usageHistory.value.length - 1].date) - new Date(usageHistory.value[0].date)) / (1000 * 60 * 60 * 24)
+  // Sort by date (oldest first)
+  const sortedHistory = [...usageHistory.value].sort((a, b) => new Date(a.date) - new Date(b.date))
+  const totalConsumption = sortedHistory[0].consumption_kg - sortedHistory[sortedHistory.length - 1].consumption_kg
+  const totalDays = (new Date(sortedHistory[sortedHistory.length - 1].date) - new Date(sortedHistory[0].date)) / (1000 * 60 * 60 * 24)
   return totalDays > 0 ? (totalConsumption / totalDays).toFixed(2) : 0
 })
 
@@ -383,23 +423,35 @@ const refillUrgencyText = computed(() => {
 
 const totalConsumption = computed(() => {
   if (usageHistory.value.length < 2) return 0
+  // Sort by date (oldest first)
+  const sortedHistory = [...usageHistory.value].sort((a, b) => new Date(a.date) - new Date(b.date))
   let total = 0
-  for (let i = 1; i < usageHistory.value.length; i++) {
-    const diff = usageHistory.value[i-1].consumption_kg - usageHistory.value[i].consumption_kg
-    total += diff
+  for (let i = 1; i < sortedHistory.length; i++) {
+    const diff = sortedHistory[i-1].consumption_kg - sortedHistory[i].consumption_kg
+    if (diff > 0) {
+      total += diff
+    }
   }
   return total
 })
 
 const dailyConsumptionData = computed(() => {
   if (usageHistory.value.length < 2) return []
+  
+  // Sort by date (oldest first)
+  const sortedHistory = [...usageHistory.value].sort((a, b) => new Date(a.date) - new Date(b.date))
+  
   const data = []
-  for (let i = 1; i < usageHistory.value.length; i++) {
-    const diff = usageHistory.value[i-1].consumption_kg - usageHistory.value[i].consumption_kg
-    data.push({
-      date: usageHistory.value[i].date,
-      consumption: diff.toFixed(2)
-    })
+  for (let i = 1; i < sortedHistory.length; i++) {
+    // Calculate positive consumption (previous - current)
+    const diff = sortedHistory[i-1].consumption_kg - sortedHistory[i].consumption_kg
+    if (diff > 0) { // Only include positive consumption
+      data.push({
+        date: sortedHistory[i].date,
+        consumption: diff.toFixed(2),
+        is_weekend: sortedHistory[i].is_weekend
+      })
+    }
   }
   return data
 })
@@ -513,6 +565,7 @@ const fetchGasReadings = async () => {
       }))
       
       // Fetch AI prediction
+      isPredicting.value = true
       const predictionResponse = await api.get('/gas/prediction/', {
         headers: { Authorization: `Token ${localStorage.getItem('authToken')}` }
       })
@@ -560,6 +613,8 @@ const fetchGasReadings = async () => {
         callback: () => fetchGasReadings()
       }
     }
+  } finally {
+    isPredicting.value = false
   }
 }
 
@@ -629,7 +684,8 @@ const initializeCharts = () => {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: 'Consumption (kg)' }
+          title: { display: true, text: 'Consumption (kg)' },
+          min: 0 // Ensure y-axis starts at 0
         },
         x: {
           title: { display: true, text: 'Date' }
@@ -663,12 +719,16 @@ const updateCharts = () => {
   }
 
   if (consumptionChartInstance.value) {
-    consumptionChartInstance.value.data.labels = dailyConsumptionData.value.map(item => item.date)
-    consumptionChartInstance.value.data.datasets[0].data = dailyConsumptionData.value.map(item => item.consumption)
-    consumptionChartInstance.value.data.datasets[0].backgroundColor = dailyConsumptionData.value.map(item => 
+    // Sort consumption data by date
+    const sortedData = [...dailyConsumptionData.value].sort((a, b) => 
+      new Date(a.date) - new Date(b.date))
+    
+    consumptionChartInstance.value.data.labels = sortedData.map(item => item.date)
+    consumptionChartInstance.value.data.datasets[0].data = sortedData.map(item => item.consumption)
+    consumptionChartInstance.value.data.datasets[0].backgroundColor = sortedData.map(item => 
       item.is_weekend ? 'rgba(234, 88, 12, 0.7)' : 'rgba(59, 130, 246, 0.7)'
     )
-    consumptionChartInstance.value.data.datasets[0].borderColor = dailyConsumptionData.value.map(item => 
+    consumptionChartInstance.value.data.datasets[0].borderColor = sortedData.map(item => 
       item.is_weekend ? 'rgba(234, 88, 12, 1)' : 'rgba(59, 130, 246, 1)'
     )
     consumptionChartInstance.value.update()
@@ -727,5 +787,14 @@ main::-webkit-scrollbar-thumb:hover {
 }
 .modal-enter, .modal-leave-to {
   opacity: 0;
+}
+
+/* Animation for the loading spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 </style>

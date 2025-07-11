@@ -1,17 +1,18 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
-import api from './pages/public/api' // Import your axios instance
-import './style.css'
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+import api from './pages/public/api';
+import './style.css';
 import { createPinia } from 'pinia';
-const app = createApp(App)
-const pinia = createPinia();
-// Set auth token if exists
-const token = localStorage.getItem('authToken');
-if (token) {
-  api.defaults.headers.common['Authorization'] = `Token ${token}`;
-}
-app.use(pinia)
-app.use(router)
-app.mount('#app')
 
+const app = createApp(App);
+const pinia = createPinia();
+
+// Use Pinia before mounting
+app.use(pinia);
+
+// Set up the API instance with interceptors if needed
+app.use(router);
+
+// Mount the app
+app.mount('#app');

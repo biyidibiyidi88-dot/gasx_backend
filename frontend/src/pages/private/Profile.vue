@@ -13,14 +13,14 @@
     <transition name="fade">
       <div v-if="showImageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
         <div class="relative max-w-3xl max-h-screen">
-          <img :src="user.profile_image_url" class="max-w-full max-h-screen object-contain" alt="Profile preview">
+          <img :src="userStore.userProfile?.profile_image_url" class="max-w-full max-h-screen object-contain" alt="Profile preview">
           <button @click="showImageModal = false" 
                   class="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <button v-if="user.profile_image_url"
+          <button v-if="userStore.userProfile?.profile_image_url"
                   @click="removeProfileImage"
                   class="absolute bottom-4 right-4 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
             Remove Image
@@ -38,12 +38,12 @@
         <div class="flex items-center space-x-6">
           <div class="relative">
             <!-- Profile Image with Click-to-View -->
-            <div v-if="user.profile_image_url" 
+            <div v-if="userStore.userProfile?.profile_image_url" 
                  class="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-500 cursor-pointer hover:border-blue-600 transition-all"
                  @click="showImageModal = true">
               <img 
                 class="w-full h-full object-cover" 
-                :src="user.profile_image_url" 
+                :src="userStore.userProfile.profile_image_url" 
                 alt="User profile"
                 @error="handleImageError"
               >
@@ -76,7 +76,7 @@
                 </button>
               </label>
               <button
-                v-if="user.profile_image_url"
+                v-if="userStore.userProfile?.profile_image_url"
                 @click="removeProfileImage"
                 class="px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
               >
@@ -90,13 +90,12 @@
         </div>
         
         <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <!-- Form fields remain the same -->
           <div>
             <label for="first_name" class="block text-sm font-medium text-gray-700">First name</label>
             <input 
               type="text" 
               id="first_name" 
-              v-model="user.first_name" 
+              v-model="userStore.userProfile.first_name" 
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
           </div>
@@ -106,7 +105,7 @@
             <input 
               type="text" 
               id="last_name" 
-              v-model="user.last_name" 
+              v-model="userStore.userProfile.last_name" 
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
           </div>
@@ -116,7 +115,7 @@
             <input 
               type="email" 
               id="email" 
-              v-model="user.email" 
+              v-model="userStore.userProfile.email" 
               disabled
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
@@ -127,7 +126,7 @@
             <input 
               type="tel" 
               id="phone" 
-              v-model="user.phone_number" 
+              v-model="userStore.userProfile.phone_number" 
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
           </div>
@@ -156,18 +155,12 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from "../public/api"
+import { useUserStore } from '../../stores/user'
 
-const user = ref({
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone_number: '',
-  profile_image_url: null
-})
-
+const userStore = useUserStore()
 const isSaving = ref(false)
 const selectedFile = ref(null)
 const showImageModal = ref(false)
@@ -183,23 +176,6 @@ const showNotificationMessage = (message, type = 'success') => {
   setTimeout(() => {
     showNotification.value = false
   }, 3000)
-}
-
-// Fetch user profile
-const fetchUserProfile = async () => {
-  try {
-    const response = await api.get('/users/profile/')
-    user.value = response.data
-    
-    if (response.data.profile_image_url) {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL
-      user.value.profile_image_url = backendUrl + response.data.profile_image_url
-
-    }
-  } catch (error) {
-    showNotificationMessage('Failed to load profile', 'error')
-    console.error('Failed to fetch user profile:', error)
-  }
 }
 
 // Handle file change
@@ -221,7 +197,8 @@ const onFileChange = (e) => {
   
   const reader = new FileReader()
   reader.onload = (e) => {
-    user.value.profile_image_url = e.target.result
+    // Temporarily set the image URL for preview
+    userStore.userProfile.profile_image_url = e.target.result
   }
   reader.readAsDataURL(file)
   
@@ -238,15 +215,7 @@ const uploadProfileImage = async () => {
   isSaving.value = true
   
   try {
-    const response = await api.put('/users/profile/image/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-    user.value = response.data
-
-    localStorage.setItem('profile_image', response.data)
-
+    await userStore.uploadProfileImage(formData)
     showNotificationMessage('Profile image updated successfully')
   } catch (error) {
     showNotificationMessage('Failed to update profile image', 'error')
@@ -262,11 +231,9 @@ const removeProfileImage = async () => {
   isSaving.value = true
   
   try {
-    const response = await api.delete('/users/profile/image/')
-    user.value = response.data
+    await userStore.removeProfileImage()
     showImageModal.value = false
     showNotificationMessage('Profile image removed successfully')
-    localStorage.removeItem('profile_image');
   } catch (error) {
     showNotificationMessage('Failed to remove profile image', 'error')
     console.error('Failed to remove profile image:', error)
@@ -280,8 +247,7 @@ const updateProfile = async () => {
   isSaving.value = true
   
   try {
-    const response = await api.put('/users/profile/', user.value)
-    user.value = response.data
+    await userStore.updateProfile(userStore.userProfile)
     showNotificationMessage('Profile updated successfully')
   } catch (error) {
     showNotificationMessage('Failed to update profile', 'error')
@@ -293,15 +259,21 @@ const updateProfile = async () => {
 
 // Handle image error
 const handleImageError = () => {
-  user.value.profile_image_url = null
+  userStore.userProfile.profile_image_url = null
 }
 
-onMounted(() => {
-  fetchUserProfile()
+onMounted(async () => {
+  try {
+    await userStore.fetchUserProfile()
+  } catch (error) {
+    showNotificationMessage('Failed to load profile', 'error')
+    console.error('Failed to fetch user profile:', error)
+  }
 })
 </script>
 
 <style scoped>
+/* Styles remain exactly the same */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

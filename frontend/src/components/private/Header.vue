@@ -23,14 +23,20 @@
       <div class="hidden sm:flex items-center space-x-2">
         <span class="text-xs text-gray-400">System Status:</span>
         <span class="flex items-center">
-          <span class="w-2 h-2 rounded-full bg-green-500 mr-1 animate-pulse"></span>
-          <span class="text-xs font-medium text-green-400">Operational</span>
+          <span class="w-2 h-2 rounded-full mr-1 animate-pulse"
+                :class="userStore.systemStatus.operational ? 'bg-green-500' : 'bg-red-500'"></span>
+          <span class="text-xs font-medium"
+                :class="userStore.systemStatus.operational ? 'text-green-400' : 'text-red-400'">
+            {{ userStore.systemStatus.operational ? 'Operational' : 'Degraded' }}
+          </span>
         </span>
       </div>
       
       <div class="hidden md:flex items-center space-x-2">
         <span class="text-xs text-gray-400">Last Update:</span>
-        <span class="text-xs font-medium text-gray-300">2 min ago</span>
+        <span class="text-xs font-medium text-gray-300">
+          {{ formatTime(userStore.systemStatus.lastUpdate) }}
+        </span>
       </div>
     </div>
 
@@ -40,19 +46,88 @@
       <div class="relative">
         <button 
           class="text-gray-400 hover:text-blue-400 focus:outline-none transition-colors relative p-1"
-          @click="emit('show-notifications')"
+          @click="toggleNotifications"
           aria-label="Show notifications"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
           </svg>
           <span
-            v-if="props.unreadNotifications > 0"
+            v-if="unreadNotificationsCount > 0"
             class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border border-gray-900"
           >
             <span class="absolute top-0 right-0 h-full w-full rounded-full bg-red-500 animate-ping opacity-75"></span>
           </span>
         </button>
+
+        <!-- Notifications dropdown -->
+        <transition
+          enter-active-class="transition ease-out duration-100"
+          enter-from-class="transform opacity-0 scale-95"
+          enter-to-class="transform opacity-100 scale-100"
+          leave-active-class="transition ease-in duration-75"
+          leave-from-class="transform opacity-100 scale-100"
+          leave-to-class="transform opacity-0 scale-95"
+        >
+          <div
+            v-show="notificationsOpen"
+            class="absolute right-0 mt-2 w-72 bg-gray-800 rounded-md shadow-xl py-1 z-40 border border-gray-700 max-h-96 overflow-y-auto"
+            @click.stop
+          >
+            <div class="px-4 py-2 border-b border-gray-700 flex justify-between items-center">
+              <h3 class="text-sm font-medium text-white">Notifications</h3>
+              <button 
+                @click="markAllAsRead"
+                class="text-xs text-blue-400 hover:text-blue-300"
+                :disabled="unreadNotificationsCount === 0"
+              >
+                Mark all as read
+              </button>
+            </div>
+            
+            <template v-if="userStore.notifications.length > 0">
+              <div 
+                v-for="notification in userStore.notifications"
+                :key="notification.id"
+                class="px-4 py-3 border-b border-gray-700 last:border-b-0 hover:bg-gray-700/50 transition-colors"
+                :class="{ 'bg-gray-700/30': !notification.read }"
+                @click="handleNotificationClick(notification)"
+              >
+                <div class="flex items-start">
+                  <div class="flex-shrink-0 pt-0.5">
+                    <svg 
+                      class="h-5 w-5"
+                      :class="getNotificationIconClass(notification)"
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="getNotificationIconPath(notification)"/>
+                    </svg>
+                  </div>
+                  <div class="ml-3 flex-1">
+                    <p class="text-sm font-medium text-white">
+                      {{ notification.title }}
+                    </p>
+                    <p class="text-xs text-gray-300 mt-1">
+                      {{ notification.message }}
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">
+                      {{ formatTime(notification.timestamp) }}
+                    </p>
+                  </div>
+                  <div v-if="!notification.read" class="ml-2 flex-shrink-0">
+                    <span class="h-2 w-2 rounded-full bg-blue-500"></span>
+                  </div>
+                </div>
+              </div>
+            </template>
+            
+            <div v-else class="px-4 py-4 text-center">
+              <p class="text-sm text-gray-400">No notifications</p>
+            </div>
+          </div>
+        </transition>
       </div>
 
       <!-- Fullscreen toggle -->
@@ -75,10 +150,10 @@
         >
           <div class="relative">
             <!-- Profile Image with Fallback -->
-            <div v-if="userProfile.profile_image_url" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500/30">
+            <div v-if="userStore.userProfile?.profile_image_url" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500/30">
               <img 
                 class="w-full h-full object-cover" 
-                :src="userProfile.profile_image_url" 
+                :src="userStore.userProfile.profile_image_url" 
                 alt="User profile"
                 @error="handleImageError"
               >
@@ -94,9 +169,9 @@
 
           <div class="hidden md:block text-left">
             <p class="text-xs font-medium text-gray-200 truncate max-w-[120px]">
-              {{ userProfile.first_name }} {{ userProfile.last_name }}
+              {{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}
             </p>
-            <p class="text-xs text-gray-400">{{ userProfile.role }}</p>
+            <p class="text-xs text-gray-400">{{ userStore.userProfile?.role || 'User' }}</p>
           </div>
           <svg
             class="hidden md:block w-4 h-4 text-gray-500 transform transition-transform duration-200"
@@ -124,8 +199,8 @@
             @click.stop
           >
             <div class="px-4 py-2 border-b border-gray-700">
-              <p class="text-sm font-medium text-white">{{ userProfile.first_name }} {{ userProfile.last_name }}</p>
-              <p class="text-xs text-gray-400">{{ userProfile.email }}</p>
+              <p class="text-sm font-medium text-white">{{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}</p>
+              <p class="text-xs text-gray-400">{{ userStore.userProfile?.email }}</p>
             </div>
             <router-link 
               to="admin/profile" 
@@ -165,114 +240,187 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
-import api from "../../pages/public/api"
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '../../stores/user';
+
 const props = defineProps({
   sidebarCollapsed: {
     type: Boolean,
     default: false
-  },
-  unreadNotifications: {
-    type: Number,
-    default: 0
   }
-})
+});
 
-const emit = defineEmits(['toggle-sidebar', 'show-notifications'])
+const emit = defineEmits(['toggle-sidebar', 'show-notifications']);
 
-const router = useRouter()
-const isMobile = ref(window.innerWidth < 768)
-const dropdownOpen = ref(false)
-const userProfile = ref({
-  first_name: '',
-  last_name: '',
-  email: '',
-  role: 'User',
-  profile_image_url:''
-})
+const router = useRouter();
+const userStore = useUserStore();
+const isMobile = ref(window.innerWidth < 768);
+const dropdownOpen = ref(false);
+const notificationsOpen = ref(false);
 
-// Fetch user profile
-const fetchUserProfile = async () => {
-  try {
-    const response = await api.get('/users/profile/')
-    userProfile.value = response.data
-    
-    // Construct the full URL if profile_image_url exists
-    if (response.data.profile_image_url) {
-      
-      const backendUrl = import.meta.env.VITE_BACKEND_URL
-      userProfile.value.profile_image_url = backendUrl + response.data.profile_image_url
-      console.log(response.data)
-      localStorage.setItem('profile_image', response.data.profile_image_url)
-    }
-    const backendUrl = import.meta.env.VITE_BACKEND_URL
-user.value.profile_image_url = backendUrl + response.data.profile_image_url
+// Format time
+const formatTime = (date) => {
+  return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
-   
-  } catch (error) {
-    console.error('Failed to fetch user profile:', error)
+// Computed properties
+const unreadNotificationsCount = computed(() => {
+  return userStore.notifications.filter(n => !n.read).length;
+});
+
+// Notification methods
+const toggleNotifications = () => {
+  notificationsOpen.value = !notificationsOpen.value;
+  if (notificationsOpen.value && unreadNotificationsCount.value > 0) {
+    userStore.fetchNotifications();
   }
-}
+};
+
+const markAllAsRead = async () => {
+  await userStore.clearNotifications();
+};
+
+const handleNotificationClick = async (notification) => {
+  if (!notification.read) {
+    await userStore.markNotificationAsRead(notification.id);
+  }
+  
+  // Handle navigation based on notification type
+  if (notification.link) {
+    router.push(notification.link);
+  }
+  
+  notificationsOpen.value = false;
+};
+
+const getNotificationIconClass = (notification) => {
+  switch (notification.type) {
+    case 'alert': return 'text-red-400';
+    case 'warning': return 'text-yellow-400';
+    case 'info': return 'text-blue-400';
+    case 'success': return 'text-green-400';
+    default: return 'text-gray-400';
+  }
+};
+
+const getNotificationIconPath = (notification) => {
+  switch (notification.type) {
+    case 'alert': 
+      return 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z';
+    case 'warning':
+      return 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+    case 'info':
+      return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+    case 'success':
+      return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+    default:
+      return 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9';
+  }
+};
 
 // Toggle dropdown
 const toggleDropdown = () => {
-  dropdownOpen.value = !dropdownOpen.value
-}
-
-// Close dropdown when clicking outside
-const handleClickOutside = (event) => {
-  if (dropdownOpen.value && !event.target.closest('.relative')) {
-    dropdownOpen.value = false
-  }
-}
+  dropdownOpen.value = !dropdownOpen.value;
+};
 
 // Toggle fullscreen
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(err => {
-      console.error(`Error attempting to enable fullscreen: ${err.message}`)
-    })
+      console.error(`Error attempting to enable fullscreen: ${err.message}`);
+    });
   } else {
     if (document.exitFullscreen) {
-      document.exitFullscreen()
+      document.exitFullscreen();
     }
   }
-}
+};
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event) => {
+  if (dropdownOpen.value && !event.target.closest('.relative')) {
+    dropdownOpen.value = false;
+  }
+  if (notificationsOpen.value && !event.target.closest('.relative')) {
+    notificationsOpen.value = false;
+  }
+};
+
+// Handle image error
+const handleImageError = () => {
+  userStore.userProfile.profile_image_url = '';
+};
+
+// Check mobile view
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
 
 // Logout
 const logout = async () => {
   try {
-    await axios.post('/api/auth/logout/')
-    localStorage.removeItem('authToken')
-    router.push('/login')
+    await userStore.clearAuth();
+    router.push('/login');
   } catch (error) {
-    console.error('Logout failed:', error)
+    console.error('Logout failed:', error);
   }
-}
-
-// Check mobile view
-const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768
-}
+};
 
 // Lifecycle hooks
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  window.addEventListener('resize', checkMobile)
-  fetchUserProfile()
-})
+  document.addEventListener('click', handleClickOutside);
+  window.addEventListener('resize', checkMobile);
+  
+  // Fetch notifications initially
+  userStore.fetchNotifications();
+  
+  // Set up periodic refresh (every 10 minutes)
+  const notificationsUpdateInterval = setInterval(userStore.fetchNotifications, 600000);
+  
+  onBeforeUnmount(() => {
+    clearInterval(notificationsUpdateInterval);
+  });
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('resize', checkMobile)
-})
+  document.removeEventListener('click', handleClickOutside);
+  window.removeEventListener('resize', checkMobile);
+});
 </script>
 
 <style scoped>
-/* Custom transition for dropdown */
 .transition-all {
   transition: all 0.3s ease-in-out;
+}
+
+/* Animation for the notification ping */
+@keyframes ping {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  70%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+.animate-ping {
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Custom scrollbar for notifications dropdown */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>

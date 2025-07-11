@@ -12,9 +12,9 @@ const routes = [
         component: () => import('../pages/private/dashboard.vue'),
       },
       {
-        path: 'analytics',
+        path: 'pricing',
         name: 'analytics',
-        component: () => import('../pages/private/Analitics.vue'),
+        component: () => import('../pages/private/pricing.vue'),
       },
       {
         path: 'tanks',
@@ -36,6 +36,13 @@ const routes = [
         name: 'alerts',
         component: () => import('../pages/private/notification.vue'),
       },
+            
+      {
+        path: 'pricing',
+        name: 'pricing',
+        component: () => import('../pages/private/pricing.vue'),
+      },
+
       {
         path: 'profile',
         name: 'profile',
