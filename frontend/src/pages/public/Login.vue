@@ -347,7 +347,7 @@
     api.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
     
     // Redirect to dashboard
-    await router.push('admin/analytics');
+    await router.push('admin');
     
   } catch (error) {
     console.error('Login error:', error);

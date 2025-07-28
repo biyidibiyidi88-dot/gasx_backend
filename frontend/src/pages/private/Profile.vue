@@ -1,37 +1,54 @@
 <template>
-  <div class="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-    <!-- Notification Toast -->
-    <transition name="fade">
-      <div v-if="showNotification" 
-           :class="['fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg text-white', 
-                   notificationType === 'success' ? 'bg-green-500' : 'bg-red-500']">
-        {{ notificationMessage }}
-      </div>
-    </transition>
-
-    <!-- Image Preview Modal -->
-    <transition name="fade">
-      <div v-if="showImageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div class="relative max-w-3xl max-h-screen">
-          <img :src="userStore.userProfile?.profile_image_url" class="max-w-full max-h-screen object-contain" alt="Profile preview">
-          <button @click="showImageModal = false" 
-                  class="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <button v-if="userStore.userProfile?.profile_image_url"
-                  @click="removeProfileImage"
-                  class="absolute bottom-4 right-4 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-            Remove Image
-          </button>
+  <div :class="[themeClasses.bg.primary, 'min-h-screen']">
+    <div class="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <!-- Notification Toast -->
+      <transition name="fade">
+        <div v-if="showNotification" 
+             :class="['fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg text-white', 
+                     notificationType === 'success' ? 'bg-green-500' : 'bg-red-500']">
+          {{ notificationMessage }}
         </div>
-      </div>
-    </transition>
+      </transition>
 
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-xl font-semibold text-gray-800">Profile Settings</h2>
+      <!-- Image Preview Modal -->
+      <transition name="fade">
+        <div v-if="showImageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+          <div class="relative max-w-3xl max-h-screen">
+            <img :src="userStore.userProfile?.profile_image_url" class="max-w-full max-h-screen object-contain" alt="Profile preview">
+            <button @click="showImageModal = false" 
+                    :class="[themeClasses.bg.secondary, 'absolute top-4 right-4 p-2 rounded-full shadow-md hover:bg-gray-700']">
+              <svg xmlns="http://www.w3.org/2000/svg" :class="[themeClasses.text.primary, 'h-6 w-6']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <button v-if="userStore.userProfile?.profile_image_url"
+                    @click="removeProfileImage"
+                    :class="[themeClasses.button.danger, 'absolute bottom-4 right-4 px-4 py-2 rounded-md']">
+              Remove Image
+            </button>
+          </div>
+        </div>
+      </transition>
+
+      <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden']">
+        <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
+          <div class="flex items-center justify-between">
+            <h2 :class="[themeClasses.text.primary, 'text-xl font-semibold']">Profile Settings</h2>
+            <!-- Theme Toggle Button -->
+            <button 
+              @click="toggleTheme" 
+              :class="[themeClasses.text.secondary, 'p-2 rounded-lg transition-colors hover:text-gray-600']"
+              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            >
+              <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
       
       <div class="px-6 py-4">
@@ -50,9 +67,9 @@
             </div>
             <!-- Fallback Avatar -->
             <div v-else 
-                 class="w-24 h-24 rounded-full bg-gray-200 border-2 border-blue-500/30 flex items-center justify-center cursor-pointer"
+                 :class="[themeClasses.bg.tertiary, 'w-24 h-24 rounded-full flex items-center justify-center cursor-pointer border-2 border-gray-300']"
                  @click="$refs.fileInput.click()">
-              <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg :class="[themeClasses.text.muted, 'w-12 h-12']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
             </div>
@@ -70,7 +87,7 @@
                 >
                 <button
                   @click="$refs.fileInput.click()"
-                  class="px-4 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
+                  :class="[themeClasses.button.secondary, 'px-4 py-2 rounded-md transition-colors']"
                 >
                   Add Photo
                 </button>
@@ -78,9 +95,9 @@
               <button
                 v-if="userStore.userProfile?.profile_image_url"
                 @click="removeProfileImage"
-                class="px-4 py-2 text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
+                :class="[themeClasses.button.danger, 'px-4 py-2 rounded-md transition-colors']"
               >
-                Remove
+                Remove Photo
               </button>
             </div>
             <p class="mt-2 text-sm text-gray-500">
@@ -158,6 +175,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useTheme } from '../../composables/useTheme'
+
+// Theme composable
+const { isDark, toggleTheme, themeClasses } = useTheme()
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()

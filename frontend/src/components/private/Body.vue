@@ -1,11 +1,14 @@
 <template>
     <main
-      class="flex-1 transition-all duration-300 overflow-y-auto bg-gray-100 min-h-screen mt-16"
-      :class="{
-        'ml-72': !isSidebarCollapsed && !isMobile,
-        'ml-0': isSidebarCollapsed || isMobile,
-        'w-full': isMobile
-      }"
+      :class="[
+        themeClasses.bg.primary,
+        'flex-1 transition-all duration-300 overflow-y-auto min-h-screen mt-16',
+        {
+          'ml-72': !isSidebarCollapsed && !isMobile,
+          'ml-0': isSidebarCollapsed || isMobile,
+          'w-full': isMobile
+        }
+      ]"
     >
       <div class="max-w-7xl mx-auto p-6">
         <router-view />
@@ -13,20 +16,23 @@
     </main>
   </template>
   
-  <script>
-  export default {
-    name: 'Body',
-    props: {
-      isSidebarCollapsed: {
-        type: Boolean,
-        default: false,
-      },
-      isMobile: {
-        type: Boolean,
-        default: false,
-      }
+  <script setup>
+  import { useTheme } from '../../composables/useTheme';
+  
+  // Theme composable
+  const { isDark, toggleTheme, themeClasses } = useTheme();
+  
+  // Define props
+  const props = defineProps({
+    isSidebarCollapsed: {
+      type: Boolean,
+      default: false,
+    },
+    isMobile: {
+      type: Boolean,
+      default: false,
     }
-  };
+  });
   </script>
   
   <style scoped>

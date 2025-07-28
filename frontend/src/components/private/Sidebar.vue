@@ -1,57 +1,61 @@
 <template>
-  <aside 
-    class="fixed top-0 left-0 h-screen bg-gray-900 text-white flex flex-col shadow-xl transition-all duration-300 z-50 border-r border-gray-700"
-    :class="{
-       'w-72': isOpen,
-       'w-0 overflow-hidden': !isOpen,
-       'md:w-72': !isMobile,
-    }"
-    role="navigation"
-    aria-label="Gas Monitoring Sidebar"
-  >
+  <aside :class="[
+      themeClasses.bg.secondary,
+      themeClasses.text.primary,
+      themeClasses.shadow,
+      themeClasses.border.primary,
+      'fixed top-0 left-0 h-screen flex flex-col transition-all duration-300 z-50 border-r',
+      {
+        'w-72': isOpen,
+        'w-0 overflow-hidden': !isOpen,
+        'md:w-72': !isMobile,
+      }
+    ]" role="navigation" aria-label="Gas Monitoring Sidebar">
     <!-- Logo Section with Status Indicator -->
-    <div class="p-5 border-b border-gray-800 bg-gray-900/50" v-if="isOpen || !isMobile">
+    <div :class="[themeClasses.border.primary, themeClasses.bg.tertiary, 'p-5 border-b']" v-if="isOpen || !isMobile">
       <div class="flex items-center space-x-3">
         <div class="relative">
           <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-gray-900"
-                :class="userStore.systemStatus.operational ? 'bg-green-500' : 'bg-red-500'"></span>
+          <span
+            :class="[themeClasses.border.secondary, 'absolute -top-1 -right-1 w-3 h-3 rounded-full border-2', userStore.systemStatus.operational ? 'bg-green-500' : 'bg-red-500']"></span>
         </div>
         <div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">GasTrack Pro</h1>
-          <p class="text-xs text-gray-400">Monitoring System v2.1</p>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
+            GasTrack Pro</h1>
+          <p :class="[themeClasses.text.caption, 'text-xs']">Monitoring System v2.1</p>
         </div>
       </div>
     </div>
 
     <!-- System Status Summary -->
-    <div class="px-4 py-3 border-b border-gray-800 bg-gray-900/30" v-if="isOpen || !isMobile">
+    <div :class="[themeClasses.border.primary, themeClasses.bg.tertiary, 'px-4 py-3 border-b']"
+      v-if="isOpen || !isMobile">
       <div class="flex items-center justify-between mb-2">
-        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">System Status</h3>
+        <h3 :class="[themeClasses.text.caption, 'text-xs font-semibold uppercase tracking-wider']">System Status</h3>
         <span class="text-xs px-2 py-1 rounded"
-              :class="userStore.systemStatus.operational ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'">
+          :class="userStore.systemStatus.operational ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'">
           {{ userStore.systemStatus.operational ? 'Online' : 'Offline' }}
         </span>
       </div>
       <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="p-2 rounded bg-gray-800/50">
+        <div :class="[isDark ? 'bg-gray-800/50' : 'bg-gray-200/50', 'p-2 rounded']">
           <p class="text-2xl font-bold text-blue-400">{{ userStore.systemStatus.tanks }}</p>
-          <p class="text-xs text-gray-400">Tanks</p>
+          <p :class="[themeClasses.text.caption, 'text-xs']">Tanks</p>
         </div>
-        <div class="p-2 rounded bg-gray-800/50">
+        <div :class="[isDark ? 'bg-gray-800/50' : 'bg-gray-200/50', 'p-2 rounded']">
           <p class="text-2xl font-bold text-green-400">{{ userStore.systemStatus.normal }}</p>
-          <p class="text-xs text-gray-400">Normal</p>
+          <p :class="[themeClasses.text.caption, 'text-xs']">Normal</p>
         </div>
-        <div class="p-2 rounded bg-gray-800/50">
+        <div :class="[isDark ? 'bg-gray-800/50' : 'bg-gray-200/50', 'p-2 rounded']">
           <p class="text-2xl font-bold text-yellow-400">{{ userStore.systemStatus.warning }}</p>
-          <p class="text-xs text-gray-400">Warning</p>
+          <p :class="[themeClasses.text.caption, 'text-xs']">Warning</p>
         </div>
       </div>
-      <div class="mt-2 text-xs text-gray-400 text-right">
+      <div :class="[themeClasses.text.caption, 'mt-2 text-xs text-right']">
         Updated: {{ formatTime(userStore.systemStatus.lastUpdate) }}
       </div>
     </div>
@@ -60,18 +64,24 @@
     <nav class="flex-1 overflow-y-auto py-3" v-if="isOpen || !isMobile">
       <ul class="space-y-1 px-3">
         <li v-for="(link, index) in links.main" :key="index">
-          <router-link
-            :to="link.path"
-            class="flex items-center p-3 rounded-lg hover:bg-gray-800/50 transition-all group"
-            :class="{ 'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path }"
-            @click="closeSidebar"
-          >
+          <router-link :to="link.path" :class="[
+              isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-200/50',
+              'flex items-center p-3 rounded-lg transition-all group',
+              { 
+                'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path && isDark,
+                'bg-blue-100/50 border-l-4 border-blue-500': activeLink === link.path && !isDark
+              }
+            ]" @click="closeSidebar">
             <div class="relative">
-              <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon"/>
+              <svg
+                :class="[themeClasses.text.muted, 'w-5 h-5 mr-3', isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon" />
               </svg>
             </div>
-            <span class="text-gray-300 group-hover:text-white">{{ link.name }}</span>
+            <span
+              :class="[themeClasses.text.secondary, isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']">{{
+              link.name }}</span>
           </router-link>
         </li>
 
@@ -80,16 +90,21 @@
           <p class="text-xs font-semibold text-gray-400 px-3 py-2 uppercase tracking-wider">Tank Monitoring</p>
           <ul class="mt-1 space-y-1">
             <li v-for="(link, index) in links.tankMonitoring" :key="index">
-              <router-link
-                :to="link.path"
-                class="flex items-center p-3 rounded-lg hover:bg-gray-800/50 transition-all group"
-                :class="{ 'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path }"
-                @click="closeSidebar"
-              >
-                <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon"/>
+              <router-link :to="link.path" :class="[
+                isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-200/50',
+                'flex items-center p-3 rounded-lg transition-all group',
+                {
+                  'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path && isDark,
+                  'bg-blue-100/50 border-l-4 border-blue-500': activeLink === link.path && !isDark
+                }
+              ]" @click="closeSidebar">
+                <svg  :class="[themeClasses.text.muted, 'w-5 h-5 mr-3', isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon" />
                 </svg>
-                <span class="text-gray-300 group-hover:text-white">{{ link.name }}</span>
+                <span
+              :class="[themeClasses.text.secondary, isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']">{{
+              link.name }}</span>
               </router-link>
             </li>
           </ul>
@@ -100,20 +115,28 @@
           <p class="text-xs font-semibold text-gray-400 px-3 py-2 uppercase tracking-wider">Alerts</p>
           <ul class="mt-1 space-y-1">
             <li v-for="(link, index) in links.alerts" :key="index">
-              <router-link
-                :to="link.path"
-                class="flex items-center p-3 rounded-lg hover:bg-gray-800/50 transition-all group"
-                :class="{ 'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path }"
-                @click="closeSidebar"
-              >
+              <router-link :to="link.path" :class="[
+              isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-200/50',
+              'flex items-center p-3 rounded-lg transition-all group',
+              { 
+                'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path && isDark,
+                'bg-blue-100/50 border-l-4 border-blue-500': activeLink === link.path && !isDark
+              }
+            ]" @click="closeSidebar">
                 <div class="relative">
-                  <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon"/>
+                  <svg  :class="[themeClasses.text.muted, 'w-5 h-5 mr-3', isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon" />
                   </svg>
-                  <span v-if="link.alertCount" class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  <span v-if="link.alertCount"
+                    class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                 </div>
-                <span class="text-gray-300 group-hover:text-white">{{ link.name }}</span>
-                <span v-if="link.alertCount" class="ml-auto px-2 py-0.5 text-xs rounded-full bg-red-900/50 text-red-300">{{ link.alertCount }}</span>
+                <span
+              :class="[themeClasses.text.secondary, isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']">{{
+              link.name }}</span>
+                <span v-if="link.alertCount"
+                  class="ml-auto px-2 py-0.5 text-xs rounded-full bg-red-900/50 text-red-300">{{ link.alertCount
+                  }}</span>
               </router-link>
             </li>
           </ul>
@@ -124,16 +147,21 @@
           <p class="text-xs font-semibold text-gray-400 px-3 py-2 uppercase tracking-wider">Configuration</p>
           <ul class="mt-1 space-y-1">
             <li v-for="(link, index) in links.configuration" :key="index">
-              <router-link
-                :to="link.path"
-                class="flex items-center p-3 rounded-lg hover:bg-gray-800/50 transition-all group"
-                :class="{ 'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path }"
-                @click="closeSidebar"
-              >
-                <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon"/>
+              <router-link :to="link.path" :class="[
+              isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-200/50',
+              'flex items-center p-3 rounded-lg transition-all group',
+              { 
+                'bg-blue-900/30 border-l-4 border-blue-400': activeLink === link.path && isDark,
+                'bg-blue-100/50 border-l-4 border-blue-500': activeLink === link.path && !isDark
+              }
+            ]" @click="closeSidebar">
+                <svg  :class="[themeClasses.text.muted, 'w-5 h-5 mr-3', isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="link.icon" />
                 </svg>
-                <span class="text-gray-300 group-hover:text-white">{{ link.name }}</span>
+                <span
+              :class="[themeClasses.text.secondary, isDark ? 'group-hover:text-blue-300' : 'group-hover:text-blue-700']">{{
+              link.name }}</span>
               </router-link>
             </li>
           </ul>
@@ -142,37 +170,36 @@
     </nav>
 
     <!-- Bottom Section - User & Logout -->
-    <div class="p-4 border-t border-gray-800 bg-gray-900/50 mt-auto" v-if="isOpen || !isMobile">
+    <div :class="[themeClasses.border.primary, themeClasses.bg.tertiary, 'p-4 border-t mt-auto']" v-if="isOpen || !isMobile">
       <div class="flex items-center space-x-3 mb-4">
         <div class="relative">
           <!-- Profile Image with Fallback -->
-          <div v-if="userStore.userProfile?.profile_image_url" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500/30">
-            <img 
-              class="w-full h-full object-cover" 
-              :src="userStore.userProfile.profile_image_url" 
-              alt="User profile"
-              @error="handleImageError"
-            >
+          <div v-if="userStore.userProfile?.profile_image_url"
+            class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500/30">
+            <img class="w-full h-full object-cover" :src="userStore.userProfile.profile_image_url" alt="User profile"
+              @error="handleImageError">
           </div>
           <!-- Fallback Avatar -->
-          <div v-else class="w-10 h-10 rounded-full bg-gray-600 border-2 border-blue-500/30 flex items-center justify-center">
-            <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          <div v-else
+            :class="[themeClasses.bg.input, 'w-10 h-10 rounded-full border-2 border-blue-500/30 flex items-center justify-center']">
+            <svg :class="[themeClasses.text.muted, 'w-6 h-6']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
-          <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-900"></span>
+          <span :class="[themeClasses.border.secondary, 'absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2']"></span>
         </div>
         <div>
-          <p class="font-medium text-gray-200">{{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}</p>
-          <p class="text-xs text-gray-400">{{ userStore.userProfile?.role || 'User' }}</p>
+          <p :class="[themeClasses.text.primary, 'font-medium']">{{ userStore.userProfile?.first_name }} {{
+            userStore.userProfile?.last_name }}</p>
+          <p :class="[themeClasses.text.muted, 'text-xs']">{{ userStore.userProfile?.role || 'User' }}</p>
         </div>
       </div>
-      <button 
-        @click="logout"
-        class="w-full flex items-center justify-center p-2 rounded-lg bg-gray-800 hover:bg-gray-700/70 text-gray-300 hover:text-white transition-colors"
-      >
+      <button @click="logout"
+        :class="[themeClasses.button.secondary, 'w-full flex items-center justify-center p-2 rounded-lg transition-colors']">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
         </svg>
         Logout
       </button>
@@ -184,6 +211,10 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '../../stores/user';
+import { useTheme } from '../../composables/useTheme';
+
+// Theme composable
+const { isDark, toggleTheme, themeClasses } = useTheme();
 
 // Define props
 const props = defineProps({

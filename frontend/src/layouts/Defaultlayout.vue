@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col relative">
+  <div :class="[themeClasses.bg.primary, 'min-h-screen flex flex-col relative']">
     <!-- Header -->
     <Header
       :sidebar-collapsed="sidebarCollapsed"
@@ -37,7 +37,11 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import Header from '../components/private/Header.vue';
 import Sidebar from '../components/private/Sidebar.vue';
 import Body from '../components/private/Body.vue';
-import { useUserStore } from '../stores/user'; 
+import { useUserStore } from '../stores/user';
+import { useTheme } from '../composables/useTheme';
+
+// Theme composable
+const { isDark, toggleTheme, themeClasses } = useTheme(); 
 
 const userStore = useUserStore();
 const sidebarCollapsed = ref(window.innerWidth < 768);

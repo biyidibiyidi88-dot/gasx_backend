@@ -1,12 +1,12 @@
 <template>
-    <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+    <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden']">
       <!-- Top Navigation -->
-      <header class="bg-white shadow-sm z-10">
+      <header :class="[themeClasses.bg.secondary, themeClasses.shadow, 'z-10']">
         <div class="flex items-center justify-between px-4 py-3 sm:px-6">
           <!-- Mobile menu button -->
           <button 
             @click="$emit('toggle-sidebar')"
-            class="md:hidden text-gray-500 hover:text-gray-600 focus:outline-none"
+            :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'md:hidden focus:outline-none']"
           >
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -14,17 +14,34 @@
           </button>
           
           <!-- Page Title -->
-          <h1 class="text-xl font-semibold text-gray-800">System Settings</h1>
+          <h1 :class="[themeClasses.text.primary, 'text-xl font-semibold']">System Settings</h1>
           
-          <!-- Save Status -->
-          <div class="text-sm text-gray-500">
-            <span v-if="saved" class="text-green-500 flex items-center">
-              <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          <!-- Theme Toggle & Save Status -->
+          <div class="flex items-center space-x-4">
+            <!-- Theme Toggle Button -->
+            <button 
+              @click="toggleTheme" 
+              :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors']"
+              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            >
+              <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
               </svg>
-              Changes saved
-            </span>
-            <span v-else class="text-gray-500">Unsaved changes</span>
+              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+              </svg>
+            </button>
+            
+            <!-- Save Status -->
+            <div :class="[themeClasses.text.secondary, 'text-sm']">
+              <span v-if="saved" :class="[themeClasses.text.success, 'flex items-center']">
+                <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Changes saved
+              </span>
+              <span v-else :class="themeClasses.text.secondary">Unsaved changes</span>
+            </div>
           </div>
         </div>
       </header>
@@ -33,10 +50,10 @@
       <main class="flex-1 overflow-y-auto p-4 sm:p-6">
         <div class="max-w-4xl mx-auto">
           <!-- Alert Notification Settings -->
-          <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-medium text-gray-900 flex items-center">
-                <svg class="h-5 w-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden mb-6']">
+            <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
+              <h2 :class="[themeClasses.text.primary, 'text-lg font-medium flex items-center']">
+                <svg :class="[themeClasses.text.warning, 'h-5 w-5 mr-2']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 Alert Notifications
@@ -451,7 +468,19 @@
   </template>
   
   <script>
+  import { useTheme } from '../../composables/useTheme';
+  
   export default {
+    setup() {
+      // Theme composable
+      const { isDark, toggleTheme, themeClasses } = useTheme();
+      
+      return {
+        isDark,
+        toggleTheme,
+        themeClasses
+      };
+    },
     name: 'SettingsView',
     emits: ['toggle-sidebar'],
     data() {

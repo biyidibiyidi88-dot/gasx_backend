@@ -1,7 +1,10 @@
 <template>
   <header
     :class="[
-      'fixed top-0 right-0 h-16 bg-gray-900 shadow-lg flex items-center justify-between px-4 sm:px-6 z-30 transition-all duration-300 border-b border-gray-800',
+      themeClasses.bg.secondary,
+      themeClasses.shadow,
+      themeClasses.border.primary,
+      'fixed top-0 right-0 h-16 flex items-center justify-between px-4 sm:px-6 z-30 transition-all duration-300 border-b',
       sidebarCollapsed ? 'left-0' : 'left-72',
       isMobile ? 'left-0' : ''
     ]"
@@ -10,7 +13,7 @@
     <button 
       v-if="isMobile" 
       @click="emit('toggle-sidebar', !sidebarCollapsed)" 
-      class="text-gray-400 hover:text-blue-400 focus:outline-none transition-colors"
+      :class="[themeClasses.text.secondary, 'hover:text-blue-400 focus:outline-none transition-colors']"
       aria-label="Toggle sidebar"
     >
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -21,7 +24,7 @@
     <!-- System status indicators -->
     <div class="flex items-center space-x-4 ml-4">
       <div class="hidden sm:flex items-center space-x-2">
-        <span class="text-xs text-gray-400">System Status:</span>
+        <span :class="[themeClasses.text.muted, 'text-xs']">System Status:</span>
         <span class="flex items-center">
           <span class="w-2 h-2 rounded-full mr-1 animate-pulse"
                 :class="userStore.systemStatus.operational ? 'bg-green-500' : 'bg-red-500'"></span>
@@ -33,8 +36,8 @@
       </div>
       
       <div class="hidden md:flex items-center space-x-2">
-        <span class="text-xs text-gray-400">Last Update:</span>
-        <span class="text-xs font-medium text-gray-300">
+        <span :class="[themeClasses.text.muted, 'text-xs']">Last Update:</span>
+        <span :class="[themeClasses.text.secondary, 'text-xs font-medium']">
           {{ formatTime(userStore.systemStatus.lastUpdate) }}
         </span>
       </div>
@@ -42,10 +45,24 @@
 
     <!-- User controls -->
     <div class="flex items-center space-x-4">
+      <!-- Theme Toggle Button -->
+      <button 
+        @click="toggleTheme" 
+        :class="[themeClasses.text.secondary, 'hover:text-blue-400 p-2 rounded-lg transition-colors']"
+        :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+      </button>
+      
       <!-- Notification button -->
       <div class="relative">
         <button 
-          class="text-gray-400 hover:text-blue-400 focus:outline-none transition-colors relative p-1"
+          :class="[themeClasses.text.secondary, isDark ? 'hover:text-blue-300' : 'hover:text-blue-600', 'focus:outline-none transition-colors relative p-1']"
           @click="toggleNotifications"
           aria-label="Show notifications"
         >
@@ -71,11 +88,11 @@
         >
           <div
             v-show="notificationsOpen"
-            class="absolute right-0 mt-2 w-72 bg-gray-800 rounded-md shadow-xl py-1 z-40 border border-gray-700 max-h-96 overflow-y-auto"
+            :class="[themeClasses.bg.card, themeClasses.shadow, themeClasses.border.primary, 'absolute right-0 mt-2 w-72 rounded-md py-1 z-40 border max-h-96 overflow-y-auto']"
             @click.stop
           >
-            <div class="px-4 py-2 border-b border-gray-700 flex justify-between items-center">
-              <h3 class="text-sm font-medium text-white">Notifications</h3>
+            <div :class="[themeClasses.border.primary, 'px-4 py-2 border-b flex justify-between items-center']">
+              <h3 :class="[themeClasses.text.heading, 'text-sm font-medium']">Notifications</h3>
               <button 
                 @click="markAllAsRead"
                 class="text-xs text-blue-400 hover:text-blue-300"
@@ -89,8 +106,15 @@
               <div 
                 v-for="notification in userStore.notifications"
                 :key="notification.id"
-                class="px-4 py-3 border-b border-gray-700 last:border-b-0 hover:bg-gray-700/50 transition-colors"
-                :class="{ 'bg-gray-700/30': !notification.read }"
+                :class="[
+                  themeClasses.border.primary,
+                  isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100/50',
+                  'px-4 py-3 border-b last:border-b-0 transition-colors',
+                  { 
+                    'bg-gray-700/30': !notification.read && isDark,
+                    'bg-gray-100/30': !notification.read && !isDark
+                  }
+                ]"
                 @click="handleNotificationClick(notification)"
               >
                 <div class="flex items-start">
@@ -106,13 +130,13 @@
                     </svg>
                   </div>
                   <div class="ml-3 flex-1">
-                    <p class="text-sm font-medium text-white">
+                    <p :class="[themeClasses.text.primary, 'text-sm font-medium']">
                       {{ notification.title }}
                     </p>
-                    <p class="text-xs text-gray-300 mt-1">
+                    <p :class="[themeClasses.text.secondary, 'text-xs mt-1']">
                       {{ notification.message }}
                     </p>
-                    <p class="text-xs text-gray-400 mt-1">
+                    <p :class="[themeClasses.text.muted, 'text-xs mt-1']">
                       {{ formatTime(notification.timestamp) }}
                     </p>
                   </div>
@@ -124,7 +148,7 @@
             </template>
             
             <div v-else class="px-4 py-4 text-center">
-              <p class="text-sm text-gray-400">No notifications</p>
+              <p :class="[themeClasses.text.muted, 'text-sm']">No notifications</p>
             </div>
           </div>
         </transition>
@@ -243,6 +267,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
+import { useTheme } from '../../composables/useTheme';
+
+// Theme composable
+const { isDark, toggleTheme, themeClasses } = useTheme();
 
 const props = defineProps({
   sidebarCollapsed: {

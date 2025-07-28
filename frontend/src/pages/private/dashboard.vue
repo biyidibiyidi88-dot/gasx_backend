@@ -1,12 +1,12 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+  <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden']">
     <!-- Top Navigation -->
-    <header class="bg-white shadow-sm z-10">
+    <header :class="[themeClasses.bg.secondary, themeClasses.shadow, 'z-10']">
       <div class="flex items-center justify-between px-4 py-3 sm:px-6">
         <!-- Mobile menu button -->
         <button 
           @click="emit('toggle-sidebar')"
-          class="md:hidden text-gray-500 hover:text-gray-600 focus:outline-none"
+          :class="[themeClasses.text.secondary, 'md:hidden focus:outline-none hover:text-gray-600']"
         >
           <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
@@ -14,16 +14,33 @@
         </button>
         
         <!-- Dashboard Title -->
-        <h1 class="text-xl font-semibold text-gray-800">Home Gas Tank Monitor</h1>
+        <h1 :class="[themeClasses.text.heading, 'text-xl font-semibold']">Home Gas Tank Monitor</h1>
         
-        <!-- Last Updated -->
-        <div class="text-sm text-gray-500">
-          Last updated: {{ formatTime(lastUpdated) }}
-          <button @click="refreshData" class="ml-2 text-blue-500 hover:text-blue-700">
-            <svg class="h-4 w-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        <!-- Theme Toggle & Last Updated -->
+        <div class="flex items-center space-x-4">
+          <!-- Theme Toggle Button -->
+          <button 
+            @click="toggleTheme" 
+            :class="[themeClasses.text.secondary, 'p-2 rounded-lg transition-colors hover:text-gray-600']"
+            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          >
+            <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
             </svg>
           </button>
+          
+          <!-- Last Updated -->
+          <div :class="[themeClasses.text.caption, 'text-sm']">
+            Last updated: {{ formatTime(lastUpdated) }}
+            <button @click="refreshData" :class="[themeClasses.text.accent, 'ml-2 hover:text-blue-700']">
+              <svg class="h-4 w-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -32,23 +49,23 @@
     <main class="flex-1 overflow-y-auto p-4 sm:p-6">
       <!-- Critical Alert Banner -->
       <div v-if="alert" class="mb-6">
-        <div :class="`bg-${alert.type}-50 border-l-4 border-${alert.type}-500 p-4 rounded-r-lg`">
+        <div :class="[getAlertClasses(alert.type), 'border-l-4 p-4 rounded-r-lg']">
           <div class="flex items-center">
             <div class="flex-shrink-0">
-              <svg class="h-5 w-5" :class="`text-${alert.type}-500`" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5" :class="getAlertIconClasses(alert.type)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
             </div>
             <div class="ml-3">
-              <h3 :class="`text-sm font-medium text-${alert.type}-800`">{{ alert.title }}</h3>
-              <div :class="`mt-2 text-sm text-${alert.type}-700`">
+              <h3 :class="[getAlertTextClasses(alert.type), 'text-sm font-medium']">{{ alert.title }}</h3>
+              <div :class="[getAlertTextClasses(alert.type), 'mt-2 text-sm']">
                 {{ alert.message }}
-                <button v-if="alert.action" @click="alert.action.callback" class="ml-2 px-2 py-1 text-xs rounded" :class="`bg-${alert.type}-100 text-${alert.type}-800 hover:bg-${alert.type}-200`">
+                <button v-if="alert.action" @click="alert.action.callback" :class="[getAlertButtonClasses(alert.type), 'ml-2 px-2 py-1 text-xs rounded']">
                   {{ alert.action.text }}
                 </button>
               </div>
             </div>
-            <button @click="dismissAlert" class="ml-auto text-gray-400 hover:text-gray-500">
+            <button @click="dismissAlert" :class="[themeClasses.text.muted, 'ml-auto hover:text-gray-600']">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -60,9 +77,9 @@
       <!-- Tank Status Overview -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <!-- Tank Level -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 class="text-lg font-medium text-gray-900">Gas Level</h3>
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden']">
+          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b flex justify-between items-center']">
+            <h3 :class="[themeClasses.text.heading, 'text-lg font-medium']">Gas Level</h3>
             <span class="text-xs px-2 py-1 rounded-full" :class="levelStatusClass">{{ levelStatusText }}</span>
           </div>
           <div class="px-6 py-8 text-center">
@@ -88,7 +105,7 @@
             </div>
             <div class="mt-4">
               <p class="text-3xl font-bold" :class="levelTextColorClass">{{ tank.level }}%</p>
-            </div>
+            </div>t
           </div>
           <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
             <button @click="showRefillModal = true" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors">
@@ -98,29 +115,29 @@
         </div>
 
         <!-- Usage Statistics -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Usage Statistics</h3>
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden']">
+          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
+            <h3 :class="[themeClasses.text.heading, 'text-lg font-medium']">Tank Information</h3>
           </div>
           <div class="p-6">
             <div class="space-y-4">
               <div>
-                <p class="text-sm text-gray-500">Daily Usage</p>
-                <p class="text-xl font-semibold">{{ dailyUsage }} kg/day</p>
+                <p :class="[themeClasses.text.secondary, 'text-sm']">Daily Usage</p>
+                <p class="text-xl font-semibold" :class="themeClasses.text.primary">{{ dailyUsage }} kg/day</p>
                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
                   <div class="bg-blue-600 h-2.5 rounded-full" :style="`width: ${Math.min(dailyUsage / tank.capacity * 100, 100)}%`"></div>
                 </div>
               </div>
               
               <div>
-                <p class="text-sm text-gray-500">Last Refill</p>
-                <p class="text-xl font-semibold">{{ daysSinceRefill }} days ago</p>
-                <p class="text-xs text-gray-400">{{ formatDate(tank.lastRefill) }}</p>
+                <p :class="[themeClasses.text.secondary, 'text-sm']">Last Refill</p>
+                <p class="text-xl font-semibold" :class="themeClasses.text.primary">{{ daysSinceRefill }} days ago</p>
+                <p :class="[themeClasses.text.muted, 'text-xs']">{{ formatDate(tank.lastRefill) }}</p>
               </div>
               
               <div>
-                <p class="text-sm text-gray-500">Estimated Refill Date</p>
-                <p class="text-xl font-semibold">{{ estimatedRefillDate }}</p>
+                <p :class="[themeClasses.text.secondary, 'text-sm']">Estimated Refill Date</p>
+                <p class="text-xl font-semibold" :class="themeClasses.text.primary">{{ estimatedRefillDate }}</p>
                 <p class="text-xs" :class="refillUrgencyClass">
                   {{ refillUrgencyText }}
                 </p>
@@ -128,7 +145,7 @@
             </div>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <button @click="showUsageHistory = true" class="text-sm text-blue-600 hover:text-blue-500">
+            <button @click="showUsageHistory = true" :class="[themeClasses.text.accent, 'text-sm hover:text-blue-500']">
               View Detailed Usage History
             </button>
           </div>
@@ -136,41 +153,41 @@
       </div>
 
       <!-- AI Prediction Section -->
-      <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">AI Consumption Prediction</h3>
+      <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden mb-6']">
+        <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
+          <h3 :class="[themeClasses.text.heading, 'text-lg font-medium']">AI Consumption Prediction</h3>
         </div>
         <div class="p-6">
           <div v-if="isPredicting" class="flex flex-col items-center justify-center py-8">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-            <p class="text-gray-500 text-center">
+            <p :class="[themeClasses.text.secondary, 'text-center']">
               Analyzing usage patterns...<br>
               AI predictions may take some time
             </p>
           </div>
           
           <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-blue-50 p-4 rounded-lg">
-              <p class="text-sm text-blue-800">Predicted Days Remaining</p>
-              <p class="text-2xl font-bold text-blue-600">{{ prediction.days_remaining }}</p>
-              <p class="text-xs text-blue-500 mt-1">Based on current usage</p>
+            <div :class="[isDark ? 'bg-blue-900/30' : 'bg-blue-50', 'p-4 rounded-lg']">
+              <p :class="[isDark ? 'text-blue-300' : 'text-blue-800', 'text-sm']">Predicted Days Remaining</p>
+              <p :class="[isDark ? 'text-blue-400' : 'text-blue-600', 'text-2xl font-bold']">{{ prediction.days_remaining }}</p>
+              <p :class="[isDark ? 'text-blue-400' : 'text-blue-500', 'text-xs mt-1']">Based on current usage</p>
             </div>
             
-            <div class="bg-purple-50 p-4 rounded-lg">
-              <p class="text-sm text-purple-800">Prediction Confidence</p>
-              <p class="text-2xl font-bold text-purple-600">{{ (prediction.confidence * 100).toFixed(0) }}%</p>
-              <p class="text-xs text-purple-500 mt-1">Accuracy of forecast</p>
+            <div :class="[isDark ? 'bg-purple-900/30' : 'bg-purple-50', 'p-4 rounded-lg']">
+              <p :class="[isDark ? 'text-purple-300' : 'text-purple-800', 'text-sm']">Prediction Confidence</p>
+              <p :class="[isDark ? 'text-purple-400' : 'text-purple-600', 'text-2xl font-bold']">{{ (prediction.confidence * 100).toFixed(0) }}%</p>
+              <p :class="[isDark ? 'text-purple-400' : 'text-purple-500', 'text-xs mt-1']">Accuracy of forecast</p>
             </div>
             
-            <div class="bg-green-50 p-4 rounded-lg">
-              <p class="text-sm text-green-800">Consumption Trend</p>
-              <p class="text-2xl font-bold text-green-600 capitalize">{{ prediction.trend }}</p>
-              <p class="text-xs text-green-500 mt-1">Compared to last week</p>
+            <div :class="[isDark ? 'bg-green-900/30' : 'bg-green-50', 'p-4 rounded-lg']">
+              <p :class="[isDark ? 'text-green-300' : 'text-green-800', 'text-sm']">Consumption Trend</p>
+              <p :class="[isDark ? 'text-green-400' : 'text-green-600', 'text-2xl font-bold capitalize']">{{ prediction.trend }}</p>
+              <p :class="[isDark ? 'text-green-400' : 'text-green-500', 'text-xs mt-1']">Compared to last week</p>
             </div>
             
-            <div class="md:col-span-3 bg-gray-50 p-4 rounded-lg mt-2">
-              <p class="text-sm text-gray-800 font-medium">AI Recommendation</p>
-              <p class="text-gray-700 mt-1">{{ prediction.recommendation }}</p>
+            <div :class="[themeClasses.bg.tertiary, 'md:col-span-3 p-4 rounded-lg mt-2']">
+              <p :class="[themeClasses.text.primary, 'text-sm font-medium']">AI Recommendation</p>
+              <p :class="[themeClasses.text.secondary, 'mt-1']">{{ prediction.recommendation }}</p>
             </div>
           </div>
         </div>
@@ -179,17 +196,17 @@
       <!-- Consumption Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Level Trend Chart -->
-        <div class="bg-white shadow rounded-lg p-6">
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-6']">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Gas Level Trend (Last 7 Days)</h3>
+            <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Gas Level Trend (Last 7 Days)</h3>
             <div class="flex space-x-2">
-              <button @click="chartRange = 'week'" :class="`px-3 py-1 text-sm rounded-md ${chartRange === 'week' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`">
+              <button @click="chartRange = 'week'" :class="[chartRange === 'week' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-3 py-1 text-sm rounded-md']">
                 Week
               </button>
-              <button @click="chartRange = 'month'" :class="`px-3 py-1 text-sm rounded-md ${chartRange === 'month' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`">
+              <button @click="chartRange = 'month'" :class="[chartRange === 'month' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-3 py-1 text-sm rounded-md']">
                 Month
               </button>
-              <button @click="chartRange = 'year'" :class="`px-3 py-1 text-sm rounded-md ${chartRange === 'year' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`">
+              <button @click="chartRange = 'year'" :class="[chartRange === 'year' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-3 py-1 text-sm rounded-md']">
                 Year
               </button>
             </div>
@@ -200,10 +217,10 @@
         </div>
 
         <!-- Daily Consumption Chart -->
-        <div class="bg-white shadow rounded-lg p-6">
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-6']">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-medium text-gray-900">Daily Consumption (Last 7 Days)</h3>
-            <div class="text-sm text-gray-500">
+            <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Daily Consumption (Last 7 Days)</h3>
+            <div :class="[themeClasses.text.secondary, 'text-sm']">
               Total: {{ totalConsumption.toFixed(2) }} kg
             </div>
           </div>
@@ -215,63 +232,63 @@
 
       <!-- Quick Actions -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <button @click="showRefillModal = true" class="p-4 bg-white rounded-lg shadow flex flex-col items-center hover:bg-gray-50 transition-colors">
+        <button @click="showRefillModal = true" :class="[themeClasses.bg.card, themeClasses.shadow, 'p-4 rounded-lg flex flex-col items-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-700']">
           <svg class="h-6 w-6 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
           </svg>
-          <span class="text-sm font-medium">Order Refill</span>
+          <span :class="[themeClasses.text.primary, 'text-sm font-medium']">Order Refill</span>
         </button>
-        <button @click="showTankDetails = true" class="p-4 bg-white rounded-lg shadow flex flex-col items-center hover:bg-gray-50 transition-colors">
+        <button @click="showTankDetails = true" :class="[themeClasses.bg.card, themeClasses.shadow, 'p-4 rounded-lg flex flex-col items-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-700']">
           <svg class="h-6 w-6 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
           </svg>
-          <span class="text-sm font-medium">Tank Details</span>
+          <span :class="[themeClasses.text.primary, 'text-sm font-medium']">Tank Details</span>
         </button>
-        <button @click="showAlertsSettings = true" class="p-4 bg-white rounded-lg shadow flex flex-col items-center hover:bg-gray-50 transition-colors">
+        <button @click="showAlertsSettings = true" :class="[themeClasses.bg.card, themeClasses.shadow, 'p-4 rounded-lg flex flex-col items-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-700']">
           <svg class="h-6 w-6 text-yellow-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
           </svg>
-          <span class="text-sm font-medium">Alert Settings</span>
+          <span :class="[themeClasses.text.primary, 'text-sm font-medium']">Alert Settings</span>
         </button>
-        <button @click="showSettingsModal = true" class="p-4 bg-white rounded-lg shadow flex flex-col items-center hover:bg-gray-50 transition-colors">
+        <button @click="showSettingsModal = true" :class="[themeClasses.bg.card, themeClasses.shadow, 'p-4 rounded-lg flex flex-col items-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-700']">
           <svg class="h-6 w-6 text-purple-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
           </svg>
-          <span class="text-sm font-medium">Settings</span>
+          <span :class="[themeClasses.text.primary, 'text-sm font-medium']">Settings</span>
         </button>
       </div>
 
       <!-- Refill Modal -->
       <div v-if="showRefillModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Schedule Gas Refill</h3>
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg max-w-md w-full']">
+          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
+            <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Schedule Gas Refill</h3>
           </div>
           <div class="p-6">
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
-              <input type="date" v-model="refillDate" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <label :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Delivery Date</label>
+              <input type="date" v-model="refillDate" :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500']">
             </div>
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Time</label>
-              <select v-model="refillTime" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <label :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Delivery Time</label>
+              <select v-model="refillTime" :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500']">
                 <option>Morning (8am-12pm)</option>
                 <option>Afternoon (12pm-4pm)</option>
                 <option>Evening (4pm-8pm)</option>
               </select>
             </div>
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Quantity (kg)</label>
-              <input type="number" v-model="refillQuantity" min="10" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <label :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Quantity (kg)</label>
+              <input type="number" v-model="refillQuantity" min="10" max="100" :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500']">
             </div>
           </div>
-          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button @click="showRefillModal = false" class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <div :class="[themeClasses.border.primary, themeClasses.bg.tertiary, 'px-6 py-4 border-t flex justify-end']">
+            <button @click="showRefillModal = false" :class="[themeClasses.button.secondary, 'mr-3 px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']">
               Cancel
             </button>
-            <button @click="scheduleRefill" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button @click="scheduleRefill" :class="[themeClasses.button.primary, 'px-4 py-2 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']">
               Schedule Refill
             </button>
           </div>
@@ -280,25 +297,25 @@
 
       <!-- Settings Modal -->
       <div v-if="showSettingsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Safety Thresholds</h3>
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg max-w-md w-full']">
+          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
+            <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Safety Thresholds</h3>
           </div>
           <div class="p-6">
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Low Level Alert (%)</label>
-              <input type="number" v-model="alertThresholds.lowLevel" min="5" max="30" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <label :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Low Level Alert (%)</label>
+              <input type="number" v-model="alertThresholds.lowLevel" min="5" max="30" :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500']">
             </div>
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Critical Level Alert (%)</label>
-              <input type="number" v-model="alertThresholds.criticalLevel" min="1" max="15" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <label :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Critical Level Alert (%)</label>
+              <input type="number" v-model="alertThresholds.criticalLevel" min="1" max="15" :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500']">
             </div>
           </div>
-          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button @click="showSettingsModal = false" class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <div :class="[themeClasses.border.primary, themeClasses.bg.tertiary, 'px-6 py-4 border-t flex justify-end']">
+            <button @click="showSettingsModal = false" :class="[themeClasses.button.secondary, 'mr-3 px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']">
               Cancel
             </button>
-            <button @click="saveSettings" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button @click="saveSettings" :class="[themeClasses.button.primary, 'px-4 py-2 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']">
               Save Settings
             </button>
           </div>
@@ -311,8 +328,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '../public/api'
-import Chart from 'chart.js/auto'
-import { onUnmounted } from 'vue'
+import { useTheme } from '../../composables/useTheme'
+
+// Theme composable
+const { isDark, toggleTheme, themeClasses } = useTheme()
 
 const emit = defineEmits(['toggle-sidebar'])
 
@@ -338,7 +357,7 @@ const tank = ref({
   level: 0,
   lastRefill: '2025-06-01',
   capacity: 20,
-  type: 'Propane',
+  type: 'Propane', 
   serialNumber: 'HTK-2025-0425',
   installationDate: '2025-04-25'
 })
@@ -371,9 +390,9 @@ const levelTextColorClass = computed(() => {
 })
 
 const levelStatusClass = computed(() => {
-  if (tank.value.level < alertThresholds.value.criticalLevel) return 'bg-red-100 text-red-800'
-  if (tank.value.level < alertThresholds.value.lowLevel) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-green-100 text-green-800'
+  if (tank.value.level < alertThresholds.value.criticalLevel) return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  if (tank.value.level < alertThresholds.value.lowLevel) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+  return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
 })
 
 const levelStatusText = computed(() => {
@@ -733,6 +752,47 @@ const updateCharts = () => {
     )
     consumptionChartInstance.value.update()
   }
+}
+
+// Theme helper functions for alerts
+function getAlertClasses(type) {
+  const alertMap = {
+    'success': themeClasses.value.alert.success,
+    'warning': themeClasses.value.alert.warning,
+    'error': themeClasses.value.alert.error,
+    'red': themeClasses.value.alert.error,
+    'orange': themeClasses.value.alert.warning,
+    'green': themeClasses.value.alert.success
+  }
+  return alertMap[type] || themeClasses.value.alert.info
+}
+
+function getAlertIconClasses(type) {
+  const iconMap = {
+    'success': themeClasses.value.text.success,
+    'warning': themeClasses.value.text.warning,
+    'error': themeClasses.value.text.error,
+    'red': themeClasses.value.text.error,
+    'orange': themeClasses.value.text.warning,
+    'green': themeClasses.value.text.success
+  }
+  return iconMap[type] || themeClasses.value.text.accent
+}
+
+function getAlertTextClasses(type) {
+  return getAlertIconClasses(type)
+}
+
+function getAlertButtonClasses(type) {
+  const buttonMap = {
+    'success': isDark.value ? 'bg-green-800/50 text-green-300 hover:bg-green-800/70' : 'bg-green-100 text-green-800 hover:bg-green-200',
+    'warning': isDark.value ? 'bg-orange-800/50 text-orange-300 hover:bg-orange-800/70' : 'bg-orange-100 text-orange-800 hover:bg-orange-200',
+    'error': isDark.value ? 'bg-red-800/50 text-red-300 hover:bg-red-800/70' : 'bg-red-100 text-red-800 hover:bg-red-200',
+    'red': isDark.value ? 'bg-red-800/50 text-red-300 hover:bg-red-800/70' : 'bg-red-100 text-red-800 hover:bg-red-200',
+    'orange': isDark.value ? 'bg-orange-800/50 text-orange-300 hover:bg-orange-800/70' : 'bg-orange-100 text-orange-800 hover:bg-orange-200',
+    'green': isDark.value ? 'bg-green-800/50 text-green-300 hover:bg-green-800/70' : 'bg-green-100 text-green-800 hover:bg-green-200'
+  }
+  return buttonMap[type] || (isDark.value ? 'bg-blue-800/50 text-blue-300 hover:bg-blue-800/70' : 'bg-blue-100 text-blue-800 hover:bg-blue-200')
 }
 
 // Lifecycle hooks

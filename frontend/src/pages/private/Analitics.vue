@@ -1,26 +1,41 @@
 <template>
-    <div class="gas-analytics-page p-6 bg-gray-50 min-h-screen">
+    <div :class="[themeClasses.bg.primary, 'gas-analytics-page p-6 min-h-screen']">
       <!-- Analytics Header -->
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
-          <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Gas Bottle Analytics</h1>
-          <p class="text-gray-600 mt-1">Detailed usage patterns and historical data</p>
+          <div class="flex items-center space-x-4">
+            <h1 :class="[themeClasses.text.primary, 'text-2xl md:text-3xl font-bold']">Gas Bottle Analytics</h1>
+            <!-- Theme Toggle Button -->
+            <button 
+              @click="toggleTheme" 
+              :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors']"
+              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            >
+              <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+              </svg>
+            </button>
+          </div>
+          <p :class="[themeClasses.text.secondary, 'mt-1']">Detailed usage patterns and historical data</p>
         </div>
         <div class="mt-4 md:mt-0 flex gap-2">
           <div class="relative">
-            <select v-model="timeRange" @change="updateCharts" class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <select v-model="timeRange" @change="updateCharts" :class="[themeClasses.bg.input, themeClasses.border.primary, themeClasses.text.primary, 'appearance-none border rounded-lg px-4 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500']">
               <option value="7">Last 7 Days</option>
               <option value="30">Last 30 Days</option>
               <option value="90">Last 3 Months</option>
               <option value="365">Last Year</option>
             </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <div :class="[themeClasses.text.secondary, 'pointer-events-none absolute inset-y-0 right-0 flex items-center px-2']">
               <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
               </svg>
             </div>
           </div>
-          <button @click="exportData" class="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm hover:bg-gray-50 transition-colors">
+          <button @click="exportData" :class="[themeClasses.button.secondary, 'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors']">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
@@ -32,8 +47,8 @@
       <!-- Main Analytics Content -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Key Metrics Summary -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h2 class="text-lg font-semibold text-gray-800 mb-4">Key Metrics</h2>
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, themeClasses.border.primary, 'p-6 rounded-xl border']">
+          <h2 :class="[themeClasses.text.primary, 'text-lg font-semibold mb-4']">Key Metrics</h2>
           <div class="space-y-4">
             <div class="p-4 bg-blue-50 rounded-lg">
               <p class="text-sm text-blue-600 font-medium">Average Daily Usage</p>
@@ -262,6 +277,7 @@
   
   <script>
   import { ref, computed, onMounted, watch } from 'vue';
+  import { useTheme } from '../../composables/useTheme';
   import Chart from 'chart.js/auto';
   import axios from 'axios'
   export default {

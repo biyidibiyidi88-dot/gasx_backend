@@ -1,6 +1,21 @@
 <template>
-    <div class="p-6 flex flex-col items-center min-h-screen bg-gradient-to-b from-blue-50 to-gray-100">
-      <h2 class="text-3xl font-bold text-gray-800 mb-6">Professional Gas Cylinder</h2>
+    <div :class="[themeClasses.bg.primary, 'p-6 flex flex-col items-center min-h-screen']">
+      <div class="flex items-center justify-center space-x-4 mb-6">
+        <h2 :class="[themeClasses.text.primary, 'text-3xl font-bold']">Professional Gas Cylinder</h2>
+        <!-- Theme Toggle Button -->
+        <button 
+          @click="toggleTheme" 
+          :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors']"
+          :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        >
+          <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+          </svg>
+        </button>
+      </div>
       
       <div class="flex flex-col lg:flex-row w-full max-w-6xl gap-8">
         <!-- Gas Bottle Visualization (Left Column) -->
@@ -125,10 +140,10 @@
         
         <!-- Bottle Information Panel (Right Column) -->
         <div class="w-full lg:w-1/2">
-          <div class="bg-white p-6 rounded-xl shadow-xl h-full flex flex-col">
+          <div :class="[themeClasses.bg.card, themeClasses.shadow, 'p-6 rounded-xl h-full flex flex-col']">
             <!-- Bottle Information Header -->
-            <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-              <h3 class="text-2xl font-bold text-gray-800">Cylinder Details</h3>
+            <div :class="[themeClasses.border.primary, 'flex justify-between items-center mb-6 pb-4 border-b']">
+              <h3 :class="[themeClasses.text.primary, 'text-2xl font-bold']">Cylinder Details</h3>
               <span class="px-3 py-1 text-xs font-bold rounded-full" 
                     :class="statusBadgeClass">
                 {{ tank.status }}
@@ -258,8 +273,12 @@
   <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTheme } from '../../composables/useTheme';
 
 const router = useRouter();
+
+// Theme composable
+const { isDark, toggleTheme, themeClasses } = useTheme();
 
 // Tank state
 const tank = ref({ 
