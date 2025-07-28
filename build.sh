@@ -3,7 +3,7 @@
 set -o errexit
 
 # Install dependencies
-pip install -r backend/requirements-deploy.txt
+pip install -r requirements.txt
 
 # Collect static files
 cd backend
