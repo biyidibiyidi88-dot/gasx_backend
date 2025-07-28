@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class AIPredictionService:
     API_URL = "https://openrouter.ai/api/v1/chat/completions"
     API_KEY = "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"
-    BOTTLE_CAPACITY = 20  # kg
+    BOTTLE_CAPACITY = 20
 
     # Available models with fallback order
     MODEL_PRIORITY = [
@@ -43,28 +43,29 @@ class AIPredictionService:
             if not history_data:
                 raise ValueError("Empty history data provided")
 
-            consumptions = [float(day['consumption_kg']) for day in history_data]
-            total_used = sum(consumptions)
+            # consumption_kg is already daily consumption rate, not total consumption
+            daily_consumptions = [float(day['consumption_kg']) for day in history_data]
             
-            if total_used > cls.BOTTLE_CAPACITY:
-                raise ValueError(f"Total used {total_used}kg exceeds bottle capacity {cls.BOTTLE_CAPACITY}kg")
-
-            remaining = cls.BOTTLE_CAPACITY - total_used
-            avg_daily = total_used / len(consumptions)
+            # Calculate average daily consumption (not total)
+            avg_daily = sum(daily_consumptions) / len(daily_consumptions) if daily_consumptions else 0
             
+            # Estimate remaining gas based on current consumption patterns
+            # We'll get the actual remaining from the latest reading in the calling function
             weekend_days = [d for d in history_data if d['is_weekend']]
             weekday_days = [d for d in history_data if not d['is_weekend']]
             
             weekend_avg = sum(d['consumption_kg'] for d in weekend_days)/len(weekend_days) if weekend_days else avg_daily
             weekday_avg = sum(d['consumption_kg'] for d in weekday_days)/len(weekday_days) if weekday_days else avg_daily
             
+            # Calculate recent trend (last 3 days)
+            recent_avg = sum(daily_consumptions[-3:])/3 if len(daily_consumptions) >= 3 else avg_daily
+            
             return {
-                'total_used': total_used,
-                'remaining': remaining,
-                'avg_daily': avg_daily,
-                'weekend_avg': weekend_avg,
-                'weekday_avg': weekday_avg,
-                'recent_avg': sum(consumptions[-3:])/3 if len(consumptions) >= 3 else avg_daily
+                'avg_daily': max(0.1, avg_daily),  # Ensure minimum consumption to avoid division by zero
+                'weekend_avg': max(0.1, weekend_avg),
+                'weekday_avg': max(0.1, weekday_avg),
+                'recent_avg': max(0.1, recent_avg),
+                'total_days': len(daily_consumptions)
             }
         except Exception as e:
             cls._debug_log(f"Metrics calculation error: {str(e)}", level='error')
@@ -93,17 +94,16 @@ class AIPredictionService:
             if remaining_kg is None or projected_days is None:
                 raise ValueError("Could not extract valid numbers from prediction")
 
-            max_possible_days = metrics['remaining'] / metrics['avg_daily'] if metrics['avg_daily'] > 0 else 0
-            
-            if not (0 <= projected_days <= max_possible_days * 1.5):
+            # Basic validation - projected days should be reasonable
+            if not (0 <= projected_days <= 365):  # Max 1 year
                 raise ValueError(
-                    f"Projected days {projected_days} invalid. "
-                    f"Max possible: {max_possible_days:.2f} (remaining {metrics['remaining']:.2f}kg)"
+                    f"Projected days {projected_days} invalid. Should be between 0-365 days"
                 )
             
-            if abs(remaining_kg - metrics['remaining']) > 0.1:
+            # Remaining gas should be within tank capacity
+            if not (0 <= remaining_kg <= cls.BOTTLE_CAPACITY):
                 raise ValueError(
-                    f"Reported remaining {remaining_kg}kg doesn't match calculated {metrics['remaining']:.2f}kg"
+                    f"Reported remaining {remaining_kg}kg invalid. Should be between 0-{cls.BOTTLE_CAPACITY}kg"
                 )
             
             if not (0.5 <= prediction.get('confidence', 0) <= 0.95):
@@ -118,7 +118,7 @@ class AIPredictionService:
             return False
 
     @classmethod
-    def predict_days_remaining(cls, history_data):
+    def predict_days_remaining(cls, history_data, current_remaining_kg=None):
         """Predict remaining gas days with robust error handling"""
         try:
             if not cls.API_KEY:
@@ -126,6 +126,14 @@ class AIPredictionService:
 
             metrics = cls._calculate_metrics(history_data)
             cls._debug_log(f"Metrics: {metrics}", level='info')
+            
+            # If current remaining gas not provided, estimate from latest data
+            if current_remaining_kg is None:
+                # Assume we start with some reasonable amount based on consumption patterns
+                current_remaining_kg = max(1.0, cls.BOTTLE_CAPACITY * 0.3)  # Default to 30% capacity
+            
+            current_remaining_kg = float(current_remaining_kg)
+            cls._debug_log(f"Current remaining gas: {current_remaining_kg}kg", level='info')
 
             headers = {
                 "Authorization": f"Bearer {cls.API_KEY}",
@@ -137,11 +145,10 @@ class AIPredictionService:
 
             Constraints:
             - Bottle capacity: {cls.BOTTLE_CAPACITY}kg
-            - Total consumed: {metrics['total_used']:.2f}kg
-            - Remaining: {metrics['remaining']:.2f}kg
-            - Max days: {metrics['remaining']/metrics['avg_daily']:.2f}
+            - Current remaining: {current_remaining_kg:.2f}kg
+            - Max possible days: {current_remaining_kg/metrics['avg_daily']:.1f}
 
-            Averages:
+            Consumption Averages:
             - Daily: {metrics['avg_daily']:.2f}kg
             - Weekdays: {metrics['weekday_avg']:.2f}kg
             - Weekends: {metrics['weekend_avg']:.2f}kg
@@ -149,8 +156,8 @@ class AIPredictionService:
 
             Response (JSON, NO LISTS for numbers):
             {{
-                "remaining_kg": {metrics['remaining']:.2f},
-                "projected_days": [number ≤ {metrics['remaining']/metrics['avg_daily']:.2f}],
+                "remaining_kg": {current_remaining_kg:.2f},
+                "projected_days": [number ≤ {current_remaining_kg/metrics['avg_daily']:.1f}],
                 "confidence": [number between 0.5-0.95],
                 "trend": ["increasing"/"decreasing"/"stable"],
                 "calculation": "[formula]",

@@ -18,6 +18,7 @@ from .views import (
     MarkNotificationAsReadView,
     NotificationSettingsView,
     GasReadingListView,
+    GasReadingCreateView,
     GasPredictionView,
     
 )
@@ -50,5 +51,6 @@ urlpatterns = [
     path('sensors/', GasSensorListView.as_view(), name='sensor-list'),
     path('alerts/', AlertListView.as_view(), name='alert-list'),
     path('gas-readings/', GasReadingListView.as_view(), name='gas-reading-list'),
+    path('gas-readings/create/', GasReadingCreateView.as_view(), name='gas-reading-create'),
      path('gas/prediction/', GasPredictionView.as_view(), name='gas-prediction'),
 ]

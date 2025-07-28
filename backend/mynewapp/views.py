@@ -323,8 +323,12 @@ class GasPredictionView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Get current remaining gas from latest reading
+            latest_reading = readings.first()  # readings are ordered by -reading_timestamp
+            current_remaining_kg = float(latest_reading.remaining_gas) if latest_reading else 1.0
+
             # Get prediction from AI service
-            prediction = AIPredictionService.predict_days_remaining(history_data)
+            prediction = AIPredictionService.predict_days_remaining(history_data, current_remaining_kg)
             
             # Format response
             response_data = {
@@ -370,3 +374,58 @@ class GasReadingListView(generics.ListAPIView):
             queryset = queryset.filter(reading_timestamp__gte=default_start)
 
         return queryset.order_by('-reading_timestamp')
+
+
+class GasReadingCreateView(generics.CreateAPIView):
+    serializer_class = GasReadingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Save the gas reading
+        gas_reading = serializer.save()
+        
+        # Check if gas level is at or below critical threshold (15%)
+        sensor = gas_reading.sensor
+        remaining_gas = float(gas_reading.remaining_gas)
+        
+        # Calculate percentage based on 20kg tank capacity (from memory)
+        TANK_CAPACITY = 20.0  # kg
+        gas_percentage = (remaining_gas / TANK_CAPACITY) * 100
+        
+        # Alert thresholds to match frontend: 20% (low), 10% (critical)
+        LOW_THRESHOLD = 20.0
+        CRITICAL_THRESHOLD = 10.0
+        
+        if gas_percentage <= LOW_THRESHOLD:
+            # Mark the reading as alert triggered
+            gas_reading.is_alert_triggered = True
+            gas_reading.save()
+            
+            # Check if there's already an unresolved alert for this sensor
+            existing_alert = Alert.objects.filter(
+                sensor=sensor,
+                alert_type='GAS_LEVEL_LOW',
+                is_resolved=False
+            ).first()
+            
+            # Only create a new alert if there isn't an existing unresolved one
+            if not existing_alert:
+                # Determine severity based on gas level (matching frontend thresholds)
+                if gas_percentage <= CRITICAL_THRESHOLD:  # <= 10%
+                    severity = 'CRITICAL'
+                elif gas_percentage <= 15:  # 10% < level <= 15%
+                    severity = 'HIGH'
+                else:  # 15% < level <= 20%
+                    severity = 'MEDIUM'
+                
+                # Create the alert
+                Alert.objects.create(
+                    user=sensor.house.user,
+                    sensor=sensor,
+                    alert_type='GAS_LEVEL_LOW',
+                    severity_level=severity,
+                    alert_message=f"Critical gas level detected! {sensor.sensor_name} has only {remaining_gas}kg ({gas_percentage:.1f}%) remaining. Please refill soon.",
+                    is_resolved=False
+                )
+        
+        return gas_reading
