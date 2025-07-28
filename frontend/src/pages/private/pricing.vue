@@ -180,6 +180,7 @@
           >
             Add New Sensor
           </button>
+          </div>
         </div>
       </div>
     </div>
