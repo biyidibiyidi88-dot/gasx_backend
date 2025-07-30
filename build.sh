@@ -2,12 +2,21 @@
 # exit on error
 set -o errexit
 
-# Install dependencies
-pip install -r requirements.txt
+echo "Starting build process..."
+
+# Install dependencies from backend directory
+echo "Installing Python dependencies..."
+pip install -r backend/requirements.txt
+
+# Change to backend directory
+cd backend
 
 # Collect static files
-cd backend
+echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
 # Run migrations
+echo "Running database migrations..."
 python manage.py migrate
+
+echo "Build completed successfully!"

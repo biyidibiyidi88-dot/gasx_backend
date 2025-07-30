@@ -11,7 +11,7 @@ from .models import (
     Alert, 
     Notification, 
     EmergencyContact, 
-    SensorMaintenanceRecord, 
+    SensorMaintenanceRecord,
     EmergencyAction, 
     GasRefillRecord
 )
