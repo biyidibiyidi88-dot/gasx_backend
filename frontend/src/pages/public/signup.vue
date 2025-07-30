@@ -436,7 +436,7 @@ const form = ref({
         newsletter: false
       };
       
-      await router.push('admin/analytics');
+      await router.push('admin');
       return; // This prevents any further execution
     }
     
