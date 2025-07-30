@@ -241,7 +241,7 @@ class GasRefillRecordSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     houses = HouseSerializer(many=True, read_only=True)
-    emergency_contacts = EmergencyContactSerializer(many=True, read_only=True)
+    emergency_contacts = EmergencyContactSerializer(source='emergencycontact_set', many=True, read_only=True)
     profile_image_url = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
     active_alerts_count = serializers.SerializerMethodField()

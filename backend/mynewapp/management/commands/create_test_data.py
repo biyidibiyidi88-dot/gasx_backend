@@ -35,10 +35,11 @@ class Command(BaseCommand):
             House.objects.all().delete()
             self.stdout.write('Existing test data cleared.')
         
-        # Process both users
+        # Process all users
         users_data = [
             {
                 'email': 'tchouabiyidi@gmail.com',
+                'password': 'A5555555',
                 'house_data': {
                     'address_line_1': '123 Main Street',
                     'city': 'San Francisco',
@@ -49,12 +50,24 @@ class Command(BaseCommand):
             },
             {
                 'email': 'biyidichoua@gmail.com',
+                'password': 'A5555555',
                 'house_data': {
                     'address_line_1': '456 Oak Avenue',
                     'city': 'Los Angeles',
                     'state_province': 'California',
                     'country': 'USA',
                     'postal_code': '90210'
+                }
+            },
+            {
+                'email': 'biyiditchoua@gmail.com',
+                'password': 'A5555555#',
+                'house_data': {
+                    'address_line_1': '789 Pine Street',
+                    'city': 'Seattle',
+                    'state_province': 'Washington',
+                    'country': 'USA',
+                    'postal_code': '98101'
                 }
             }
         ]
@@ -65,13 +78,18 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Test data creation completed!'))
     
     def create_user_data(self, user_info, days):
-        # Get the user
+        # Get or create the user
         try:
             user = CustomUser.objects.get(email=user_info['email'])
-            self.stdout.write(f'Processing user: {user.email}')
+            self.stdout.write(f'Processing existing user: {user.email}')
         except CustomUser.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f'User {user_info["email"]} not found.'))
-            return
+            # Create the user if it doesn't exist
+            user = CustomUser.objects.create_user(
+                email=user_info['email'],
+                password=user_info['password'],
+                is_active=True
+            )
+            self.stdout.write(f'Created new user: {user.email}')
 
         # Create a house for the user
         house, created = House.objects.get_or_create(
