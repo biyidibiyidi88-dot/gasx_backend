@@ -14,33 +14,40 @@
         </button>
         
         <!-- Dashboard Title -->
-        <h1 :class="[themeClasses.text.heading, 'text-xl font-semibold']">Home Gas Tank Monitor</h1>
+        <h1 :class="[themeClasses.text.heading, 'text-lg sm:text-xl font-semibold truncate flex-1 mx-2 md:mx-0 md:flex-none']">Home Gas Tank Monitor</h1>
         
         <!-- Theme Toggle & Last Updated -->
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 sm:space-x-4">
           <!-- Theme Toggle Button -->
           <button 
             @click="toggleTheme" 
             :class="[themeClasses.text.secondary, 'p-2 rounded-lg transition-colors hover:text-gray-600']"
             :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           >
-            <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg v-if="isDark" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
             </svg>
-            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg v-else class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
             </svg>
           </button>
           
           <!-- Last Updated -->
-          <div :class="[themeClasses.text.caption, 'text-sm']">
+          <div :class="[themeClasses.text.caption, 'text-xs sm:text-sm hidden sm:block']">
             Last updated: {{ formatTime(lastUpdated) }}
             <button @click="refreshData" :class="[themeClasses.text.accent, 'ml-2 hover:text-blue-700']">
-              <svg class="h-4 w-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-3 w-3 sm:h-4 sm:w-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
               </svg>
             </button>
           </div>
+          
+          <!-- Mobile refresh button -->
+          <button @click="refreshData" :class="[themeClasses.text.accent, 'p-2 rounded-lg hover:text-blue-700 sm:hidden']">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
         </div>
       </div>
     </header>
@@ -75,15 +82,15 @@
       </div>
 
       <!-- Tank Status Overview -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
         <!-- Tank Level -->
         <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b flex justify-between items-center']">
-            <h3 :class="[themeClasses.text.heading, 'text-lg font-medium']">Gas Level</h3>
+          <div :class="[themeClasses.border.primary, 'px-4 sm:px-6 py-3 sm:py-4 border-b flex justify-between items-center']">
+            <h3 :class="[themeClasses.text.heading, 'text-base sm:text-lg font-medium']">Gas Level</h3>
             <span class="text-xs px-2 py-1 rounded-full" :class="levelStatusClass">{{ levelStatusText }}</span>
           </div>
-          <div class="px-6 py-8 text-center">
-            <div class="relative h-48 mx-auto" style="max-width: 200px">
+          <div class="px-4 sm:px-6 py-6 sm:py-8 text-center">
+            <div class="relative h-32 sm:h-48 mx-auto" style="max-width: 200px">
               <!-- Tank visualization -->
               <div class="absolute bottom-0 left-0 right-0 bg-gray-200 rounded-t-lg" style="height: 100%">
                 <div 
@@ -107,7 +114,7 @@
               <p class="text-3xl font-bold" :class="levelTextColorClass">{{ tank.level }}%</p>
             </div>t
           </div>
-          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
             <button @click="showRefillModal = true" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors">
               Schedule Refill
             </button>
@@ -116,10 +123,10 @@
 
         <!-- Usage Statistics -->
         <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-            <h3 :class="[themeClasses.text.heading, 'text-lg font-medium']">Tank Information</h3>
+          <div :class="[themeClasses.border.primary, 'px-4 sm:px-6 py-3 sm:py-4 border-b']">
+            <h3 :class="[themeClasses.text.heading, 'text-base sm:text-lg font-medium']">Tank Information</h3>
           </div>
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <div class="space-y-4">
               <div>
                 <p :class="[themeClasses.text.secondary, 'text-sm']">Daily Usage</p>
@@ -144,7 +151,7 @@
               </div>
             </div>
           </div>
-          <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
             <button @click="showUsageHistory = true" :class="[themeClasses.text.accent, 'text-sm hover:text-blue-500']">
               View Detailed Usage History
             </button>
@@ -154,10 +161,10 @@
 
       <!-- AI Prediction Section -->
       <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden mb-6']">
-        <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-          <h3 :class="[themeClasses.text.heading, 'text-lg font-medium']">AI Consumption Prediction</h3>
+        <div :class="[themeClasses.border.primary, 'px-4 sm:px-6 py-3 sm:py-4 border-b']">
+          <h3 :class="[themeClasses.text.heading, 'text-base sm:text-lg font-medium']">AI Consumption Prediction</h3>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
           <div v-if="isPredicting" class="flex flex-col items-center justify-center py-8">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
             <p :class="[themeClasses.text.secondary, 'text-center']">
@@ -166,72 +173,72 @@
             </p>
           </div>
           
-          <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div :class="[isDark ? 'bg-blue-900/30' : 'bg-blue-50', 'p-4 rounded-lg']">
-              <p :class="[isDark ? 'text-blue-300' : 'text-blue-800', 'text-sm']">Predicted Days Remaining</p>
-              <p :class="[isDark ? 'text-blue-400' : 'text-blue-600', 'text-2xl font-bold']">{{ prediction.days_remaining }}</p>
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div :class="[isDark ? 'bg-blue-900/30' : 'bg-blue-50', 'p-3 sm:p-4 rounded-lg']">
+              <p :class="[isDark ? 'text-blue-300' : 'text-blue-800', 'text-xs sm:text-sm']">Predicted Days Remaining</p>
+              <p :class="[isDark ? 'text-blue-400' : 'text-blue-600', 'text-xl sm:text-2xl font-bold']">{{ prediction.days_remaining }}</p>
               <p :class="[isDark ? 'text-blue-400' : 'text-blue-500', 'text-xs mt-1']">Based on current usage</p>
             </div>
             
-            <div :class="[isDark ? 'bg-purple-900/30' : 'bg-purple-50', 'p-4 rounded-lg']">
-              <p :class="[isDark ? 'text-purple-300' : 'text-purple-800', 'text-sm']">Prediction Confidence</p>
-              <p :class="[isDark ? 'text-purple-400' : 'text-purple-600', 'text-2xl font-bold']">{{ (prediction.confidence * 100).toFixed(0) }}%</p>
+            <div :class="[isDark ? 'bg-purple-900/30' : 'bg-purple-50', 'p-3 sm:p-4 rounded-lg']">
+              <p :class="[isDark ? 'text-purple-300' : 'text-purple-800', 'text-xs sm:text-sm']">Prediction Confidence</p>
+              <p :class="[isDark ? 'text-purple-400' : 'text-purple-600', 'text-xl sm:text-2xl font-bold']">{{ (prediction.confidence * 100).toFixed(0) }}%</p>
               <p :class="[isDark ? 'text-purple-400' : 'text-purple-500', 'text-xs mt-1']">Accuracy of forecast</p>
             </div>
             
-            <div :class="[isDark ? 'bg-green-900/30' : 'bg-green-50', 'p-4 rounded-lg']">
-              <p :class="[isDark ? 'text-green-300' : 'text-green-800', 'text-sm']">Consumption Trend</p>
-              <p :class="[isDark ? 'text-green-400' : 'text-green-600', 'text-2xl font-bold capitalize']">{{ prediction.trend }}</p>
+            <div :class="[isDark ? 'bg-green-900/30' : 'bg-green-50', 'p-3 sm:p-4 rounded-lg sm:col-span-2 lg:col-span-1']">
+              <p :class="[isDark ? 'text-green-300' : 'text-green-800', 'text-xs sm:text-sm']">Consumption Trend</p>
+              <p :class="[isDark ? 'text-green-400' : 'text-green-600', 'text-xl sm:text-2xl font-bold capitalize']">{{ prediction.trend }}</p>
               <p :class="[isDark ? 'text-green-400' : 'text-green-500', 'text-xs mt-1']">Compared to last week</p>
             </div>
             
-            <div :class="[themeClasses.bg.tertiary, 'md:col-span-3 p-4 rounded-lg mt-2']">
-              <p :class="[themeClasses.text.primary, 'text-sm font-medium']">AI Recommendation</p>
-              <p :class="[themeClasses.text.secondary, 'mt-1']">{{ prediction.recommendation }}</p>
+            <div :class="[themeClasses.bg.tertiary, 'sm:col-span-2 lg:col-span-3 p-3 sm:p-4 rounded-lg mt-2']">
+              <p :class="[themeClasses.text.primary, 'text-xs sm:text-sm font-medium']">AI Recommendation</p>
+              <p :class="[themeClasses.text.secondary, 'mt-1 text-xs sm:text-sm']">{{ prediction.recommendation }}</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Consumption Charts -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-6">
         <!-- Level Trend Chart -->
-        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-6']">
-          <div class="flex items-center justify-between mb-4">
-            <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Gas Level Trend (Last 7 Days)</h3>
-            <div class="flex space-x-2">
-              <button @click="chartRange = 'week'" :class="[chartRange === 'week' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-3 py-1 text-sm rounded-md']">
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-4 sm:p-6']">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
+            <h3 :class="[themeClasses.text.primary, 'text-base sm:text-lg font-medium']">Gas Level Trend</h3>
+            <div class="flex space-x-1 sm:space-x-2">
+              <button @click="chartRange = 'week'" :class="[chartRange === 'week' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md']">
                 Week
               </button>
-              <button @click="chartRange = 'month'" :class="[chartRange === 'month' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-3 py-1 text-sm rounded-md']">
+              <button @click="chartRange = 'month'" :class="[chartRange === 'month' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md']">
                 Month
               </button>
-              <button @click="chartRange = 'year'" :class="[chartRange === 'year' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-3 py-1 text-sm rounded-md']">
+              <button @click="chartRange = 'year'" :class="[chartRange === 'year' ? (isDark ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800') : (isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'), 'px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md']">
                 Year
               </button>
             </div>
           </div>
-          <div class="h-64">
+          <div class="h-48 sm:h-64">
             <canvas id="levelChart"></canvas>
           </div>
         </div>
 
         <!-- Daily Consumption Chart -->
-        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-6']">
-          <div class="flex items-center justify-between mb-4">
-            <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Daily Consumption (Last 7 Days)</h3>
-            <div :class="[themeClasses.text.secondary, 'text-sm']">
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-4 sm:p-6']">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
+            <h3 :class="[themeClasses.text.primary, 'text-base sm:text-lg font-medium']">Daily Consumption</h3>
+            <div :class="[themeClasses.text.secondary, 'text-xs sm:text-sm']">
               Total: {{ totalConsumption.toFixed(2) }} kg
             </div>
           </div>
-          <div class="h-64">
+          <div class="h-48 sm:h-64">
             <canvas id="consumptionChart"></canvas>
           </div>
         </div>
       </div>
 
       <!-- Quick Actions -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <button @click="showRefillModal = true" :class="[themeClasses.bg.card, themeClasses.shadow, 'p-4 rounded-lg flex flex-col items-center transition-colors hover:bg-gray-100 dark:hover:bg-gray-700']">
           <svg class="h-6 w-6 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>

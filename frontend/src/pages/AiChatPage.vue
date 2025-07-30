@@ -1,31 +1,31 @@
 <template>
-  <div :class="[themeClasses.bg.primary, 'min-h-screen p-6']">
+  <div :class="[themeClasses.bg.primary, 'min-h-screen p-4 sm:p-6']">
     <!-- Header -->
-    <div class="mb-6">
-      <div class="flex items-center justify-between">
+    <div class="mb-4 sm:mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between space-y-4 sm:space-y-0">
         <div class="flex items-center space-x-3">
-          <div class="p-3 rounded-lg bg-blue-500">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="p-2 sm:p-3 rounded-lg bg-blue-500">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
           <div>
-            <h1 :class="[themeClasses.text.primary, 'text-2xl font-bold']">AI Assistant</h1>
-            <p :class="[themeClasses.text.muted, 'text-sm']">Your intelligent gas monitoring companion</p>
+            <h1 :class="[themeClasses.text.primary, 'text-xl sm:text-2xl font-bold']">AI Assistant</h1>
+            <p :class="[themeClasses.text.muted, 'text-xs sm:text-sm']">Your intelligent gas monitoring companion</p>
           </div>
         </div>
         
         <!-- Model Selection -->
-        <div class="flex items-center space-x-3">
-          <label :class="[themeClasses.text.muted, 'text-sm font-medium']">Model:</label>
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <label :class="[themeClasses.text.muted, 'text-xs sm:text-sm font-medium']">Model:</label>
           <select 
             v-model="selectedModel"
             :class="[
               themeClasses.bg.secondary,
               themeClasses.text.primary,
               themeClasses.border.primary,
-              'px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              'px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
             ]"
           >
             <option value="anthropic/claude-3-haiku">Claude 3 Haiku</option>
@@ -39,14 +39,14 @@
     <div :class="[
       themeClasses.bg.secondary,
       themeClasses.border.primary,
-      'rounded-lg border shadow-lg h-[calc(100vh-200px)] flex flex-col'
+      'rounded-lg border shadow-lg h-[calc(100vh-160px)] sm:h-[calc(100vh-200px)] flex flex-col'
     ]">
       <!-- Chat Messages -->
       <div 
         ref="messagesContainer"
         :class="[
           themeClasses.bg.primary,
-          'flex-1 overflow-y-auto p-6 space-y-4'
+          'flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4'
         ]"
       >
         <div v-if="messages.length === 0" :class="[themeClasses.text.muted, 'text-center py-12']">
