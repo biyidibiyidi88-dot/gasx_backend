@@ -371,7 +371,7 @@ import { useTheme } from '../../composables/useTheme'
 // Theme composable
 const { isDark, toggleTheme, themeClasses } = useTheme()
 
-import api from "../public/api"
+import api from "../../config/api"
 
 // State
 const activeFilter = ref('unread')

@@ -271,7 +271,7 @@
   //import axios from 'axios';
 import { ref, computed, watch } from 'vue';
 import { useRouter,} from 'vue-router';
-import api from './api'
+import api from '../../config/api'
 const router = useRouter();
 const form = ref({
   firstName: '',

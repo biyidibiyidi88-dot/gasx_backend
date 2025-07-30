@@ -399,7 +399,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import api from '../public/api' // assuming you have an API client configured
+import api from '../../config/api' // Smart API client with auto-detection
 import { useTheme } from '../../composables/useTheme'
 
 // Theme composable

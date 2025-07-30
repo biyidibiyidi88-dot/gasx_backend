@@ -327,7 +327,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import api from '../public/api'
+import api from '../../config/api'
 import { useTheme } from '../../composables/useTheme'
 
 // Theme composable
