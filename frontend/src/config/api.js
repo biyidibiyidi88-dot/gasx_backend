@@ -21,7 +21,7 @@ const getApiBaseUrl = () => {
     return 'http://127.0.0.1:8000';
   } else {
     // Production or deployed frontend - use Render backend
-    return 'https://gas-monitor-sfk3.onrender.com';
+    return 'https://gas-monitor-sfk3.onrender.com/api';
   }
 };
 
