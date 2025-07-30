@@ -48,6 +48,11 @@ const routes = [
         name: 'profile',
         component: () => import('../pages/private/Profile.vue'),
       },
+      {
+        path: 'ai-chat',
+        name: 'ai-chat',
+        component: () => import('../pages/AiChatPage.vue'),
+      },
     ],
   },
   {
