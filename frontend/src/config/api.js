@@ -2,20 +2,20 @@ import axios from 'axios';
 
 // Smart API configuration that detects environment
 const getApiBaseUrl = () => {
-  // Check if we're in development mode
-  const isDevelopment = import.meta.env.DEV;
-  
+  // If we have an explicit environment variable, use it (highest priority)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
   // Check if we're running locally (localhost or 127.0.0.1)
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' ||
                      window.location.hostname === '0.0.0.0';
 
-  // If we have an explicit environment variable, use it
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-
-  // Auto-detect based on environment
+  // Check if we're in development mode AND running locally
+  const isDevelopment = import.meta.env.DEV;
+  
+  // Only use local backend if we're both in dev mode AND on localhost
   if (isDevelopment && isLocalhost) {
     // Local development - use local Django server
     return 'http://127.0.0.1:8000';
