@@ -36,6 +36,15 @@ struct DeviceConfig {
 // API Configuration (Using deployed backend)
 const char* api_base_url = "https://gas-monitor-sfk3.onrender.com/api";
 
+// Preconfigured WiFi Credentials
+const char* PRECONFIGURED_SSID = "name";
+const char* PRECONFIGURED_PASSWORD = "11111111";
+
+// Preconfigured User Information
+const char* PRECONFIGURED_USER_EMAIL = "biyiditchoua@gmail.com";
+const char* PRECONFIGURED_USER_TOKEN = "972e4539789c26414553c450b2994111b7ebccae"; // From memory
+const int PRECONFIGURED_SENSOR_ID = 13; // From memory
+
 // Hardware Pin Configuration - ONLY MQ SENSOR
 const int MQ_SENSOR_PIN = A0;      // Analog pin for MQ sensor (GPIO36 on ESP32)
 const int MQ_DIGITAL_PIN = 2;      // Digital pin for MQ sensor threshold detection
@@ -87,10 +96,9 @@ void setup() {
   // Initialize WiFi
   connectToWiFi();
   
-  // Register device if not already registered
-  if (wifiConnected && !deviceConfig.is_registered) {
-    registerDevice();
-  }
+  // Device is preconfigured - no registration needed
+  Serial.printf("Device preconfigured for user: %s\n", PRECONFIGURED_USER_EMAIL);
+  Serial.printf("Using sensor ID: %d\n", deviceConfig.sensor_id);
   
   // Warm up MQ sensor
   Serial.println("Warming up MQ sensor (30 seconds)...");
@@ -118,18 +126,8 @@ void loop() {
     }
   }
   
-  // Try to register device if not registered
-  if (!deviceConfig.is_registered && millis() - lastRegistrationAttempt > REGISTRATION_RETRY) {
-    registerDevice();
-    lastRegistrationAttempt = millis();
-  }
-  
-  // Only proceed with gas monitoring if device is registered
-  if (!deviceConfig.is_registered) {
-    Serial.println("Device not registered. Please complete registration first.");
-    delay(10000);
-    return;
-  }
+  // Device is preconfigured - always ready for gas monitoring
+  // No registration checks needed
   
   // Read gas sensor
   int gasReading = readGasSensor();
@@ -181,19 +179,20 @@ void generateDeviceConfig() {
   macAddress.replace(":", "");
   String deviceId = "ESP32_GAS_" + macAddress;
   
-  // Initialize configuration
+  // Initialize configuration with preconfigured values
   strcpy(deviceConfig.device_id, deviceId.c_str());
-  strcpy(deviceConfig.api_key, ""); // Will be set during registration
-  deviceConfig.sensor_id = 0;       // Will be set during registration
-  deviceConfig.is_registered = false;
-  strcpy(deviceConfig.location, "Unknown Location");
+  strcpy(deviceConfig.api_key, PRECONFIGURED_USER_TOKEN); // Preconfigured token
+  deviceConfig.sensor_id = PRECONFIGURED_SENSOR_ID;       // Preconfigured sensor ID
+  deviceConfig.is_registered = true;                      // Mark as registered
+  strcpy(deviceConfig.location, "Kitchen Area");          // Default location
   
   // Calculate simple checksum
   String checksum = String(strlen(deviceConfig.device_id) + deviceConfig.sensor_id);
   strcpy(deviceConfig.checksum, checksum.c_str());
   
   saveConfiguration();
-  Serial.printf("Generated new device configuration. Device ID: %s\n", deviceConfig.device_id);
+  Serial.printf("Generated preconfigured device. Device ID: %s\n", deviceConfig.device_id);
+  Serial.printf("Sensor ID: %d, User: %s\n", PRECONFIGURED_SENSOR_ID, PRECONFIGURED_USER_EMAIL);
 }
 
 void saveConfiguration() {
@@ -208,18 +207,27 @@ void saveConfiguration() {
 }
 
 void connectToWiFi() {
-  // Use WiFiManager for easy WiFi configuration
-  wifiManager.setConfigPortalTimeout(CONFIG_TIMEOUT);
+  Serial.printf("Connecting to WiFi: %s\n", PRECONFIGURED_SSID);
   
-  if (!wifiManager.autoConnect("GasMonitor_Setup")) {
+  WiFi.begin(PRECONFIGURED_SSID, PRECONFIGURED_PASSWORD);
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+    delay(1000);
+    Serial.print(".");
+    attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    wifiConnected = true;
+    Serial.println();
+    Serial.printf("WiFi Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+  } else {
+    Serial.println();
     Serial.println("Failed to connect to WiFi. Restarting...");
     delay(3000);
     ESP.restart();
   }
-  
-  wifiConnected = true;
-  Serial.println();
-  Serial.printf("WiFi Connected! IP: %s\n", WiFi.localIP().toString().c_str());
 }
 
 void registerDevice() {
@@ -391,7 +399,7 @@ void sendGasReading(int gasLevel) {
   HTTPClient http;
   http.begin(String(api_base_url) + "/gas-readings/create/");
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Device " + String(deviceConfig.api_key));
+  http.addHeader("Authorization", "Token " + String(deviceConfig.api_key));
   
   DynamicJsonDocument doc(1024);
   doc["sensor_id"] = deviceConfig.sensor_id;
@@ -419,7 +427,7 @@ void sendGasLeakAlert(int gasLevel, String severity) {
   HTTPClient http;
   http.begin(String(api_base_url) + "/alerts/gas-leak/");
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Device " + String(deviceConfig.api_key));
+  http.addHeader("Authorization", "Token " + String(deviceConfig.api_key));
   
   DynamicJsonDocument doc(1024);
   doc["sensor_id"] = deviceConfig.sensor_id;
