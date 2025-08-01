@@ -198,3 +198,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email configuration using Resend API
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', 're_EhDLtAvk_AUHG11h85KoyJjR155ifQPCM')
+DEFAULT_FROM_EMAIL = 'Gas Monitor <onboarding@resend.dev>'  # Using Resend's verified domain
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development

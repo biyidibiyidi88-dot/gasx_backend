@@ -354,6 +354,7 @@ const refillDate = ref('')
 const refillTime = ref('Morning (8am-12pm)')
 const refillQuantity = ref(50)
 const alert = ref(null)
+const backendAlerts = ref([])
 const usageHistory = ref([])
 const levelChartInstance = ref(null)
 const consumptionChartInstance = ref(null)
@@ -505,11 +506,15 @@ const dismissAlert = () => {
 const refreshData = () => {
   lastUpdated.value = new Date()
   fetchGasReadings()
+  refreshAlerts()
 }
 
 const updateTankData = () => {
-  lastUpdated.value = new Date()
   fetchGasReadings()
+}
+
+const refreshAlerts = async () => {
+  await fetchBackendAlerts()
   checkForAlerts()
 }
 
@@ -524,9 +529,64 @@ const saveSettings = () => {
   checkForAlerts()
 }
 
+const fetchBackendAlerts = async () => {
+  try {
+    const response = await api.get('alerts/', {
+      headers: { Authorization: `Token ${localStorage.getItem('authToken')}` }
+    })
+    backendAlerts.value = response.data.filter(alert => !alert.is_resolved)
+  } catch (error) {
+    console.error('Error fetching backend alerts:', error)
+  }
+}
+
 const checkForAlerts = () => {
   alert.value = null
   
+  // Check for critical backend alerts first (gas leaks have highest priority)
+  const criticalBackendAlert = backendAlerts.value.find(a => 
+    a.alert_type === 'GAS_LEAK' && (a.severity_level === 'CRITICAL' || a.severity_level === 'HIGH')
+  )
+  
+  if (criticalBackendAlert) {
+    alert.value = {
+      type: 'red',
+      title: '🚨 GAS LEAK DETECTED',
+      message: `${criticalBackendAlert.alert_message || 'Gas leak detected by ' + criticalBackendAlert.sensor_name}. Take immediate safety action!`,
+      action: {
+        text: 'View Details',
+        callback: () => {
+          // Navigate to alerts page or show detailed modal
+          alert.value = null
+        }
+      },
+      backendAlert: criticalBackendAlert
+    }
+    return
+  }
+  
+  // Check for other backend alerts
+  const otherBackendAlert = backendAlerts.value.find(a => 
+    a.alert_type === 'GAS_LEAK' && (a.severity_level === 'MEDIUM' || a.severity_level === 'LOW')
+  )
+  
+  if (otherBackendAlert) {
+    alert.value = {
+      type: 'orange',
+      title: '⚠️ GAS LEAK ALERT',
+      message: `${otherBackendAlert.alert_message || 'Gas leak detected by ' + otherBackendAlert.sensor_name}. Please investigate.`,
+      action: {
+        text: 'View Details',
+        callback: () => {
+          alert.value = null
+        }
+      },
+      backendAlert: otherBackendAlert
+    }
+    return
+  }
+  
+  // Check for tank level alerts (lower priority)
   if (tank.value.level < alertThresholds.value.criticalLevel) {
     alert.value = {
       type: 'red',
@@ -569,6 +629,9 @@ const fetchGasReadings = async () => {
     if (sensors.length > 0) {
       const latestReading = sensors[0].current_gas_level
       tank.value.level = (latestReading / tank.value.capacity * 100).toFixed(2)
+
+      // Fetch backend alerts
+      await fetchBackendAlerts()
 
       // Fetch usage history for chart and AI prediction (7 days)
       const endDate = new Date()
