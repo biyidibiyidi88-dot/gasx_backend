@@ -564,3 +564,209 @@ class GasLeakAlertCreateView(APIView):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class DeviceRegistrationView(APIView):
+    """
+    API endpoint for ESP32 devices to register themselves.
+    Creates a device record and returns authentication token and sensor ID.
+    """
+
+    def post(self, request):
+        """
+        Handle ESP32 device registration.
+        
+        Expected payload:
+        {
+            "device_id": "ESP32_GAS_AABBCCDDEEFF",
+            "device_type": "ESP32_GAS_SENSOR",
+            "mac_address": "AA:BB:CC:DD:EE:FF",
+            "ip_address": "192.168.1.100",
+            "firmware_version": "1.0.0",
+            "sensor_type": "MQ_GAS_SENSOR",
+            "location": "Kitchen"
+        }
+        """
+        try:
+            device_id = request.data.get('device_id')
+            device_type = request.data.get('device_type', 'ESP32_GAS_SENSOR')
+            mac_address = request.data.get('mac_address')
+            ip_address = request.data.get('ip_address')
+            firmware_version = request.data.get('firmware_version', '1.0.0')
+            sensor_type = request.data.get('sensor_type', 'MQ_GAS_SENSOR')
+            location = request.data.get('location', 'Unknown Location')
+            
+            if not device_id or not mac_address:
+                return Response({
+                    "status": "error",
+                    "message": "device_id and mac_address are required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # For now, we'll create a temporary device without user association
+            # Users can claim devices later through the frontend
+            
+            # Check if device already exists
+            existing_sensors = GasSensor.objects.filter(sensor_name__contains=device_id)
+            if existing_sensors.exists():
+                sensor = existing_sensors.first()
+                # Generate a simple token for existing device
+                import hashlib
+                api_token = hashlib.sha256(f"{device_id}_{mac_address}".encode()).hexdigest()
+                
+                return Response({
+                    "status": "success",
+                    "message": "Device already registered",
+                    "device_id": device_id,
+                    "api_token": api_token,
+                    "sensor_id": sensor.id,
+                    "location": sensor.location
+                }, status=status.HTTP_200_OK)
+            
+            # Create a new gas sensor for this device
+            # We'll use a deterministic token based on device info
+            import hashlib
+            api_token = hashlib.sha256(f"{device_id}_{mac_address}".encode()).hexdigest()
+            
+            sensor = GasSensor.objects.create(
+                sensor_name=f"{sensor_type} - {device_id}",
+                sensor_type='METHANE',  # Default type
+                location=location,
+                is_active=True
+            )
+            
+            return Response({
+                "status": "success",
+                "message": "Device registered successfully",
+                "device_id": device_id,
+                "api_token": api_token,
+                "sensor_id": sensor.id,
+                "location": location,
+                "instructions": "Device registered but not claimed. Users can associate this device with their account using the device_id."
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            logging.error(f"Device registration error: {str(e)}")
+            return Response({
+                "status": "error",
+                "message": "Device registration failed",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DeviceClaimView(APIView):
+    """
+    API endpoint for users to claim registered devices.
+    Associates an unclaimed device/sensor with the authenticated user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """
+        Handle device claiming by authenticated users.
+        
+        Expected payload:
+        {
+            "device_id": "ESP32_GAS_AABBCCDDEEFF"
+        }
+        """
+        try:
+            device_id = request.data.get('device_id')
+            
+            if not device_id:
+                return Response({
+                    "status": "error",
+                    "message": "device_id is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Find the sensor associated with this device_id
+            try:
+                sensor = GasSensor.objects.get(sensor_name__contains=device_id, user__isnull=True)
+            except GasSensor.DoesNotExist:
+                return Response({
+                    "status": "error",
+                    "message": "Device not found or already claimed"
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Check if user already has a house, if not create one
+            user_house = House.objects.filter(user=request.user).first()
+            if not user_house:
+                user_house = House.objects.create(
+                    user=request.user,
+                    address="Default Address",
+                    city="Default City",
+                    state="Default State",
+                    zip_code="00000"
+                )
+            
+            # Claim the sensor
+            sensor.user = request.user
+            sensor.house = user_house
+            sensor.save()
+            
+            return Response({
+                "status": "success",
+                "message": "Device claimed successfully",
+                "device_id": device_id,
+                "sensor": {
+                    "id": sensor.id,
+                    "name": sensor.sensor_name,
+                    "type": sensor.sensor_type,
+                    "location": sensor.location,
+                    "is_active": sensor.is_active
+                },
+                "house": {
+                    "id": user_house.id,
+                    "address": user_house.address
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logging.error(f"Device claiming error: {str(e)}")
+            return Response({
+                "status": "error",
+                "message": "Device claiming failed",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UnclaimedDevicesView(APIView):
+    """
+    API endpoint to list all unclaimed devices available for claiming.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Get list of unclaimed devices that can be claimed by users.
+        """
+        try:
+            # Find sensors without user association
+            unclaimed_sensors = GasSensor.objects.filter(user__isnull=True, is_active=True)
+            
+            devices = []
+            for sensor in unclaimed_sensors:
+                # Extract device_id from sensor name
+                device_id = sensor.sensor_name.split(' - ')[-1] if ' - ' in sensor.sensor_name else sensor.sensor_name
+                
+                devices.append({
+                    "device_id": device_id,
+                    "sensor_id": sensor.id,
+                    "sensor_name": sensor.sensor_name,
+                    "sensor_type": sensor.sensor_type,
+                    "location": sensor.location,
+                    "created_at": sensor.created_at.isoformat() if hasattr(sensor, 'created_at') else None
+                })
+            
+            return Response({
+                "status": "success",
+                "unclaimed_devices": devices,
+                "count": len(devices)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logging.error(f"Error fetching unclaimed devices: {str(e)}")
+            return Response({
+                "status": "error",
+                "message": "Failed to fetch unclaimed devices",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

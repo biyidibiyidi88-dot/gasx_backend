@@ -3,34 +3,16 @@
     <!-- Top Navigation -->
     <header :class="[themeClasses.bg.secondary, themeClasses.shadow, 'z-10']">
       <div class="flex items-center justify-between px-4 py-3 sm:px-6">
-        <!-- Mobile menu button -->
-        <button 
-          @click="emit('toggle-sidebar')"
-          :class="[themeClasses.text.secondary, 'md:hidden focus:outline-none hover:text-gray-600']"
-        >
-          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
+        
+        
         
         <!-- Dashboard Title -->
         <h1 :class="[themeClasses.text.heading, 'text-lg sm:text-xl font-semibold truncate flex-1 mx-2 md:mx-0 md:flex-none']">Home Gas Tank Monitor</h1>
         
         <!-- Theme Toggle & Last Updated -->
         <div class="flex items-center space-x-2 sm:space-x-4">
-          <!-- Theme Toggle Button -->
-          <button 
-            @click="toggleTheme" 
-            :class="[themeClasses.text.secondary, 'p-2 rounded-lg transition-colors hover:text-gray-600']"
-            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          >
-            <svg v-if="isDark" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
-            <svg v-else class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-            </svg>
-          </button>
+          
+          
           
           <!-- Last Updated -->
           <div :class="[themeClasses.text.caption, 'text-xs sm:text-sm hidden sm:block']">

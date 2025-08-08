@@ -1,54 +1,39 @@
 <template>
   <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden']">
-    <!-- Notification Toast -->
+    <!-- Notification Toast - Centered on mobile -->
     <transition name="fade">
       <div v-if="showToast" 
-           :class="['fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg text-white', 
+           :class="['fixed top-4 z-50 p-3 rounded-md shadow-lg text-white text-sm sm:text-base max-w-xs mx-4 sm:mx-0',
+                   'left-1/2 transform -translate-x-1/2 sm:left-auto sm:right-4 sm:transform-none',
                    toastType === 'success' ? 'bg-green-500' : 'bg-red-500']">
         {{ toastMessage }}
       </div>
     </transition>
 
-    <!-- Top Navigation -->
+    <!-- Top Navigation - Stacked on mobile -->
     <header :class="[themeClasses.bg.secondary, themeClasses.shadow, 'z-10']">
-      <div class="flex items-center justify-between px-4 py-3 sm:px-6">
-        <!-- Mobile menu button -->
-        <button 
-          @click="$emit('toggle-sidebar')"
-          :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'md:hidden focus:outline-none']"
-        >
-          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-        
-        <!-- Page Title -->
+      <div class="flex items-center justify-between px-4 py-3">
         <div class="flex items-center">
-          <h1 :class="[themeClasses.text.primary, 'text-xl font-semibold']">Notifications</h1>
-          <span v-if="unreadCount > 0" class="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
-            {{ unreadCount }} new
-          </span>
+          <!-- Mobile menu button -->
+         
+          
+          <!-- Page Title -->
+          <div class="flex items-center">
+            <h1 :class="[themeClasses.text.primary, 'text-lg sm:text-xl font-semibold']">Notifications</h1>
+            <span v-if="unreadCount > 0" class="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
+              {{ unreadCount }} new
+            </span>
+          </div>
         </div>
         
         <!-- Theme Toggle & Actions -->
         <div class="flex items-center space-x-2">
           <!-- Theme Toggle Button -->
-          <button 
-            @click="toggleTheme" 
-            :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors']"
-            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          >
-            <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
-            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-            </svg>
-          </button>
+          
           
           <button 
             @click="markAllAsRead"
-            :class="[themeClasses.button.secondary, 'inline-flex items-center px-3 py-2 text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
+            :class="[themeClasses.button.secondary, 'hidden sm:inline-flex items-center px-3 py-2 text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
           >
             Mark all as read
           </button>
@@ -60,7 +45,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            Settings
+            <span class="hidden sm:inline">Settings</span>
           </button>
         </div>
       </div>
@@ -83,34 +68,37 @@
 
       <!-- Content -->
       <div v-else>
-        <!-- Notification Filters -->
+        <!-- Notification Filters with scrollable area -->
         <div :class="[themeClasses.bg.secondary, themeClasses.shadow, themeClasses.border, 'border-b']">
           <div class="px-4 sm:px-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 py-3">
-              <div class="flex space-x-2 overflow-x-auto pb-2 md:pb-0">
-                <button 
-                  v-for="filter in filters"
-                  :key="filter.value"
-                  @click="activeFilter = filter.value"
-                  class="px-3 py-1 text-sm rounded-md whitespace-nowrap"
-                  :class="{
-                    'bg-blue-100 text-blue-800': activeFilter === filter.value,
-                    'bg-gray-100 text-gray-800 hover:bg-gray-200': activeFilter !== filter.value
-                  }"
-                >
-                  {{ filter.label }}
-                  <span v-if="filter.count" class="ml-1 px-1.5 py-0.5 text-xs rounded-full" 
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 py-3">
+              <div class="relative">
+                <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                  <button 
+                    v-for="filter in filters"
+                    :key="filter.value"
+                    @click="activeFilter = filter.value"
+                    class="px-3 py-1 text-sm rounded-md whitespace-nowrap flex-shrink-0"
                     :class="{
-                      'bg-blue-200 text-blue-800': activeFilter === filter.value,
-                      'bg-gray-200 text-gray-800': activeFilter !== filter.value
-                    }">
-                    {{ filter.count }}
-                  </span>
-                </button>
+                      'bg-blue-100 text-blue-800': activeFilter === filter.value,
+                      'bg-gray-100 text-gray-800 hover:bg-gray-200': activeFilter !== filter.value
+                    }"
+                  >
+                    {{ filter.label }}
+                    <span v-if="filter.count" class="ml-1 px-1.5 py-0.5 text-xs rounded-full" 
+                      :class="{
+                        'bg-blue-200 text-blue-800': activeFilter === filter.value,
+                        'bg-gray-200 text-gray-800': activeFilter !== filter.value
+                      }">
+                      {{ filter.count }}
+                    </span>
+                  </button>
+                </div>
+                <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-100 to-transparent pointer-events-none"></div>
               </div>
               
-              <div class="flex items-center">
-                <label for="sort" class="mr-2 text-sm text-gray-600">Sort by:</label>
+              <div class="flex items-center mt-2 md:mt-0">
+                <label for="sort" class="mr-2 text-sm text-gray-600 whitespace-nowrap">Sort by:</label>
                 <select 
                   id="sort"
                   v-model="sortBy"
@@ -157,15 +145,15 @@
               <!-- Notification Content -->
               <div class="ml-3 flex-1 min-w-0">
                 <div class="flex justify-between">
-                  <p class="text-sm font-medium text-gray-900">
+                  <p class="text-sm font-medium text-gray-900 truncate">
                     {{ notification.alert_message }}
                     <span v-if="!notification.is_resolved" class="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500"></span>
                   </p>
-                  <div class="text-xs text-gray-500">
+                  <div class="text-xs text-gray-500 whitespace-nowrap ml-2">
                     {{ formatTime(notification.triggered_at) }}
                   </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-1">
+                <p class="text-sm text-gray-600 mt-1 truncate">
                   {{ notification.sensor_name }} at {{ notification.house_address }}
                 </p>
                 
@@ -212,9 +200,9 @@
       </div>
     </main>
 
-    <!-- Notification Settings Modal -->
-    <div v-if="showNotificationSettings" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+    <!-- Notification Settings Modal - Responsive -->
+    <div v-if="showNotificationSettings" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="px-6 py-4 border-b border-gray-200">
           <h3 class="text-lg font-medium text-gray-900">Notification Settings</h3>
         </div>
@@ -271,10 +259,10 @@
               </div>
             </div>
             
-            <!-- Alert Thresholds -->
+            <!-- Alert Thresholds - Responsive grid -->
             <div>
               <h4 class="text-sm font-medium text-gray-900 mb-3">Alert Thresholds</h4>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label for="critical-alerts" class="block text-sm font-medium text-gray-700 mb-1">Critical Alerts</label>
                   <select 
@@ -313,10 +301,10 @@
               </div>
             </div>
             
-            <!-- Quiet Hours -->
+            <!-- Quiet Hours - Responsive grid -->
             <div>
               <h4 class="text-sm font-medium text-gray-900 mb-3">Quiet Hours</h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label for="quiet-start" class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
                   <select 
@@ -593,7 +581,7 @@ onMounted(() => {
 <style scoped>
 /* Custom scrollbar for main content */
 main::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 main::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.05);
@@ -604,6 +592,15 @@ main::-webkit-scrollbar-thumb {
 }
 main::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
+}
+
+/* Hide scrollbar for filter buttons but allow scrolling */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Modal transitions */
@@ -633,5 +630,14 @@ button {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 </style>
