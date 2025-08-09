@@ -6,8 +6,9 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
-load_dotenv(BASE_DIR / '.env')
+# Load environment variables from .env file located in the backend's root directory
+# e.g., /home/tchoua/Desktop/backup/Gas_Monitor/backend/.env
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -118,32 +119,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Try to import dj_database_url for production, fallback for local development
-try:
-    import dj_database_url
-    HAS_DJ_DATABASE_URL = True
-except ImportError:
-    HAS_DJ_DATABASE_URL = False
+import dj_database_url
 
-# Use DATABASE_URL if available (for production), otherwise use individual env vars
-if os.getenv('DATABASE_URL') and HAS_DJ_DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME'),
-            'USER': os.getenv('DB_USER'),
-            'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': os.getenv('DB_HOST'),
-            'PORT': os.getenv('DB_PORT'),
-            'OPTIONS': {
-                'client_encoding': 'UTF8',
-            },
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.config(conn_max_age=600)
+}
 
 
 # Password validation

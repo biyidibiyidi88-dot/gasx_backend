@@ -2,8 +2,6 @@ from django.urls import path
 
 from .views import (
     AlertListView,
-    DeviceClaimView,
-    DeviceRegistrationView,
     GasLeakAlertCreateView,
     GasPredictionView,
     GasReadingCreateView,
@@ -19,7 +17,6 @@ from .views import (
     PasswordChangeView,
     ProfileImageView,
     RegisterView,
-    UnclaimedDevicesView,
     UserDetailView,
     UserInviteView,
     UserListView,
@@ -67,21 +64,6 @@ urlpatterns = [
         name="gas-reading-create",
     ),
     # ESP32 endpoints
-    path(
-        "devices/register/",
-        DeviceRegistrationView.as_view(),
-        name="device-registration",
-    ),
-    path(
-        "devices/claim/",
-        DeviceClaimView.as_view(),
-        name="device-claim",
-    ),
-    path(
-        "devices/unclaimed/",
-        UnclaimedDevicesView.as_view(),
-        name="unclaimed-devices",
-    ),
     path(
         "alerts/gas-leak/",
         GasLeakAlertCreateView.as_view(),
