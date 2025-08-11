@@ -424,6 +424,123 @@ class GasReadingListView(generics.ListAPIView):
         return queryset.order_by("-reading_timestamp")
 
 
+class DailyGasConsumptionView(APIView):
+    """
+    API endpoint to get daily aggregated gas consumption data for dashboard charts.
+    Groups readings by day and calculates total consumption per day.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Get the user's primary sensor
+            sensor = GasSensor.objects.filter(house__user=request.user).first()
+            if not sensor:
+                return Response(
+                    {"error": "No gas sensor found for this user"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Get date range parameters (default to last 30 days)
+            end_date = timezone.now().date()
+            start_date = end_date - timedelta(days=30)
+            
+            # Override with query parameters if provided
+            if request.query_params.get('start_date'):
+                start_date = datetime.strptime(request.query_params.get('start_date'), '%Y-%m-%d').date()
+            if request.query_params.get('end_date'):
+                end_date = datetime.strptime(request.query_params.get('end_date'), '%Y-%m-%d').date()
+
+            # Get readings for the date range
+            readings = GasReading.objects.filter(
+                sensor=sensor,
+                reading_timestamp__date__gte=start_date,
+                reading_timestamp__date__lte=end_date
+            ).order_by('reading_timestamp')
+
+            if not readings.exists():
+                return Response(
+                    {"message": "No gas readings found for the specified date range", "data": []},
+                    status=status.HTTP_200_OK,
+                )
+
+            # Group readings by date and calculate daily consumption
+            daily_data = {}
+            previous_reading = None
+
+            for reading in readings:
+                date_key = reading.reading_timestamp.date()
+                
+                # Initialize date entry if not exists
+                if date_key not in daily_data:
+                    daily_data[date_key] = {
+                        'date': date_key.isoformat(),
+                        'consumption_kg': 0.0,
+                        'avg_remaining_kg': 0.0,
+                        'reading_count': 0,
+                        'min_remaining': float('inf'),
+                        'max_remaining': 0.0,
+                        'readings': []
+                    }
+
+                # Add reading data
+                remaining_gas = float(reading.remaining_gas)
+                daily_data[date_key]['readings'].append(remaining_gas)
+                daily_data[date_key]['reading_count'] += 1
+                daily_data[date_key]['min_remaining'] = min(daily_data[date_key]['min_remaining'], remaining_gas)
+                daily_data[date_key]['max_remaining'] = max(daily_data[date_key]['max_remaining'], remaining_gas)
+
+                # Calculate consumption from previous reading (if same day or previous day)
+                if previous_reading:
+                    prev_date = previous_reading.reading_timestamp.date()
+                    time_diff_hours = (reading.reading_timestamp - previous_reading.reading_timestamp).total_seconds() / 3600
+                    
+                    # Only calculate consumption if readings are within reasonable time (max 24 hours apart)
+                    if time_diff_hours <= 24:
+                        consumption = float(previous_reading.remaining_gas) - remaining_gas
+                        # Only add positive consumption (actual usage)
+                        if consumption > 0:
+                            daily_data[date_key]['consumption_kg'] += consumption
+
+                previous_reading = reading
+
+            # Calculate averages and prepare final data
+            chart_data = []
+            for date_key in sorted(daily_data.keys()):
+                day_data = daily_data[date_key]
+                readings = day_data['readings']
+                
+                # Calculate average remaining gas for the day
+                avg_remaining = sum(readings) / len(readings) if readings else 0
+                
+                chart_data.append({
+                    'date': day_data['date'],
+                    'consumption_kg': round(day_data['consumption_kg'], 2),
+                    'avg_remaining_kg': round(avg_remaining, 2),
+                    'min_remaining_kg': round(day_data['min_remaining'] if day_data['min_remaining'] != float('inf') else 0, 2),
+                    'max_remaining_kg': round(day_data['max_remaining'], 2),
+                    'reading_count': day_data['reading_count'],
+                    'gas_percentage': round((avg_remaining / 20.0) * 100, 1)  # Assuming 20kg tank capacity
+                })
+
+            return Response({
+                'status_code': 200,
+                'message': 'Daily consumption data retrieved successfully',
+                'data': chart_data,
+                'date_range': {
+                    'start_date': start_date.isoformat(),
+                    'end_date': end_date.isoformat()
+                },
+                'total_days': len(chart_data)
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e), "details": "Failed to retrieve daily consumption data"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 class GasReadingCreateView(generics.CreateAPIView):
     serializer_class = GasReadingSerializer
     permission_classes = [IsAuthenticated]
