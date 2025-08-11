@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     AlertListView,
+    BulkDeleteGasReadingsView,
     DailyGasConsumptionView,
     GasLeakAlertCreateView,
     GasPredictionView,
@@ -68,6 +69,11 @@ urlpatterns = [
         "gas-readings/daily/",
         DailyGasConsumptionView.as_view(),
         name="daily-gas-consumption",
+    ),
+    path(
+        "gas-readings/bulk-delete/",
+        BulkDeleteGasReadingsView.as_view(),
+        name="bulk-delete-gas-readings",
     ),
     # ESP32 endpoints
     path(

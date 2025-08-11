@@ -698,3 +698,73 @@ class GasLeakAlertCreateView(APIView):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class BulkDeleteGasReadingsView(APIView):
+    """
+    API endpoint to bulk delete gas readings for cleanup purposes.
+    Supports deleting all readings or filtering by sensor ID.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        try:
+            # Get optional sensor filter from query params
+            sensor_id = request.query_params.get('sensor')
+            
+            # Build queryset
+            queryset = GasReading.objects.all()
+            
+            if sensor_id:
+                try:
+                    sensor_id = int(sensor_id)
+                    queryset = queryset.filter(sensor_id=sensor_id)
+                except ValueError:
+                    return Response(
+                        {
+                            "status": "error",
+                            "message": "Invalid sensor ID provided"
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Count readings before deletion
+            total_count = queryset.count()
+            
+            if total_count == 0:
+                return Response(
+                    {
+                        "status": "success",
+                        "message": "No gas readings found to delete",
+                        "deleted_count": 0
+                    },
+                    status=status.HTTP_200_OK
+                )
+            
+            # Perform bulk deletion
+            deleted_count, _ = queryset.delete()
+            
+            # Prepare response message
+            if sensor_id:
+                message = f"Successfully deleted all gas readings for sensor {sensor_id}"
+            else:
+                message = "Successfully deleted all gas readings"
+            
+            return Response(
+                {
+                    "status": "success",
+                    "message": message,
+                    "deleted_count": deleted_count
+                },
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Failed to delete gas readings",
+                    "error": str(e)
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
