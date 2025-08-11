@@ -315,27 +315,44 @@ class GasPredictionView(APIView):
             history_data = []
             previous_reading = None
 
+            # Group readings by hour to reduce noise and get meaningful consumption patterns
+            hourly_readings = {}
             for reading in readings:
+                hour_key = reading.reading_timestamp.replace(minute=0, second=0, microsecond=0)
+                if hour_key not in hourly_readings or reading.reading_timestamp > hourly_readings[hour_key].reading_timestamp:
+                    hourly_readings[hour_key] = reading
+            
+            # Sort hourly readings by timestamp
+            sorted_hourly = sorted(hourly_readings.values(), key=lambda x: x.reading_timestamp)
+            
+            # Calculate consumption between hourly readings (minimum 1 hour intervals)
+            previous_reading = None
+            for reading in sorted_hourly:
                 if previous_reading:
-                    # Calculate consumption between readings
                     time_diff = (
                         reading.reading_timestamp - previous_reading.reading_timestamp
                     ).total_seconds() / 86400  # days
-                    if time_diff > 0:
+                    
+                    # Only process if time difference is at least 1 hour (0.042 days) to avoid noise
+                    if time_diff >= 0.042:  # 1 hour = 0.042 days
                         consumption = float(previous_reading.remaining_gas) - float(
                             reading.remaining_gas
                         )
-                        is_weekend = (
-                            reading.reading_timestamp.weekday() >= 5
-                        )  # Saturday or Sunday
+                        
+                        # Filter out unrealistic consumption values (more than 5kg per day)
+                        daily_consumption = consumption / time_diff
+                        if -5.0 <= daily_consumption <= 5.0:  # Realistic range for gas consumption
+                            is_weekend = (
+                                reading.reading_timestamp.weekday() >= 5
+                            )  # Saturday or Sunday
 
-                        history_data.append(
-                            {
-                                "date": reading.reading_timestamp.date().isoformat(),
-                                "consumption_kg": consumption / time_diff,  # kg per day
-                                "is_weekend": is_weekend,
-                            }
-                        )
+                            history_data.append(
+                                {
+                                    "date": reading.reading_timestamp.date().isoformat(),
+                                    "consumption_kg": daily_consumption,  # kg per day
+                                    "is_weekend": is_weekend,
+                                }
+                            )
 
                 previous_reading = reading
 
