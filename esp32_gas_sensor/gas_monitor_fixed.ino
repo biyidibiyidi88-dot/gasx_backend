@@ -71,7 +71,8 @@
  float currentWeight = 0.0;
  float lastSentWeight = 0.0;
  float calibration_factor = 1.0;
- 
+
+ int currentGasLevel = 0;  // Still needed for gas leak detection
  String currentSeverity = "LOW";
  
  
@@ -247,26 +248,26 @@
    preferences.putBool("cal_done", true);
    Serial.printf("✅ Calibration factor saved permanently: %.2f\n", calibration_factor);
  }
- 
- void readWeightSensor() {
-   if (!scale.is_ready() || !scaleCalibrated) return;
- 
-   float weight = scale.get_units(5);
-   if (abs(weight - lastStableWeight) > MIN_WEIGHT_CHANGE) {
-     currentWeight = weight;
-     lastStableWeight = weight;
- 
-     float gasWeight = max(0.0f, currentWeight - TANK_EMPTY_WEIGHT);
-     float gasPercentage = (gasWeight / (TANK_FULL_WEIGHT - TANK_EMPTY_WEIGHT)) * 100.0;
-     gasPercentage = constrain(gasPercentage, 0.0, 100.0);
- 
-     Serial.printf("Weight: %.2f kg | Gas: %.2f kg (%.1f%%)\n", currentWeight, gasWeight, gasPercentage);
- 
-     if (gasPercentage <= 10.0 && millis() - lastAlertTime >= ALERT_COOLDOWN) {
-       handleLowGasAlert(gasPercentage);
-     }
-   }
- }
+
+void readWeightSensor() {
+  if (!scale.is_ready() || !scaleCalibrated) return;
+
+  float weight = scale.get_units(5);
+  if (abs(weight - lastSentWeight) > MIN_WEIGHT_CHANGE) {
+    currentWeight = weight;
+    // lastSentWeight will be updated when data is actually sent
+
+    float gasWeight = max(0.0f, currentWeight - TANK_EMPTY_WEIGHT);
+    float gasPercentage = (gasWeight / (TANK_FULL_WEIGHT - TANK_EMPTY_WEIGHT)) * 100.0;
+    gasPercentage = constrain(gasPercentage, 0.0, 100.0);
+
+    Serial.printf("Weight: %.2f kg | Gas: %.2f kg (%.1f%%)\n", currentWeight, gasWeight, gasPercentage);
+
+    if (gasPercentage <= 10.0 && millis() - lastAlertTime >= ALERT_COOLDOWN) {
+      handleLowGasAlert(gasPercentage);
+    }
+  }
+}
  
  int readGasSensor() {
    int analogValue = analogRead(MQ_SENSOR_PIN);
