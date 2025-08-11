@@ -445,24 +445,20 @@ const totalConsumption = computed(() => {
 })
 
 const dailyConsumptionData = computed(() => {
-  if (usageHistory.value.length < 2) return []
+  if (usageHistory.value.length === 0) return []
   
   // Sort by date (oldest first)
   const sortedHistory = [...usageHistory.value].sort((a, b) => new Date(a.date) - new Date(b.date))
   
-  const data = []
-  for (let i = 1; i < sortedHistory.length; i++) {
-    // Calculate positive consumption (previous - current)
-    const diff = sortedHistory[i-1].consumption_kg - sortedHistory[i].consumption_kg
-    if (diff > 0) { // Only include positive consumption
-      data.push({
-        date: sortedHistory[i].date,
-        consumption: diff.toFixed(2),
-        is_weekend: sortedHistory[i].is_weekend
-      })
-    }
-  }
-  return data
+  // Use the pre-calculated daily consumption from the backend
+  return sortedHistory
+    .filter(day => day.consumption_kg > 0) // Only show days with actual consumption
+    .map(day => ({
+      date: day.date,
+      consumption: day.consumption_kg.toFixed(2),
+      is_weekend: day.is_weekend,
+      reading_count: day.reading_count
+    }))
 })
 
 // Methods
@@ -615,12 +611,12 @@ const fetchGasReadings = async () => {
       // Fetch backend alerts
       await fetchBackendAlerts()
 
-      // Fetch usage history for chart and AI prediction (7 days)
+      // Fetch daily aggregated usage history for charts (30 days for better trend analysis)
       const endDate = new Date()
       const startDate = new Date()
-      startDate.setDate(endDate.getDate() - 7)
+      startDate.setDate(endDate.getDate() - 30)
       
-      const readingsResponse = await api.get('/gas-readings/', {
+      const dailyReadingsResponse = await api.get('/gas-readings/daily/', {
         headers: { Authorization: `Token ${localStorage.getItem('authToken')}` },
         params: {
           start_date: startDate.toISOString().split('T')[0],
@@ -628,12 +624,20 @@ const fetchGasReadings = async () => {
         }
       })
       
-      usageHistory.value = readingsResponse.data.map(reading => ({
-        date: reading.reading_timestamp.split('T')[0],
-        level: (reading.remaining_gas / tank.value.capacity * 100).toFixed(2),
-        consumption_kg: parseFloat(reading.remaining_gas),
-        is_weekend: new Date(reading.reading_timestamp).getDay() === 0 || new Date(reading.reading_timestamp).getDay() === 6
-      }))
+      // Use the properly aggregated daily data from the new endpoint
+      if (dailyReadingsResponse.data.status_code === 200) {
+        usageHistory.value = dailyReadingsResponse.data.data.map(day => ({
+          date: day.date,
+          level: day.gas_percentage,
+          consumption_kg: day.consumption_kg,
+          avg_remaining_kg: day.avg_remaining_kg,
+          reading_count: day.reading_count,
+          is_weekend: new Date(day.date).getDay() === 0 || new Date(day.date).getDay() === 6
+        }))
+      } else {
+        // Fallback to empty array if no data
+        usageHistory.value = []
+      }
       
       // Fetch AI prediction
       isPredicting.value = true
