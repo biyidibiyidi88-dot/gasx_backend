@@ -222,25 +222,28 @@ class AIPredictionService:
                 time.sleep(1)
 
             cls._debug_log("All AI models failed, using fallback calculation", level='warning')
-            manual_projection = metrics['remaining'] / metrics['recent_avg'] if metrics['recent_avg'] > 0 else 0
+            # Use current_remaining_kg from function parameter instead of missing metrics['remaining']
+            manual_projection = current_remaining_kg / metrics['recent_avg'] if metrics['recent_avg'] > 0 else 0
             return {
-                "remaining_kg": float(metrics['remaining']),
+                "remaining_kg": float(current_remaining_kg),
                 "projected_days": float(round(manual_projection, 2)),
                 "confidence": 0.8,
                 "trend": "stable",
-                "calculation": f"{metrics['remaining']:.2f}kg / {metrics['recent_avg']:.2f}kg/day",
+                "calculation": f"{current_remaining_kg:.2f}kg / {metrics['recent_avg']:.2f}kg/day",
                 "recommendation": "Based on recent average consumption"
             }
 
         except Exception as e:
             cls._debug_log(f"Critical failure: {str(e)}", level='error')
-            metrics = cls._calculate_metrics(history_data) if 'history_data' in locals() else {'remaining': 0, 'avg_daily': 1}
+            metrics = cls._calculate_metrics(history_data) if 'history_data' in locals() else {'avg_daily': 1}
+            # Use current_remaining_kg parameter or default to 0 if not available
+            remaining_kg = current_remaining_kg if 'current_remaining_kg' in locals() else 0
             return {
                 "error": "Prediction failed",
                 "details": str(e),
                 "emergency_calculation": {
-                    "remaining_kg": float(metrics['remaining']),
-                    "projected_days": float(round(metrics['remaining'] / metrics['avg_daily'], 2)) if metrics['avg_daily'] > 0 else 0,
+                    "remaining_kg": float(remaining_kg),
+                    "projected_days": float(round(remaining_kg / metrics['avg_daily'], 2)) if metrics['avg_daily'] > 0 else 0,
                     "calculation": "Emergency fallback"
                 }
             }
