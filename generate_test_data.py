@@ -148,7 +148,7 @@ def generate_month_data(start_date, days=30, sensor_id=DEFAULT_SENSOR_ID):
                 reading = {
                     "sensor": sensor_id,
                     "remaining_gas": gas_weight_rounded,
-                    "timestamp": event_time.isoformat(),
+                    "reading_timestamp": event_time.isoformat(),
                     "is_weekend": is_weekend,
                     "daily_consumption": round(daily_consumption, 2)
                 }
@@ -211,20 +211,20 @@ def upload_readings_to_backend(readings, batch_size=10):
                 
                 if response.status_code in [200, 201]:
                     successful_uploads += 1
-                    print(f"   ✅ {reading['timestamp']}: {reading['remaining_gas']}kg")
+                    print(f"   ✅ {reading['reading_timestamp']}: {reading['remaining_gas']}kg")
                 else:
                     failed_uploads += 1
-                    print(f"   ❌ {reading['timestamp']}: HTTP {response.status_code}")
+                    print(f"   ❌ {reading['reading_timestamp']}: HTTP {response.status_code}")
                 
                 # Small delay to avoid overwhelming the server
                 time.sleep(0.1)
                 
             except requests.exceptions.Timeout:
                 failed_uploads += 1
-                print(f"   ⏰ {reading['timestamp']}: Timeout")
+                print(f"   ⏰ {reading['reading_timestamp']}: Timeout")
             except Exception as e:
                 failed_uploads += 1
-                print(f"   💥 {reading['timestamp']}: {str(e)}")
+                print(f"   💥 {reading['reading_timestamp']}: {str(e)}")
         
         # Longer delay between batches
         if i + batch_size < len(readings):
