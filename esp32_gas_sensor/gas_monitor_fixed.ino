@@ -1,6 +1,6 @@
 /*
  * ESP32 Gas Monitor with Weight Measurement and Valve Control
- * - Only sends gas readings when significant change detected (>50ppm)
+ * - Only sends weight readings when significant change detected (>0.1kg)
  * - Minimum 30 seconds between readings
  */
 
@@ -41,8 +41,7 @@
  const int GAS_NORMAL_THRESHOLD = 300;
  const int GAS_WARNING_THRESHOLD = 800;
  const int GAS_CRITICAL_THRESHOLD = 1500;
- const int GAS_CHANGE_THRESHOLD = 50;  // Minimum ppm change to send reading
- const float MIN_WEIGHT_CHANGE = 0.1;  // Minimum weight change to trigger update
+ const float MIN_WEIGHT_CHANGE = 0.1;  // Minimum weight change to trigger update (0.1kg)
  
  // Weight Measurement Configuration
  const float TANK_EMPTY_WEIGHT = 6.0;     // Weight of empty tank in kg
@@ -71,14 +70,13 @@
  float currentWeight = 0.0;
  float lastSentWeight = 0.0;
  float calibration_factor = 1.0;
-
- int currentGasLevel = 0;  // Still needed for gas leak detection
- String currentSeverity = "LOW";
  
+ int currentGasLevel = 0;
+ String currentSeverity = "LOW";
  
  void setup() {
    Serial.begin(115200);
-   Serial.println("\n=== ESP32 Gas Monitor (Optimized Reporting) ===");
+   Serial.println("\n=== ESP32 Gas Monitor (Optimized Weight Reporting) ===");
  
    preferences.begin("gas_monitor", false);
  
@@ -192,13 +190,32 @@
      lastWeightSentTime = millis();
      
      Serial.printf("📊 Weight reading sent: %.2fkg (change: %.2fkg)\n", 
-                   currentWeight, abs(currentWeight - lastSentWeight));
+                  currentWeight, abs(currentWeight - lastSentWeight));
    }
  }
  
- // [Rest of the functions remain exactly the same as in the previous code]
- // Only the loop() and related timing functions have been modified
+ void readWeightSensor() {
+   if (!scale.is_ready() || !scaleCalibrated) return;
+ 
+   float weight = scale.get_units(5);
+   if (abs(weight - lastSentWeight) > MIN_WEIGHT_CHANGE) {
+     currentWeight = weight;
+ 
+     float gasWeight = max(0.0f, currentWeight - TANK_EMPTY_WEIGHT);
+     float gasPercentage = (gasWeight / (TANK_FULL_WEIGHT - TANK_EMPTY_WEIGHT)) * 100.0;
+     gasPercentage = constrain(gasPercentage, 0.0, 100.0);
+ 
+     Serial.printf("Weight: %.2f kg | Gas: %.2f kg (%.1f%%)\n", currentWeight, gasWeight, gasPercentage);
+ 
+     if (gasPercentage <= 10.0 && millis() - lastAlertTime >= ALERT_COOLDOWN) {
+       handleLowGasAlert(gasPercentage);
+     }
+   }
+ }
+ 
+ // [Rest of the functions remain exactly the same as in the original code]
  // All other functions (WiFi, sensor reading, valve control, etc.) remain identical
+ // Only the weight reading transmission logic has been modified
  
  void connectToWiFi() {
    wifiManager.setConfigPortalTimeout(180);
@@ -248,26 +265,6 @@
    preferences.putBool("cal_done", true);
    Serial.printf("✅ Calibration factor saved permanently: %.2f\n", calibration_factor);
  }
-
-void readWeightSensor() {
-  if (!scale.is_ready() || !scaleCalibrated) return;
-
-  float weight = scale.get_units(5);
-  if (abs(weight - lastSentWeight) > MIN_WEIGHT_CHANGE) {
-    currentWeight = weight;
-    // lastSentWeight will be updated when data is actually sent
-
-    float gasWeight = max(0.0f, currentWeight - TANK_EMPTY_WEIGHT);
-    float gasPercentage = (gasWeight / (TANK_FULL_WEIGHT - TANK_EMPTY_WEIGHT)) * 100.0;
-    gasPercentage = constrain(gasPercentage, 0.0, 100.0);
-
-    Serial.printf("Weight: %.2f kg | Gas: %.2f kg (%.1f%%)\n", currentWeight, gasWeight, gasPercentage);
-
-    if (gasPercentage <= 10.0 && millis() - lastAlertTime >= ALERT_COOLDOWN) {
-      handleLowGasAlert(gasPercentage);
-    }
-  }
-}
  
  int readGasSensor() {
    int analogValue = analogRead(MQ_SENSOR_PIN);

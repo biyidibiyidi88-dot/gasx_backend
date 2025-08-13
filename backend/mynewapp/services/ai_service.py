@@ -222,6 +222,18 @@ class AIPredictionService:
                 time.sleep(1)
 
             cls._debug_log("All AI models failed, using fallback calculation", level='warning')
+            
+            # Check if tank is empty or nearly empty
+            if current_remaining_kg <= 0.5:  # Less than 0.5kg remaining
+                return {
+                    "remaining_kg": float(current_remaining_kg),
+                    "projected_days": 0.0,
+                    "confidence": 1.0,
+                    "trend": "empty",
+                    "calculation": "Tank is empty or nearly empty",
+                    "recommendation": "Immediate refill required - tank is empty!"
+                }
+            
             # Use current_remaining_kg from function parameter instead of missing metrics['remaining']
             manual_projection = current_remaining_kg / metrics['recent_avg'] if metrics['recent_avg'] > 0 else 0
             return {

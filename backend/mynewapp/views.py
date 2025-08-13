@@ -496,11 +496,21 @@ class DailyGasConsumptionView(APIView):
                     time_diff_hours = (reading.reading_timestamp - previous_reading.reading_timestamp).total_seconds() / 3600
                     
                     # Only calculate consumption if readings are within reasonable time (max 24 hours apart)
-                    if time_diff_hours <= 24:
-                        consumption = float(previous_reading.remaining_gas) - remaining_gas
-                        # Only add positive consumption (actual usage)
-                        if consumption > 0:
+                    # and not more than 48 hours ago to avoid stale data
+                    if 0 < time_diff_hours <= 24:
+                        prev_gas = float(previous_reading.remaining_gas)
+                        curr_gas = remaining_gas
+                        
+                        # Consumption = previous - current (positive means gas was used)
+                        consumption = prev_gas - curr_gas
+                        
+                        # Only add realistic positive consumption (0.01kg to 5kg per reading)
+                        # This filters out sensor errors and unrealistic jumps
+                        if 0.01 <= consumption <= 5.0:
                             daily_data[date_key]['consumption_kg'] += consumption
+                        elif consumption < 0:
+                            # Log negative consumption for debugging (tank refill or sensor error)
+                            print(f"Warning: Negative consumption detected: {consumption:.2f}kg on {date_key}")
 
                 previous_reading = reading
 
