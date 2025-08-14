@@ -318,6 +318,33 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '../../config/api'
 import { useTheme } from '../../composables/useTheme'
+import {
+  Chart,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  LineController,
+  BarElement,
+  BarController,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+// Register Chart.js components
+Chart.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  LineController,
+  BarElement,
+  BarController,
+  Title,
+  Tooltip,
+  Legend
+)
 
 // Theme composable
 const { isDark, toggleTheme, themeClasses } = useTheme()
