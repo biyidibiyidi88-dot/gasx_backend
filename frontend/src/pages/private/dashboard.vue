@@ -392,11 +392,12 @@ const levelStatusText = computed(() => {
 })
 
 const dailyUsage = computed(() => {
-  if (usageHistory.value.length < 2) return 0
+  if (usageHistory.value.length === 0) return 0
   // Sort by date (oldest first)
   const sortedHistory = [...usageHistory.value].sort((a, b) => new Date(a.date) - new Date(b.date))
-  const totalConsumption = sortedHistory[0].consumption_kg - sortedHistory[sortedHistory.length - 1].consumption_kg
-  const totalDays = (new Date(sortedHistory[sortedHistory.length - 1].date) - new Date(sortedHistory[0].date)) / (1000 * 60 * 60 * 24)
+  // Sum all daily consumption values (backend already provides daily consumption amounts)
+  const totalConsumption = sortedHistory.reduce((sum, day) => sum + day.consumption_kg, 0)
+  const totalDays = sortedHistory.length
   return totalDays > 0 ? (totalConsumption / totalDays).toFixed(2) : 0
 })
 
@@ -431,17 +432,11 @@ const refillUrgencyText = computed(() => {
 })
 
 const totalConsumption = computed(() => {
-  if (usageHistory.value.length < 2) return 0
+  if (usageHistory.value.length === 0) return 0
   // Sort by date (oldest first)
   const sortedHistory = [...usageHistory.value].sort((a, b) => new Date(a.date) - new Date(b.date))
-  let total = 0
-  for (let i = 1; i < sortedHistory.length; i++) {
-    const diff = sortedHistory[i-1].consumption_kg - sortedHistory[i].consumption_kg
-    if (diff > 0) {
-      total += diff
-    }
-  }
-  return total
+  // Sum all daily consumption values (backend already provides daily consumption amounts)
+  return sortedHistory.reduce((sum, day) => sum + day.consumption_kg, 0)
 })
 
 const dailyConsumptionData = computed(() => {
