@@ -303,7 +303,7 @@ class GasPredictionView(APIView):
 
             readings = GasReading.objects.filter(
                 sensor=sensor, reading_timestamp__gte=start_date
-            ).order_by("reading_timestamp")
+            ).order_by("-reading_timestamp")
 
             if not readings.exists():
                 return Response(
@@ -365,7 +365,7 @@ class GasPredictionView(APIView):
             # Get current remaining gas from latest reading
             latest_reading = (
                 readings.first()
-            )  # readings are ordered by -reading_timestamp
+            )  # readings are now correctly ordered by -reading_timestamp (latest first)
             current_remaining_kg = (
                 float(latest_reading.remaining_gas) if latest_reading else 1.0
             )

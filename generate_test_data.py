@@ -201,10 +201,11 @@ def upload_readings_to_backend(readings, batch_size=10):
         
         for reading in batch:
             try:
-                # Prepare payload (matching ESP32 format)
+                # Prepare payload with historical timestamp for test data
                 payload = {
                     "sensor": reading["sensor"],
-                    "remaining_gas": reading["remaining_gas"]
+                    "remaining_gas": reading["remaining_gas"],
+                    "reading_timestamp": reading["reading_timestamp"]
                 }
                 
                 response = requests.post(url, headers=headers, json=payload, timeout=10)
