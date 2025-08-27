@@ -1,0 +1,143 @@
+classDiagram
+  direction TB
+
+  class CustomUser {
+    +id PK
+    +email [unique]
+    +first_name
+    +last_name
+    +phone_number
+    +address
+    +city
+    +state_province
+    +country
+    +profile_image
+    +is_verified
+    +is_admin
+    +accept_terms
+    +newsletter_subscription
+    +created_at
+    +updated_at
+    +last_login_ip
+    +last_activity
+  }
+
+  class AdminActivityLog {
+    +id PK
+    +action
+    +ip_address
+    +details JSON
+    +timestamp
+  }
+
+  class House {
+    +id PK
+    +address_line_1
+    +address_line_2
+    +city
+    +state_province
+    +country
+    +postal_code
+    +is_primary_residence
+    +created_at
+    +updated_at
+  }
+
+  class GasSensor {
+    +id PK
+    +sensor_name
+    +sensor_type
+    +serial_number [unique]
+    +installation_date
+    +last_calibration_date
+    +battery_level_percentage
+    +is_active
+    +ai_enabled
+    +created_at
+    +updated_at
+  }
+
+  class GasReading {
+    +id PK
+    +remaining_gas
+    +reading_timestamp
+    +is_alert_triggered
+    +created_at
+  }
+
+  class Alert {
+    +id PK
+    +alert_type
+    +severity_level
+    +alert_message
+    +is_resolved
+    +triggered_at
+    +resolved_at
+  }
+
+  class Notification {
+    +id PK
+    +notification_method
+    +recipient_address
+    +notification_status
+    +sent_at
+    +error_message
+  }
+
+  class EmergencyContact {
+    +id PK
+    +contact_name
+    +contact_phone
+    +contact_email
+    +relationship
+    +is_primary_contact
+  }
+
+  class SensorMaintenanceRecord {
+    +id PK
+    +maintenance_type
+    +maintenance_notes
+    +performed_at
+    +next_maintenance_due
+  }
+
+  class EmergencyAction {
+    +id PK
+    +action_type
+    +action_status
+    +initiated_at
+    +completed_at
+  }
+
+  class GasRefillRecord {
+    +id PK
+    +refill_amount
+    +refill_cost
+    +supplier_name
+    +refill_date
+  }
+
+  %% Relationships with cardinalities and notes
+  AdminActivityLog "*" o-- "1" CustomUser : admin (SET_NULL)
+
+  House "*" --> "1" CustomUser : user (CASCADE)
+  GasSensor "*" --> "1" House : house (CASCADE)
+
+  GasReading "*" --> "1" GasSensor : sensor (CASCADE)
+
+  Alert "*" --> "1" CustomUser : user (CASCADE)
+  Alert "*" --> "1" GasSensor : sensor (CASCADE)
+  Alert "*" o-- "1" CustomUser : resolved_by (SET_NULL)
+
+  Notification "*" --> "1" Alert : alert (CASCADE)
+
+  EmergencyContact "*" --> "1" CustomUser : user (CASCADE)
+
+  SensorMaintenanceRecord "*" --> "1" GasSensor : sensor (CASCADE)
+  SensorMaintenanceRecord "*" o-- "1" CustomUser : performed_by (SET_NULL)
+
+  EmergencyAction "*" --> "1" GasSensor : sensor (CASCADE)
+  EmergencyAction "*" o-- "1" CustomUser : initiated_by (SET_NULL)
+
+  GasRefillRecord "*" --> "1" GasSensor : sensor (CASCADE)
+  GasRefillRecord "*" o-- "1" CustomUser : recorded_by (SET_NULL)

@@ -18,7 +18,7 @@ const getApiBaseUrl = () => {
   // Only use local backend if we're both in dev mode AND on localhost
   if (isDevelopment && isLocalhost) {
     // Local development - use local Django server
-    return 'http://127.0.0.1:8000';
+    return 'http://127.0.0.1:8000/';
   } else {
     // Production or deployed frontend - use Render backend
     return 'https://gas-monitor-sfk3.onrender.com/api';
