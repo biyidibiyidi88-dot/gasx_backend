@@ -85,7 +85,7 @@
           </router-link>
         </li>
 
-        <!-- Tank Monitoring Section -->
+        <!-- Tank Monitoring Section
         <li class="mt-4">
           <p class="text-xs font-semibold text-gray-400 px-3 py-2 uppercase tracking-wider">Tank Monitoring</p>
           <ul class="mt-1 space-y-1">
@@ -108,7 +108,7 @@
               </router-link>
             </li>
           </ul>
-        </li>
+        </li> -->
 
         <!-- Alerts & Notifications Section -->
         <li class="mt-4">
@@ -263,18 +263,7 @@ const links = {
     icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
   }
   ],
-  tankMonitoring: [
-    { 
-      name: "Analytics", 
-      path: "/admin/analytics",
-      icon: "M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
-    },
-    { 
-      name: "Tank Locations", 
-      path: "/admin/tanks/map",
-      icon: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" 
-    },
-  ],
+  
   alerts: [
     { 
       name: "Active Alerts", 
@@ -282,11 +271,7 @@ const links = {
       icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9", 
       alertCount: userStore.notifications.filter(n => !n.read).length 
     },
-    { 
-      name: "Alert History", 
-      path: "/admin/alerts/history",
-      icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-    },
+    
   ],
   configuration: [
     {   

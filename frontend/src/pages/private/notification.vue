@@ -1,45 +1,53 @@
 <template>
   <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden']">
-    <!-- Notification Toast - Centered on mobile -->
+    <!-- Toast Notification -->
     <transition name="fade">
-      <div v-if="showToast" 
-           :class="['fixed top-4 z-50 p-3 rounded-md shadow-lg text-white text-sm sm:text-base max-w-xs mx-4 sm:mx-0',
-                   'left-1/2 transform -translate-x-1/2 sm:left-auto sm:right-4 sm:transform-none',
-                   toastType === 'success' ? 'bg-green-500' : 'bg-red-500']">
+      <div 
+        v-if="showToast" 
+        :class="[
+          'fixed top-4 z-50 p-3 rounded-md shadow-lg text-sm sm:text-base max-w-xs mx-4',
+          'left-1/2 transform -translate-x-1/2 sm:left-auto sm:right-4 sm:transform-none',
+          toastType === 'success' ? 'bg-green-500/90 text-green-50 animate-pulse-alert' : 'bg-red-500/90 text-red-50 animate-pulse-alert'
+        ]"
+      >
         {{ toastMessage }}
       </div>
     </transition>
 
-    <!-- Top Navigation - Stacked on mobile -->
-    <header :class="[themeClasses.bg.secondary, themeClasses.shadow, 'z-10']">
+    <!-- Header -->
+    <header :class="[themeClasses.bg.card, themeClasses.shadow, 'z-10 bg-gradient-to-br from-blue-500/10 to-purple-500/10 animate-gradient-shift']">
       <div class="flex items-center justify-between px-4 py-3">
-        <div class="flex items-center">
-          <!-- Mobile menu button -->
-         
-          
-          <!-- Page Title -->
-          <div class="flex items-center">
-            <h1 :class="[themeClasses.text.primary, 'text-lg sm:text-xl font-semibold']">Notifications</h1>
-            <span v-if="unreadCount > 0" class="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-500 text-white">
-              {{ unreadCount }} new
-            </span>
-          </div>
+        <div class="flex items-center space-x-3">
+          <h1 :class="[themeClasses.text.primary, 'text-lg sm:text-xl font-semibold']">Notifications</h1>
+          <span 
+            v-if="unreadCount > 0" 
+            :class="[themeClasses.alert.error, 'px-2 py-0.5 text-xs rounded-full animate-pulse-badge']"
+          >
+            {{ unreadCount }} new
+          </span>
         </div>
-        
-        <!-- Theme Toggle & Actions -->
         <div class="flex items-center space-x-2">
-          <!-- Theme Toggle Button -->
-          
-          
+          <button 
+            @click="toggleTheme" 
+            :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors animate-hover-scale']"
+            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          >
+            <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+          </button>
           <button 
             @click="markAllAsRead"
-            :class="[themeClasses.button.secondary, 'hidden sm:inline-flex items-center px-3 py-2 text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
+            :class="[themeClasses.button.secondary, 'hidden sm:inline-flex items-center px-3 py-2 text-sm font-medium rounded-md animate-hover-glow']"
           >
             Mark all as read
           </button>
           <button 
             @click="showNotificationSettings = true"
-            :class="[themeClasses.button.primary, 'inline-flex items-center px-3 py-2 text-sm leading-4 font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
+            :class="[themeClasses.button.primary, 'inline-flex items-center px-3 py-2 text-sm font-medium rounded-md animate-hover-glow']"
           >
             <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -52,57 +60,63 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+      <!-- Animated Background -->
+      <div class="absolute inset-0 overflow-hidden opacity-10">
+        <div class="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-br from-blue-400 to-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob-color"></div>
+        <div class="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-cyan-400 to-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob-color animation-delay-2000"></div>
+      </div>
+
       <!-- Loading State -->
       <div v-if="isLoading" class="flex items-center justify-center p-8">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="p-8 text-center text-red-500">
-        {{ error }}
-        <button @click="fetchNotifications" class="mt-2 text-blue-600 hover:text-blue-800">
+      <div v-else-if="error" :class="[themeClasses.bg.card, themeClasses.shadow, 'p-6 text-center rounded-lg animate-pulse-card']">
+        <div :class="[themeClasses.text.error, 'text-sm']">{{ error }}</div>
+        <button 
+          @click="fetchNotifications" 
+          :class="[themeClasses.text.accent, 'mt-2 text-sm hover:underline animate-hover-scale']"
+        >
           Retry
         </button>
       </div>
 
       <!-- Content -->
-      <div v-else>
-        <!-- Notification Filters with scrollable area -->
-        <div :class="[themeClasses.bg.secondary, themeClasses.shadow, themeClasses.border, 'border-b']">
-          <div class="px-4 sm:px-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 py-3">
+      <div v-else class="max-w-4xl mx-auto">
+        <!-- Filters -->
+        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg mb-6 animate-pulse-card']">
+          <div class="px-4 py-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div class="relative">
-                <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                <div class="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
                   <button 
                     v-for="filter in filters"
                     :key="filter.value"
                     @click="activeFilter = filter.value"
-                    class="px-3 py-1 text-sm rounded-md whitespace-nowrap flex-shrink-0"
-                    :class="{
-                      'bg-blue-100 text-blue-800': activeFilter === filter.value,
-                      'bg-gray-100 text-gray-800 hover:bg-gray-200': activeFilter !== filter.value
-                    }"
+                    :class="[
+                      activeFilter === filter.value ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200',
+                      'px-3 py-1 text-sm rounded-md whitespace-nowrap flex-shrink-0 transition-colors animate-hover-scale'
+                    ]"
                   >
                     {{ filter.label }}
-                    <span v-if="filter.count" class="ml-1 px-1.5 py-0.5 text-xs rounded-full" 
-                      :class="{
-                        'bg-blue-200 text-blue-800': activeFilter === filter.value,
-                        'bg-gray-200 text-gray-800': activeFilter !== filter.value
-                      }">
+                    <span v-if="filter.count" :class="[
+                      activeFilter === filter.value ? 'bg-blue-200 text-blue-800' : 'bg-gray-200 text-gray-800',
+                      'ml-1 px-1.5 py-0.5 text-xs rounded-full'
+                    ]">
                       {{ filter.count }}
                     </span>
                   </button>
                 </div>
                 <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-100 to-transparent pointer-events-none"></div>
               </div>
-              
-              <div class="flex items-center mt-2 md:mt-0">
-                <label for="sort" class="mr-2 text-sm text-gray-600 whitespace-nowrap">Sort by:</label>
+              <div class="flex items-center">
+                <label for="sort" :class="[themeClasses.text.secondary, 'mr-2 text-sm whitespace-nowrap']">Sort by:</label>
                 <select 
                   id="sort"
                   v-model="sortBy"
-                  class="block w-full pl-3 pr-10 py-1.5 text-sm border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                  :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full sm:w-auto px-3 py-1.5 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 animate-input-focus']"
                 >
                   <option value="newest">Newest first</option>
                   <option value="oldest">Oldest first</option>
@@ -114,61 +128,63 @@
         </div>
 
         <!-- Notifications List -->
-        <div class="divide-y divide-gray-200">
-          <div v-for="notification in filteredNotifications" :key="notification.id" 
-            class="px-4 py-4 sm:px-6 hover:bg-gray-50 transition-colors duration-150"
-            :class="{
-              'bg-blue-50': !notification.is_resolved,
-              'border-l-4 border-blue-500': !notification.is_resolved && notification.severity_level === 'CRITICAL',
-              'border-l-4 border-yellow-500': !notification.is_resolved && notification.severity_level === 'HIGH',
-              'border-l-4 border-gray-300': !notification.is_resolved && notification.severity_level === 'LOW'
-            }">
+        <div class="space-y-4">
+          <div 
+            v-for="notification in filteredNotifications" 
+            :key="notification.id" 
+            :class="[
+              themeClasses.bg.card, 
+              themeClasses.shadow, 
+              'rounded-lg p-4 hover:bg-gray-50 transition-colors duration-150 animate-pulse-card',
+              !notification.is_resolved ? 'border-l-4' : '',
+              !notification.is_resolved && notification.severity_level === 'CRITICAL' ? 'border-red-500' : '',
+              !notification.is_resolved && notification.severity_level === 'HIGH' ? 'border-yellow-500' : '',
+              !notification.is_resolved && notification.severity_level === 'LOW' ? 'border-gray-300' : ''
+            ]"
+          >
             <div class="flex items-start">
-              <!-- Notification Icon -->
               <div class="flex-shrink-0 pt-1">
-                <div class="h-8 w-8 rounded-full flex items-center justify-center"
-                  :class="{
-                    'bg-red-100 text-red-600': notification.alert_type === 'GAS_LEAK',
-                    'bg-blue-100 text-blue-600': notification.alert_type === 'SYSTEM',
-                    'bg-green-100 text-green-600': notification.alert_type === 'GAS_LEVEL_LOW',
-                    'bg-yellow-100 text-yellow-600': notification.alert_type === 'LOW_BATTERY'
-                  }">
+                <div :class="[
+                  'h-8 w-8 rounded-full flex items-center justify-center',
+                  notification.alert_type === 'GAS_LEAK' ? 'bg-red-100 text-red-600' : 
+                  notification.alert_type === 'SYSTEM' ? 'bg-blue-100 text-blue-600' : 
+                  notification.alert_type === 'GAS_LEVEL_LOW' ? 'bg-green-100 text-green-600' : 
+                  'bg-yellow-100 text-yellow-600'
+                ]">
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path v-if="notification.alert_type === 'GAS_LEAK'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     <path v-if="notification.alert_type === 'SYSTEM'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path v-if="notification.alert_type === 'GAS_LEVEL_LOW'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     <path v-if="notification.alert_type === 'LOW_BATTERY'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path v-if="notification.alert_type === 'PAYMENT_SUCCESS'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    <path v-if="notification.alert_type === 'PAYMENT_FAILED'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                   </svg>
                 </div>
               </div>
-              
-              <!-- Notification Content -->
               <div class="ml-3 flex-1 min-w-0">
                 <div class="flex justify-between">
-                  <p class="text-sm font-medium text-gray-900 truncate">
+                  <p :class="[themeClasses.text.primary, 'text-sm font-medium truncate']">
                     {{ notification.alert_message }}
-                    <span v-if="!notification.is_resolved" class="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500"></span>
+                    <span v-if="!notification.is_resolved" class="ml-1 inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse-badge"></span>
                   </p>
                   <div class="text-xs text-gray-500 whitespace-nowrap ml-2">
                     {{ formatTime(notification.triggered_at) }}
                   </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-1 truncate">
-                  {{ notification.sensor_name }} at {{ notification.house_address }}
+                <p :class="[themeClasses.text.secondary, 'text-sm mt-1 truncate']">
+                  {{ notification.sensor_name ? `${notification.sensor_name} at ${notification.house_address}` : notification.house_address }}
                 </p>
-                
-                <!-- Notification Actions -->
                 <div class="mt-2 flex space-x-3">
                   <button 
                     v-if="!notification.is_resolved"
                     @click="markAsRead(notification)"
-                    class="text-xs text-blue-600 hover:text-blue-800"
+                    :class="[themeClasses.text.accent, 'text-xs hover:underline animate-hover-scale']"
                   >
                     Mark as read
                   </button>
                   <button 
                     @click="dismissNotification(notification)"
-                    class="text-xs text-gray-500 hover:text-gray-700 ml-auto"
+                    :class="[themeClasses.text.secondary, 'text-xs hover:underline animate-hover-scale ml-auto']"
                   >
                     Dismiss
                   </button>
@@ -178,171 +194,152 @@
           </div>
           
           <!-- Empty State -->
-          <div v-if="filteredNotifications.length === 0" class="px-4 py-12 sm:px-6 text-center">
+          <div v-if="filteredNotifications.length === 0" :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg p-6 text-center animate-pulse-card']">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
             </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">No notifications</h3>
-            <p class="mt-1 text-sm text-gray-500">
+            <h3 :class="[themeClasses.text.primary, 'mt-2 text-sm font-medium']">
               {{ activeFilter === 'all' ? "You're all caught up!" : `No ${activeFilter} notifications` }}
-            </p>
-            <div class="mt-6">
-              <button 
-                @click="activeFilter = 'all'"
-                type="button"
-                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                View all notifications
-              </button>
-            </div>
+            </h3>
+            <button 
+              @click="activeFilter = 'all'"
+              :class="[themeClasses.button.primary, 'mt-4 px-4 py-2 text-sm font-medium rounded-md animate-hover-glow']"
+            >
+              View all notifications
+            </button>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- Notification Settings Modal - Responsive -->
-    <div v-if="showNotificationSettings" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">Notification Settings</h3>
+    <!-- Settings Modal -->
+    <div v-if="showNotificationSettings" class="fixed inset-0 bg-gray-600/50 flex items-center justify-center z-50 p-4">
+      <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto animate-pulse-card']">
+        <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b bg-gradient-to-br from-blue-500/10 to-purple-500/10 animate-gradient-shift']">
+          <h3 :class="[themeClasses.text.primary, 'text-lg font-medium']">Notification Settings</h3>
         </div>
-        <div class="p-6">
-          <div class="space-y-6">
-            <!-- Notification Preferences -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-900 mb-3">Notification Preferences</h4>
-              <div class="space-y-4">
-                <div class="flex items-start">
-                  <div class="flex items-center h-5">
-                    <input 
-                      id="email-notifications" 
-                      v-model="settings.emailEnabled" 
-                      type="checkbox" 
-                      class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                    >
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <label for="email-notifications" class="font-medium text-gray-700">Email Notifications</label>
-                    <p class="text-gray-500">Receive notifications via email</p>
-                  </div>
+        <div class="p-6 space-y-6">
+          <!-- Notification Preferences -->
+          <div>
+            <h4 :class="[themeClasses.text.primary, 'text-sm font-medium mb-3']">Notification Preferences</h4>
+            <div class="space-y-4">
+              <label class="flex items-start cursor-pointer">
+                <input 
+                  v-model="settings.emailEnabled" 
+                  type="checkbox" 
+                  :class="[themeClasses.text.accent, 'h-4 w-4 rounded focus:ring-blue-500 animate-input-focus']"
+                >
+                <div class="ml-3 text-sm">
+                  <span :class="[themeClasses.text.primary, 'font-medium']">Email Notifications</span>
+                  <p :class="[themeClasses.text.secondary, 'text-gray-500']">Receive notifications via email</p>
                 </div>
-                
-                <div class="flex items-start">
-                  <div class="flex items-center h-5">
-                    <input 
-                      id="push-notifications" 
-                      v-model="settings.pushEnabled" 
-                      type="checkbox" 
-                      class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                    >
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <label for="push-notifications" class="font-medium text-gray-700">Push Notifications</label>
-                    <p class="text-gray-500">Receive notifications on your devices</p>
-                  </div>
+              </label>
+              <label class="flex items-start cursor-pointer">
+                <input 
+                  v-model="settings.pushEnabled" 
+                  type="checkbox" 
+                  :class="[themeClasses.text.accent, 'h-4 w-4 rounded focus:ring-blue-500 animate-input-focus']"
+                >
+                <div class="ml-3 text-sm">
+                  <span :class="[themeClasses.text.primary, 'font-medium']">Push Notifications</span>
+                  <p :class="[themeClasses.text.secondary, 'text-gray-500']">Receive notifications on your devices</p>
                 </div>
-                
-                <div class="flex items-start">
-                  <div class="flex items-center h-5">
-                    <input 
-                      id="sms-notifications" 
-                      v-model="settings.smsEnabled" 
-                      type="checkbox" 
-                      class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                    >
-                  </div>
-                  <div class="ml-3 text-sm">
-                    <label for="sms-notifications" class="font-medium text-gray-700">SMS Notifications</label>
-                    <p class="text-gray-500">Receive critical alerts via text message</p>
-                  </div>
+              </label>
+              <label class="flex items-start cursor-pointer">
+                <input 
+                  v-model="settings.smsEnabled" 
+                  type="checkbox" 
+                  :class="[themeClasses.text.accent, 'h-4 w-4 rounded focus:ring-blue-500 animate-input-focus']"
+                >
+                <div class="ml-3 text-sm">
+                  <span :class="[themeClasses.text.primary, 'font-medium']">SMS Notifications</span>
+                  <p :class="[themeClasses.text.secondary, 'text-gray-500']">Receive critical alerts via text message</p>
                 </div>
+              </label>
+            </div>
+          </div>
+          <!-- Alert Thresholds -->
+          <div>
+            <h4 :class="[themeClasses.text.primary, 'text-sm font-medium mb-3']">Alert Thresholds</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label for="critical-alerts" :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Critical Alerts</label>
+                <select 
+                  id="critical-alerts" 
+                  v-model="settings.criticalAlerts" 
+                  :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 rounded-md focus:ring-blue-500 focus:border-blue-500 animate-input-focus']"
+                >
+                  <option value="all">All critical alerts</option>
+                  <option value="system">System alerts only</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div>
+                <label for="warning-alerts" :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Warning Alerts</label>
+                <select 
+                  id="warning-alerts" 
+                  v-model="settings.warningAlerts" 
+                  :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 rounded-md focus:ring-blue-500 focus:border-blue-500 animate-input-focus']"
+                >
+                  <option value="all">All warnings</option>
+                  <option value="important">Important only</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div>
+                <label for="info-alerts" :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Info Alerts</label>
+                <select 
+                  id="info-alerts" 
+                  v-model="settings.infoAlerts" 
+                  :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 rounded-md focus:ring-blue-500 focus:border-blue-500 animate-input-focus']"
+                >
+                  <option value="important">Important only</option>
+                  <option value="none">None</option>
+                </select>
               </div>
             </div>
-            
-            <!-- Alert Thresholds - Responsive grid -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-900 mb-3">Alert Thresholds</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label for="critical-alerts" class="block text-sm font-medium text-gray-700 mb-1">Critical Alerts</label>
-                  <select 
-                    id="critical-alerts" 
-                    v-model="settings.criticalAlerts" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All critical alerts</option>
-                    <option value="system">System alerts only</option>
-                    <option value="none">None</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="warning-alerts" class="block text-sm font-medium text-gray-700 mb-1">Warning Alerts</label>
-                  <select 
-                    id="warning-alerts" 
-                    v-model="settings.warningAlerts" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All warnings</option>
-                    <option value="important">Important only</option>
-                    <option value="none">None</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="info-alerts" class="block text-sm font-medium text-gray-700 mb-1">Info Alerts</label>
-                  <select 
-                    id="info-alerts" 
-                    v-model="settings.infoAlerts" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="important">Important only</option>
-                    <option value="none">None</option>
-                  </select>
-                </div>
+          </div>
+          <!-- Quiet Hours -->
+          <div>
+            <h4 :class="[themeClasses.text.primary, 'text-sm font-medium mb-3']">Quiet Hours</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="quiet-start" :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">Start Time</label>
+                <select 
+                  id="quiet-start" 
+                  v-model="settings.quietStart" 
+                  :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 rounded-md focus:ring-blue-500 focus:border-blue-500 animate-input-focus']"
+                >
+                  <option v-for="hour in hours" :key="'start-'+hour.value" :value="hour.value">
+                    {{ hour.label }}
+                  </option>
+                </select>
               </div>
-            </div>
-            
-            <!-- Quiet Hours - Responsive grid -->
-            <div>
-              <h4 class="text-sm font-medium text-gray-900 mb-3">Quiet Hours</h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label for="quiet-start" class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                  <select 
-                    id="quiet-start" 
-                    v-model="settings.quietStart" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option v-for="hour in hours" :key="'start-'+hour.value" :value="hour.value">
-                      {{ hour.label }}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label for="quiet-end" class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                  <select 
-                    id="quiet-end" 
-                    v-model="settings.quietEnd" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option v-for="hour in hours" :key="'end-'+hour.value" :value="hour.value">
-                      {{ hour.label }}
-                    </option>
-                  </select>
-                </div>
+              <div>
+                <label for="quiet-end" :class="[themeClasses.text.primary, 'block text-sm font-medium mb-1']">End Time</label>
+                <select 
+                  id="quiet-end" 
+                  v-model="settings.quietEnd" 
+                  :class="[themeClasses.bg.secondary, themeClasses.text.primary, themeClasses.border.primary, 'w-full px-3 py-2 rounded-md focus:ring-blue-500 focus:border-blue-500 animate-input-focus']"
+                >
+                  <option v-for="hour in hours" :key="'end-'+hour.value" :value="hour.value">
+                    {{ hour.label }}
+                  </option>
+                </select>
               </div>
             </div>
           </div>
         </div>
-        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+        <div :class="[themeClasses.bg.secondary, 'px-6 py-4 border-t flex justify-end space-x-3']">
           <button 
             @click="showNotificationSettings = false"
-            class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            :class="[themeClasses.button.secondary, 'px-4 py-2 text-sm font-medium rounded-md animate-hover-glow']"
           >
             Cancel
           </button>
           <button 
             @click="saveNotificationSettings"
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            :class="[themeClasses.button.primary, 'px-4 py-2 text-sm font-medium rounded-md animate-hover-glow']"
           >
             Save Settings
           </button>
@@ -355,11 +352,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useTheme } from '../../composables/useTheme'
+import api from '../../config/api'
 
 // Theme composable
 const { isDark, toggleTheme, themeClasses } = useTheme()
-
-import api from "../../config/api"
 
 // State
 const activeFilter = ref('unread')
@@ -389,7 +385,8 @@ const filters = ref([
   { value: 'unread', label: 'Unread', count: null },
   { value: 'alerts', label: 'Alerts', count: null },
   { value: 'system', label: 'System', count: null },
-  { value: 'tanks', label: 'Tanks', count: null }
+  { value: 'tanks', label: 'Tanks', count: null },
+  { value: 'payments', label: 'Payments', count: null }
 ])
 
 const settings = ref({
@@ -407,13 +404,12 @@ const settings = ref({
 const filteredNotifications = computed(() => {
   let filtered = [...notifications.value]
   
-  // Apply filter
   switch (activeFilter.value) {
     case 'unread':
       filtered = filtered.filter(n => !n.is_resolved)
       break
     case 'alerts':
-      filtered = filtered.filter(n => n.alert_type !== 'SYSTEM')
+      filtered = filtered.filter(n => n.alert_type !== 'SYSTEM' && n.alert_type !== 'PAYMENT_SUCCESS' && n.alert_type !== 'PAYMENT_FAILED')
       break
     case 'system':
       filtered = filtered.filter(n => n.alert_type === 'SYSTEM')
@@ -421,10 +417,11 @@ const filteredNotifications = computed(() => {
     case 'tanks':
       filtered = filtered.filter(n => n.sensor_name)
       break
-    // 'all' shows everything
+    case 'payments':
+      filtered = filtered.filter(n => n.alert_type === 'PAYMENT_SUCCESS' || n.alert_type === 'PAYMENT_FAILED')
+      break
   }
   
-  // Apply sorting
   switch (sortBy.value) {
     case 'newest':
       filtered.sort((a, b) => new Date(b.triggered_at) - new Date(a.triggered_at))
@@ -506,7 +503,7 @@ const markAsRead = async (notification) => {
 
 const markAllAsRead = async () => {
   try {
-    await api.post('notifications/mark-all-read/')
+    await api.post('/notifications/mark-all-read/')
     notifications.value.forEach(n => n.is_resolved = true)
     updateFilterCounts()
     showToastMessage('All notifications marked as read')
@@ -536,13 +533,16 @@ const updateFilterCounts = () => {
         count = notifications.value.filter(n => !n.is_resolved).length
         break
       case 'alerts':
-        count = notifications.value.filter(n => n.alert_type !== 'SYSTEM').length
+        count = notifications.value.filter(n => n.alert_type !== 'SYSTEM' && n.alert_type !== 'PAYMENT_SUCCESS' && n.alert_type !== 'PAYMENT_FAILED').length
         break
       case 'system':
         count = notifications.value.filter(n => n.alert_type === 'SYSTEM').length
         break
       case 'tanks':
         count = notifications.value.filter(n => n.sensor_name).length
+        break
+      case 'payments':
+        count = notifications.value.filter(n => n.alert_type === 'PAYMENT_SUCCESS' || n.alert_type === 'PAYMENT_FAILED').length
         break
       default:
         count = null
@@ -557,6 +557,7 @@ const fetchSettings = async () => {
     settings.value = response.data
   } catch (err) {
     console.error('Error fetching notification settings:', err)
+    showToastMessage('Failed to fetch settings', 'error')
   }
 }
 
@@ -579,7 +580,88 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Custom scrollbar for main content */
+/* Animations */
+@keyframes blob-color {
+  0% { background: radial-gradient(circle, rgba(96, 165, 250, 0.7), rgba(147, 51, 234, 0.7)); transform: translate(0, 0) scale(1); }
+  50% { background: radial-gradient(circle, rgba(34, 211, 238, 0.7), rgba(219, 39, 119, 0.7)); transform: translate(10%, 10%) scale(1.1); }
+  100% { background: radial-gradient(circle, rgba(96, 165, 250, 0.7), rgba(147, 51, 234, 0.7)); transform: translate(0, 0) scale(1); }
+}
+
+@keyframes pulse-card {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.01); }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes pulse-alert {
+  0%, 100% { background-color: rgba(255, 255, 255, 0.1); }
+  50% { background-color: rgba(255, 255, 255, 0.2); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes hover-glow {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+}
+
+@keyframes hover-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes input-focus {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  100% { box-shadow: 0 0 8px 2px rgba(59, 130, 246, 0.3); }
+}
+
+.animate-blob-color {
+  animation: blob-color 12s ease-in-out infinite;
+}
+
+.animate-pulse-card {
+  animation: pulse-card 4s ease-in-out infinite;
+}
+
+.animate-pulse-badge {
+  animation: pulse-badge 2s infinite;
+}
+
+.animate-pulse-alert {
+  animation: pulse-alert 2s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 10s ease infinite;
+}
+
+.animate-hover-glow:hover {
+  animation: hover-glow 1.5s ease-in-out infinite;
+}
+
+.animate-hover-scale:hover {
+  animation: hover-scale 0.3s ease-in-out;
+}
+
+.animate-input-focus:focus {
+  animation: input-focus 0.3s ease-in-out forwards;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2000ms;
+}
+
+/* Scrollbar styling */
 main::-webkit-scrollbar {
   width: 6px;
 }
@@ -594,7 +676,6 @@ main::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Hide scrollbar for filter buttons but allow scrolling */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -603,41 +684,20 @@ main::-webkit-scrollbar-thumb:hover {
   scrollbar-width: none;
 }
 
-/* Modal transitions */
-.modal-enter-active, .modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-.modal-enter, .modal-leave-to {
-  opacity: 0;
-}
-
-/* Notification priority indicators */
-.border-l-4 {
-  transition: border-color 0.2s ease;
-}
-
-/* Button transitions */
-button {
-  transition: all 0.2s ease;
-}
-
-/* Toast notification */
+/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
-
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .text-truncate {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+/* Ensure text stays within frame */
+.break-words {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 </style>

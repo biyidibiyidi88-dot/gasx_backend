@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class AIPredictionService:
     API_URL = "https://openrouter.ai/api/v1/chat/completions"
-    API_KEY = "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"
+    API_KEY = "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"
     BOTTLE_CAPACITY = 20
 
     # Available models with fallback order

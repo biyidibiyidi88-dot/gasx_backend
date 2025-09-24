@@ -7,7 +7,7 @@ Simulates:
 2. Refill to 100%
 3. Partial depletion in 4 days (100% → 40%)
 
-Usage: echo "y" | python3 generate_test_data_with_refills.py --sensor-id 13 --start-date 2025-08-05
+Usage: echo "y" | python3 generate_test_data_with_refills.py --sensor-id 13 --start-date 2025-09-13
    
 """
 

@@ -74,7 +74,7 @@
     >
       <div 
         v-show="isMobileMenuOpen"
-        class="lg:hidden absolute top-16 sm:top-20 inset-x-0 bg-gray-900 border-t border-gray-800 shadow-lg"
+        class="lg:hidden absolute top-16 sm:top-20 inset-x-0 backdrop-blur-sm shadow-lg"
       >
         <div class="px-4 pt-4 pb-4 space-y-2">
           <router-link
