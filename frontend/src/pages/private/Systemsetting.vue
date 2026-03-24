@@ -1,657 +1,309 @@
 <template>
-  <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden min-h-screen transition-colors duration-200']">
-    <!-- Top Navigation -->
-    <header :class="[themeClasses.bg.secondary, themeClasses.shadow, 'z-10']">
-      <div class="flex items-center justify-between px-4 py-3 sm:px-6">
-        <!-- Page Title -->
-        <h1 :class="[themeClasses.text.primary, 'text-xl font-semibold']">System Settings</h1>
-        
-        <!-- Theme Toggle & Save Status -->
+  <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden relative font-[\'Inter\',-apple-system,BlinkMacSystemFont,sans-serif]']">
+    
+    <!-- Sophisticated Background Accents -->
+    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-500/5 blur-[150px] -z-10 animate-pulse"></div>
+    <div class="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-teal-600/5 blur-[180px] -z-10 animate-pulse" style="animation-delay: 2s"></div>
+
+    <!-- Header / Nav -->
+    <header class="z-10 bg-white/[0.01] backdrop-blur-xl border-b border-white/5">
+      <div class="flex items-center justify-between px-8 py-5">
         <div class="flex items-center space-x-4">
-          <button 
-            @click="toggleTheme" 
-            :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors']"
-            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          >
-            <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
-            <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-            </svg>
-          </button>
-          
-          <!-- Save Status -->
-          <div :class="[themeClasses.text.secondary, 'text-sm']">
-            <span v-if="saved" :class="[themeClasses.text.success, 'flex items-center']">
-              <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-              Changes saved
+          <div class="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
+          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Command / <span class="text-white/80">System Configuration</span></h1>
+        </div>
+        
+        <div class="flex items-center gap-6">
+          <div class="text-[9px] font-black uppercase tracking-widest italic transition-all duration-500" :class="saved ? 'text-teal-400' : 'text-white/20'">
+            <span v-if="saved" class="flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></div>
+              LOG_COMMITTED
             </span>
-            <span v-else :class="themeClasses.text.secondary">Unsaved changes</span>
+            <span v-else>MODIFICATION_DETECTED</span>
           </div>
+
+          <button 
+            @click="saveSettings"
+            class="group flex items-center px-6 py-2.5 bg-teal-400 hover:bg-teal-300 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 transition-all hover:shadow-[0_0_20px_rgba(45,212,191,0.4)]"
+          >
+            Execute Sync
+          </button>
         </div>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div class="max-w-4xl mx-auto">
-        <!-- Alert Notification Settings -->
-        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden mb-6 transition-colors duration-200']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-            <h2 :class="[themeClasses.text.primary, 'text-lg font-medium flex items-center']">
-              <svg :class="[themeClasses.text.warning, 'h-5 w-5 mr-2']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-              </svg>
-              Alert Notifications
-            </h2>
+    <main class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar max-w-5xl mx-auto w-full">
+      
+      <!-- Alert Protocol Settings -->
+      <section class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[3rem] p-10 hover:border-white/10 transition-all duration-500">
+        <div class="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+          <div class="w-10 h-10 rounded-2xl bg-yellow-400/10 flex items-center justify-center text-yellow-400 border border-yellow-400/20 shadow-lg shadow-yellow-400/5">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
           </div>
-          <div class="p-6">
-            <div class="space-y-6">
-              <!-- Email Notifications -->
-              <div class="flex items-start">
-                <div class="flex items-center h-5">
-                  <input 
-                    id="email-notifications" 
-                    v-model="settings.emailNotifications" 
-                    type="checkbox" 
-                    :class="['focus:ring-blue-500 h-4 w-4 rounded transition-colors duration-200', 
-                            themeClasses.border.input, themeClasses.bg.input]"
-                  >
-                </div>
-                <div class="ml-3 text-sm">
-                  <label for="email-notifications" :class="['font-medium', themeClasses.text.primary]">Email Notifications</label>
-                  <p :class="[themeClasses.text.muted]">Receive alerts via email</p>
-                </div>
+          <div>
+            <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Alert Logic</h2>
+            <h3 class="text-xl font-black text-white italic tracking-tighter uppercase">Notification Protocols</h3>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <!-- Transmissions -->
+          <div class="space-y-6">
+            <div @click="settings.emailNotifications = !settings.emailNotifications" class="flex items-center justify-between group cursor-pointer p-4 rounded-2xl hover:bg-white/5 transition-all">
+              <div class="space-y-1">
+                <div class="text-[10px] font-black text-white/80 uppercase tracking-widest italic transition-colors" :class="settings.emailNotifications ? 'text-teal-400' : ''">Uplink Email</div>
+                <div class="text-[9px] font-bold text-white/20 uppercase tracking-widest italic">Receive telemetry via SMTP link</div>
               </div>
-              
-              <!-- SMS Notifications -->
-              <div class="flex items-start">
-                <div class="flex items-center h-5">
-                  <input 
-                    id="sms-notifications" 
-                    v-model="settings.smsNotifications" 
-                    type="checkbox" 
-                    :class="['focus:ring-blue-500 h-4 w-4 rounded transition-colors duration-200', 
-                            themeClasses.border.input, themeClasses.bg.input]"
-                  >
-                </div>
-                <div class="ml-3 text-sm">
-                  <label for="sms-notifications" :class="['font-medium', themeClasses.text.primary]">SMS Notifications</label>
-                  <p :class="[themeClasses.text.muted]">Receive critical alerts via text message</p>
-                </div>
+              <div class="w-12 h-6 rounded-full relative transition-colors duration-500" :class="settings.emailNotifications ? 'bg-teal-400' : 'bg-white/10'">
+                <div class="absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all duration-500" :class="settings.emailNotifications ? 'translate-x-6' : 'translate-x-0'"></div>
               </div>
-              
-              <!-- Notification Thresholds -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label for="low-level" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Low Level Alert (%)</label>
-                  <input 
-                    type="number" 
-                    id="low-level" 
-                    v-model="settings.lowLevelThreshold" 
-                    min="5" 
-                    max="30" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-                <div>
-                  <label for="critical-level" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Critical Level Alert (%)</label>
-                  <input 
-                    type="number" 
-                    id="critical-level" 
-                    v-model="settings.criticalLevelThreshold" 
-                    min="1" 
-                    max="15" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-                <div>
-                  <label for="alert-delay" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Alert Delay (minutes)</label>
-                  <input 
-                    type="number" 
-                    id="alert-delay" 
-                    v-model="settings.alertDelay" 
-                    min="0" 
-                    max="60" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
+            </div>
+
+            <div @click="settings.smsNotifications = !settings.smsNotifications" class="flex items-center justify-between group cursor-pointer p-4 rounded-2xl hover:bg-white/5 transition-all">
+              <div class="space-y-1">
+                <div class="text-[10px] font-black text-white/80 uppercase tracking-widest italic transition-colors" :class="settings.smsNotifications ? 'text-teal-400' : ''">Uplink SMS</div>
+                <div class="text-[9px] font-bold text-white/20 uppercase tracking-widest italic">Critical logic alerts via binary text</div>
               </div>
-              
-              <!-- Notification Schedule -->
-              <div>
-                <label :class="['block text-sm font-medium mb-2', themeClasses.text.primary]">Notification Hours</label>
-                <div class="flex flex-wrap gap-2">
-                  <button 
-                    v-for="hour in hours" 
-                    :key="hour.value" 
-                    @click="toggleNotificationHour(hour.value)"
-                    class="px-3 py-1 text-sm rounded-md transition-colors duration-200"
-                    :class="{
-                      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100': settings.notificationHours.includes(hour.value),
-                      'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200': !settings.notificationHours.includes(hour.value)
-                    }"
-                  >
-                    {{ hour.label }}
-                  </button>
-                </div>
+              <div class="w-12 h-6 rounded-full relative transition-colors duration-500" :class="settings.smsNotifications ? 'bg-teal-400' : 'bg-white/10'">
+                <div class="absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all duration-500" :class="settings.smsNotifications ? 'translate-x-6' : 'translate-x-0'"></div>
               </div>
+            </div>
+          </div>
+
+          <!-- Thresholds -->
+          <div class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2 group/input">
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Low Reserve (%)</label>
+                <input v-model="settings.lowLevelThreshold" type="number" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
+              </div>
+              <div class="space-y-2 group/input">
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-red-400 transition-colors">Critical Drain (%)</label>
+                <input v-model="settings.criticalLevelThreshold" type="number" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-red-500/50 focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
+              </div>
+            </div>
+            <div class="space-y-2 group/input">
+              <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-blue-400 transition-colors">Transmission Delay (Minutes)</label>
+              <input v-model="settings.alertDelay" type="number" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
             </div>
           </div>
         </div>
 
-        <!-- Tank Configuration -->
-        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden mb-6 transition-colors duration-200']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-            <h2 :class="[themeClasses.text.primary, 'text-lg font-medium flex items-center']">
-              <svg :class="[themeClasses.text.info, 'h-5 w-5 mr-2']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-              </svg>
-              Tank Configuration
-            </h2>
+        <!-- Schedule Grid -->
+        <div class="mt-12 space-y-4 pt-8 border-t border-white/5">
+          <h3 class="text-[9px] font-black uppercase tracking-[0.4em] text-white/20 italic ml-4">Authorized Transmission Cycles</h3>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              v-for="hour in hours" 
+              :key="hour.value" 
+              @click="toggleNotificationHour(hour.value)"
+              :class="[
+                settings.notificationHours.includes(hour.value) ? 'bg-teal-400 text-gray-950 border-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.3)]' : 'bg-white/5 text-white/30 border-white/5 hover:text-white',
+                'px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300'
+              ]"
+            >
+              {{ hour.label }}
+            </button>
           </div>
-          <div class="p-6">
-            <div class="space-y-6">
-              <!-- Tank Details -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="tank-type" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Tank Type</label>
-                  <select 
-                    id="tank-type" 
-                    v-model="settings.tankType" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                    <option>Propane</option>
-                    <option>Butane</option>
-                    <option>Natural Gas</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="tank-capacity" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Tank Capacity (liters)</label>
-                  <input 
-                    type="number" 
-                    id="tank-capacity" 
-                    v-model="settings.tankCapacity" 
-                    min="10" 
-                    max="1000" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-              </div>
-              
-              <!-- Safety Thresholds -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label for="min-pressure" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Minimum Pressure (psi)</label>
-                  <input 
-                    type="number" 
-                    id="min-pressure" 
-                    v-model="settings.minPressure" 
-                    min="50" 
-                    max="120" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-                <div>
-                  <label for="max-pressure" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Maximum Pressure (psi)</label>
-                  <input 
-                    type="number" 
-                    id="max-pressure" 
-                    v-model="settings.maxPressure" 
-                    min="130" 
-                    max="200" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-                <div>
-                  <label for="min-temp" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Minimum Temperature (°C)</label>
-                  <input 
-                    type="number" 
-                    id="min-temp" 
-                    v-model="settings.minTemperature" 
-                    min="-20" 
-                    max="10" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-                <div>
-                  <label for="max-temp" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Maximum Temperature (°C)</label>
-                  <input 
-                    type="number" 
-                    id="max-temp" 
-                    v-model="settings.maxTemperature" 
-                    min="30" 
-                    max="60" 
-                    :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                            themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                  >
-                </div>
-              </div>
-              
-              <!-- Tank Location -->
-              <div>
-                <label for="tank-location" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Tank Location</label>
-                <textarea 
-                  id="tank-location" 
-                  v-model="settings.tankLocation" 
-                  rows="2" 
-                  :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                          themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                ></textarea>
-              </div>
-            </div>
+        </div>
+      </section>
+
+      <!-- Hardware Constraints Section -->
+      <section class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[3rem] p-10 hover:border-white/10 transition-all duration-500">
+        <div class="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+          <div class="w-10 h-10 rounded-2xl bg-blue-400/10 flex items-center justify-center text-blue-400 border border-blue-400/20 shadow-lg shadow-blue-400/5">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          </div>
+          <div>
+            <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Module Constraints</h2>
+            <h3 class="text-xl font-black text-white italic tracking-tighter uppercase">Hardware Configuration</h3>
           </div>
         </div>
 
-        <!-- User Preferences -->
-        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden mb-6 transition-colors duration-200']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-            <h2 :class="[themeClasses.text.primary, 'text-lg font-medium flex items-center']">
-              <svg :class="[themeClasses.text.accent, 'h-5 w-5 mr-2']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              User Preferences
-            </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+           <div class="space-y-2 group/input">
+            <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Fuel Matrix Type</label>
+            <select v-model="settings.tankType" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white text-sm font-black italic tracking-tight appearance-none cursor-pointer uppercase">
+              <option>Propane</option>
+              <option>Butane</option>
+              <option>Natural Gas</option>
+              <option>Other</option>
+            </select>
           </div>
-          <div class="p-6">
-            <div class="space-y-6">
-              <!-- Theme Preference -->
-              <div>
-                <label :class="['block text-sm font-medium mb-2', themeClasses.text.primary]">Theme Preference</label>
-                <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-                  <button 
-                    @click="settings.theme = 'light'"
-                    class="px-4 py-2 border rounded-md flex items-center justify-center transition-colors duration-200"
-                    :class="{
-                      'border-blue-500 bg-blue-100 dark:bg-blue-900': settings.theme === 'light',
-                      'border-gray-300 dark:border-gray-600': settings.theme !== 'light'
-                    }"
-                  >
-                    <svg class="h-5 w-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                    </svg>
-                    Light
-                  </button>
-                  <button 
-                    @click="settings.theme = 'dark'"
-                    class="px-4 py-2 border rounded-md flex items-center justify-center transition-colors duration-200"
-                    :class="{
-                      'border-blue-500 bg-blue-100 dark:bg-blue-900': settings.theme === 'dark',
-                      'border-gray-300 dark:border-gray-600': settings.theme !== 'dark'
-                    }"
-                  >
-                    <svg class="h-5 w-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                    </svg>
-                    Dark
-                  </button>
-                  <button 
-                    @click="settings.theme = 'system'"
-                    class="px-4 py-2 border rounded-md flex items-center justify-center transition-colors duration-200"
-                    :class="{
-                      'border-blue-500 bg-blue-100 dark:bg-blue-900': settings.theme === 'system',
-                      'border-gray-300 dark:border-gray-600': settings.theme !== 'system'
-                    }"
-                  >
-                    <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    </svg>
-                    System
-                  </button>
-                </div>
-              </div>
-              
-              <!-- Data Refresh Rate -->
-              <div>
-                <label for="refresh-rate" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Data Refresh Rate</label>
-                <select 
-                  id="refresh-rate" 
-                  v-model="settings.refreshRate" 
-                  :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                          themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                >
-                  <option value="30">30 seconds</option>
-                  <option value="60">1 minute</option>
-                  <option value="300">5 minutes</option>
-                  <option value="600">10 minutes</option>
-                </select>
-              </div>
-              
-              <!-- Default Dashboard View -->
-              <div>
-                <label for="default-view" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Default Dashboard View</label>
-                <select 
-                  id="default-view" 
-                  v-model="settings.defaultView" 
-                  :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
-                          themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-                >
-                  <option value="overview">Overview</option>
-                  <option value="detailed">Detailed</option>
-                  <option value="analytics">Analytics</option>
-                </select>
-              </div>
-            </div>
+          <div class="space-y-2 group/input">
+            <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Volumetric Capacity (L)</label>
+            <input v-model="settings.tankCapacity" type="number" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
+          </div>
+          <div class="space-y-2 group/input">
+            <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Deployment Zone</label>
+            <input v-model="settings.tankLocation" type="text" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
           </div>
         </div>
 
-        <!-- Danger Zone -->
-        <div :class="[themeClasses.bg.card, themeClasses.shadow, 'rounded-lg overflow-hidden border border-red-200 dark:border-red-800 mb-6 transition-colors duration-200']">
-          <div :class="['px-6 py-4 border-b border-red-200 dark:border-red-800', themeClasses.bg.danger]">
-            <h2 :class="['text-lg font-medium flex items-center', themeClasses.text.danger]">
-              <svg class="h-5 w-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-              Danger Zone
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="space-y-4">
-              <!-- Reset Settings -->
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 :class="['text-sm font-medium', themeClasses.text.primary]">Reset to Default Settings</h3>
-                  <p :class="['text-sm', themeClasses.text.muted]">Reset all settings to their original default values</p>
-                </div>
-                <button 
-                  @click="confirmReset = true"
-                  :class="['px-4 py-2 border rounded-md text-sm font-medium transition-colors duration-200',
-                          themeClasses.border.input, themeClasses.text.primary, 'hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500']"
-                >
-                  Reset
-                </button>
-              </div>
-              
-              <!-- Delete Account -->
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 :class="['text-sm font-medium', themeClasses.text.primary]">Delete Account</h3>
-                  <p :class="['text-sm', themeClasses.text.muted]">Permanently delete your account and all associated data</p>
-                </div>
-                <button 
-                  @click="confirmDelete = true"
-                  class="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12 pt-8 border-t border-white/5">
+          <div v-for="(val, key) in { minPressure: 'Min PSI', maxPressure: 'Max PSI', minTemperature: 'Min °C', maxTemperature: 'Max °C' }" :key="key" class="space-y-2 group/input">
+            <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-blue-400 transition-colors">{{ val }} Threshold</label>
+            <input v-model="settings[key]" type="number" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
           </div>
         </div>
+      </section>
 
-        <!-- Save Button -->
-        <div class="mt-6 flex justify-end">
-          <button 
-            @click="saveSettings"
-            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
+      <!-- Terminal Destruction Layer -->
+      <section class="bg-red-500/[0.02] border border-red-500/10 rounded-[3rem] p-10 hover:bg-red-500/[0.03] transition-all duration-700 group/danger">
+        <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-red-400/40 italic mb-8">Danger Protocol Grid</h3>
+        
+        <div class="grid grid-cols-2 gap-8">
+           <div class="p-8 bg-white/5 rounded-[2rem] border border-white/5 space-y-4 hover:border-red-500/30 transition-all">
+             <div class="text-[10px] font-black text-white/60 uppercase tracking-widest italic">Logic Factory Reset</div>
+             <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-loose italic">Wipe all custom threshold logic and return the system to its initial baseline state.</p>
+             <button @click="confirmReset = true" class="px-6 py-3 border border-red-500/20 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">Reset Matrix</button>
+           </div>
 
-      <!-- Reset Confirmation Modal -->
-      <div v-if="confirmReset" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-        <div :class="[themeClasses.bg.card, 'rounded-lg shadow-xl max-w-md w-full transition-colors duration-200']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-            <h3 :class="['text-lg font-medium', themeClasses.text.primary]">Reset Settings</h3>
-          </div>
-          <div class="p-6">
-            <p :class="[themeClasses.text.primary, 'mb-4']">Are you sure you want to reset all settings to their default values? This action cannot be undone.</p>
-            <div class="flex justify-end space-x-3">
-              <button 
-                @click="confirmReset = false"
-                :class="['px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200',
-                        themeClasses.border.input, themeClasses.text.primary, 'hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
-              >
-                Cancel
-              </button>
-              <button 
-                @click="resetSettings"
-                class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-              >
-                Reset Settings
-              </button>
-            </div>
-          </div>
+           <div class="p-8 bg-white/5 rounded-[2rem] border border-white/5 space-y-4 hover:border-red-500/30 transition-all">
+             <div class="text-[10px] font-black text-white/60 uppercase tracking-widest italic">Permanent Node Purge</div>
+             <p class="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-loose italic">Erase all associated account data, telemetry logs, and authorized credentials permanently.</p>
+             <button @click="confirmDelete = true" class="px-6 py-3 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 shadow-xl transition-all">Purge Account</button>
+           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Delete Confirmation Modal -->
-      <div v-if="confirmDelete" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-        <div :class="[themeClasses.bg.card, 'rounded-lg shadow-xl max-w-md w-full transition-colors duration-200']">
-          <div :class="[themeClasses.border.primary, 'px-6 py-4 border-b']">
-            <h3 :class="['text-lg font-medium', themeClasses.text.primary]">Delete Account</h3>
-          </div>
-          <div class="p-6">
-            <p :class="[themeClasses.text.primary, 'mb-4']">This will permanently delete your account and all associated data. This action cannot be undone.</p>
-            <div class="mb-4">
-              <label for="confirm-delete" :class="['block text-sm font-medium mb-1', themeClasses.text.primary]">Type "DELETE" to confirm</label>
-              <input 
-                type="text" 
-                id="confirm-delete" 
-                v-model="deleteConfirmation" 
-                :class="['w-full px-3 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200',
-                        themeClasses.bg.input, themeClasses.text.primary, themeClasses.border.input]"
-              >
-            </div>
-            <div class="flex justify-end space-x-3">
-              <button 
-                @click="confirmDelete = false"
-                :class="['px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200',
-                        themeClasses.border.input, themeClasses.text.primary, 'hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500']"
-              >
-                Cancel
-              </button>
-              <button 
-                @click="deleteAccount"
-                :disabled="deleteConfirmation !== 'DELETE'"
-                :class="{
-                  'bg-red-600 hover:bg-red-700': deleteConfirmation === 'DELETE',
-                  'bg-red-400 cursor-not-allowed': deleteConfirmation !== 'DELETE'
-                }"
-                class="px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
-              >
-                Delete Account
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </main>
+
+    <!-- Modal Layers -->
+    <transition name="modal">
+      <div v-if="confirmReset || confirmDelete" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-gray-950/80 backdrop-blur-xl" @click="confirmReset = false; confirmDelete = false">
+        
+        <!-- Reset Modal -->
+        <div v-if="confirmReset" @click.stop class="bg-gray-900 border border-white/10 rounded-[3rem] p-10 max-w-sm w-full text-center space-y-8 overflow-hidden group/modal relative">
+          <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-red-500/5 to-transparent pointer-events-none"></div>
+          <div class="w-16 h-16 mx-auto rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center animate-pulse">
+            <svg class="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-black uppercase tracking-[0.4em] text-red-500/60 mb-2 italic">LOGIC_FAULT_DETECTED</h3>
+            <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Reset All Logic?</h2>
+            <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest italic mt-4 leading-relaxed">This will override all custom thresholds and return node to baseline parameters.</p>
+          </div>
+          <div class="flex gap-4">
+            <button @click="confirmReset = false" class="flex-1 py-4 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-xl transition-all">Abort</button>
+            <button @click="resetSettings" class="flex-1 py-4 bg-red-500 text-[10px] font-black uppercase tracking-widest text-white rounded-xl hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-all">Execute Wipe</button>
+          </div>
+        </div>
+
+        <!-- Delete Modal -->
+         <div v-if="confirmDelete" @click.stop class="bg-gray-900 border border-white/10 rounded-[3rem] p-10 max-w-sm w-full text-center space-y-8 relative overflow-hidden group/modal">
+          <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-red-500/5 to-transparent pointer-events-none"></div>
+          <div class="w-16 h-16 mx-auto rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center animate-pulse">
+            <svg class="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-[11px] font-black uppercase tracking-[0.4em] text-red-500/60 mb-2 italic">DANGER_PROTOCOL</h3>
+            <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Purge Account?</h2>
+            <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest italic mt-4 leading-relaxed text-center">Type "DELETE" to confirm terminal node erasure.</p>
+          </div>
+          <div class="space-y-4">
+            <input v-model="deleteConfirmation" type="text" class="w-full px-6 py-4 bg-white/5 border border-red-500/10 rounded-xl focus:border-red-500 focus:outline-none text-white text-center font-black italic uppercase">
+          </div>
+          <div class="flex gap-4">
+            <button @click="confirmDelete = false; deleteConfirmation = ''" class="flex-1 py-4 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-xl transition-all">Abort</button>
+            <button @click="deleteAccount" :disabled="deleteConfirmation !== 'DELETE'" class="flex-1 py-4 bg-red-500 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-20 rounded-xl hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-all">Confirm Purge</button>
+          </div>
+        </div>
+
+      </div>
+    </transition>
+
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue';
 import { useTheme } from '../../composables/useTheme';
 
-export default {
-  setup() {
-    // Theme composable
-    const { isDark, toggleTheme, themeClasses } = useTheme();
-    
-    return {
-      isDark,
-      toggleTheme,
-      themeClasses
-    };
-  },
-  name: 'SettingsView',
-  emits: ['toggle-sidebar'],
-  data() {
-    return {
-      saved: false,
-      confirmReset: false,
-      confirmDelete: false,
-      deleteConfirmation: '',
-      hours: [
-        { value: 0, label: '12 AM' },
-        { value: 1, label: '1 AM' },
-        { value: 2, label: '2 AM' },
-        { value: 3, label: '3 AM' },
-        { value: 4, label: '4 AM' },
-        { value: 5, label: '5 AM' },
-        { value: 6, label: '6 AM' },
-        { value: 7, label: '7 AM' },
-        { value: 8, label: '8 AM' },
-        { value: 9, label: '9 AM' },
-        { value: 10, label: '10 AM' },
-        { value: 11, label: '11 AM' },
-        { value: 12, label: '12 PM' },
-        { value: 13, label: '1 PM' },
-        { value: 14, label: '2 PM' },
-        { value: 15, label: '3 PM' },
-        { value: 16, label: '4 PM' },
-        { value: 17, label: '5 PM' },
-        { value: 18, label: '6 PM' },
-        { value: 19, label: '7 PM' },
-        { value: 20, label: '8 PM' },
-        { value: 21, label: '9 PM' },
-        { value: 22, label: '10 PM' },
-        { value: 23, label: '11 PM' }
-      ],
-      settings: {
-        emailNotifications: true,
-        smsNotifications: false,
-        lowLevelThreshold: 20,
-        criticalLevelThreshold: 10,
-        alertDelay: 5,
-        notificationHours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-        tankType: 'Propane',
-        tankCapacity: 100,
-        minPressure: 100,
-        maxPressure: 150,
-        minTemperature: 15,
-        maxTemperature: 30,
-        tankLocation: 'Backyard, near the patio',
-        theme: 'system',
-        refreshRate: '60',
-        defaultView: 'overview'
-      }
-    }
-  },
-  methods: {
-    toggleNotificationHour(hour) {
-      const index = this.settings.notificationHours.indexOf(hour);
-      if (index === -1) {
-        this.settings.notificationHours.push(hour);
-      } else {
-        this.settings.notificationHours.splice(index, 1);
-      }
-      // Sort the hours for display
-      this.settings.notificationHours.sort((a, b) => a - b);
-    },
-    saveSettings() {
-      // In a real app, this would save to your backend
-      console.log('Settings saved:', this.settings);
-      this.saved = true;
-      setTimeout(() => {
-        this.saved = false;
-      }, 3000);
-    },
-    resetSettings() {
-      // Reset to default values
-      this.settings = {
-        emailNotifications: true,
-        smsNotifications: false,
-        lowLevelThreshold: 20,
-        criticalLevelThreshold: 10,
-        alertDelay: 5,
-        notificationHours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-        tankType: 'Propane',
-        tankCapacity: 100,
-        minPressure: 100,
-        maxPressure: 150,
-        minTemperature: 15,
-        maxTemperature: 30,
-        tankLocation: 'Backyard, near the patio',
-        theme: 'system',
-        refreshRate: '60',
-        defaultView: 'overview'
-      };
-      this.confirmReset = false;
-      this.saved = true;
-      setTimeout(() => {
-        this.saved = false;
-      }, 3000);
-    },
-    deleteAccount() {
-      if (this.deleteConfirmation === 'DELETE') {
-        // In a real app, this would delete the account
-        console.log('Account deleted');
-        this.confirmDelete = false;
-        this.$router.push('/login');
-      }
-    }
+const { isDark, toggleTheme, themeClasses } = useTheme();
+
+// Logic State
+const saved = ref(false);
+const confirmReset = ref(false);
+const confirmDelete = ref(false);
+const deleteConfirmation = ref('');
+
+const hours = [
+  { value: 0, label: '12 AM' }, { value: 1, label: '01 AM' }, { value: 2, label: '02 AM' }, { value: 3, label: '03 AM' },
+  { value: 4, label: '04 AM' }, { value: 5, label: '05 AM' }, { value: 6, label: '06 AM' }, { value: 7, label: '07 AM' },
+  { value: 8, label: '08 AM' }, { value: 9, label: '09 AM' }, { value: 10, label: '10 AM' }, { value: 11, label: '11 AM' },
+  { value: 12, label: '12 PM' }, { value: 13, label: '01 PM' }, { value: 14, label: '02 PM' }, { value: 15, label: '03 PM' },
+  { value: 16, label: '04 PM' }, { value: 17, label: '05 PM' }, { value: 18, label: '06 PM' }, { value: 19, label: '07 PM' },
+  { value: 20, label: '08 PM' }, { value: 21, label: '09 PM' }, { value: 22, label: '10 PM' }, { value: 23, label: '11 PM' }
+];
+
+const settings = ref({
+  emailNotifications: true,
+  smsNotifications: false,
+  lowLevelThreshold: 20,
+  criticalLevelThreshold: 10,
+  alertDelay: 5,
+  notificationHours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+  tankType: 'Propane',
+  tankCapacity: 100,
+  minPressure: 100,
+  maxPressure: 150,
+  minTemperature: 15,
+  maxTemperature: 30,
+  tankLocation: 'BACKYARD_ALPHA_STORAGE',
+  theme: 'system',
+  refreshRate: '60',
+  defaultView: 'overview'
+});
+
+const toggleNotificationHour = (hour) => {
+  const idx = settings.value.notificationHours.indexOf(hour);
+  if (idx === -1) settings.value.notificationHours.push(hour);
+  else settings.value.notificationHours.splice(idx, 1);
+  settings.value.notificationHours.sort((a, b) => a - b);
+};
+
+const saveSettings = () => {
+  console.log('SYNC_COMMITTED:', settings.value);
+  saved.value = true;
+  setTimeout(() => saved.value = false, 3000);
+};
+
+const resetSettings = () => {
+  settings.value = {
+    emailNotifications: true, smsNotifications: false, lowLevelThreshold: 20,
+    criticalLevelThreshold: 10, alertDelay: 5,
+    notificationHours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    tankType: 'Propane', tankCapacity: 100, minPressure: 100, maxPressure: 150,
+    minTemperature: 15, maxTemperature: 30, tankLocation: 'BACKYARD_ALPHA_STORAGE',
+    theme: 'system', refreshRate: '60', defaultView: 'overview'
+  };
+  confirmReset.value = false;
+  saveSettings();
+};
+
+const deleteAccount = () => {
+  if (deleteConfirmation.value === 'DELETE') {
+    console.log('ACCOUNT_PURGED');
+    confirmDelete.value = false;
+    // router.push('/login') would go here
   }
-}
+};
 </script>
 
 <style scoped>
-/* Custom scrollbar for main content */
-main::-webkit-scrollbar {
-  width: 8px;
-}
-main::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-}
-main::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-main::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
-}
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
 
 /* Modal transitions */
-.modal-enter-active, .modal-leave-active {
-  transition: opacity 0.3s ease;
-}
-.modal-enter, .modal-leave-to {
-  opacity: 0;
-}
+.modal-enter-active, .modal-leave-active { transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.98); }
 
-/* Smooth transitions for buttons and inputs */
-button, input, select, textarea {
-  transition: all 0.2s ease;
-}
-
-/* Checkbox styling */
-input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  border-width: 1px;
-  border-style: solid;
-}
-
-input[type="checkbox"]:checked {
-  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.707 7.293a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l4-4a1 1 0 0 0-1.414-1.414L7 8.586 5.707 7.293z'/%3e%3c/svg%3e");
-  background-size: 100% 100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-color: transparent;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .flex-col-sm {
-    flex-direction: column;
-  }
-  
-  .space-y-sm-4 > * + * {
-    margin-top: 1rem;
-  }
+input[type="number"]::-webkit-inner-spin-button, 
+input[type="number"]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
 }
 </style>

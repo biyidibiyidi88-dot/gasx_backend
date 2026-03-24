@@ -1,702 +1,289 @@
 <template>
-    <div :class="[themeClasses.bg.primary, 'p-6 flex flex-col items-center min-h-screen']">
-      <div class="flex items-center justify-center space-x-4 mb-6">
-        <h2 :class="[themeClasses.text.primary, 'text-3xl font-bold']">Professional Gas Cylinder</h2>
-        <!-- Theme Toggle Button -->
-        <button 
-          @click="toggleTheme" 
-          :class="[themeClasses.text.secondary, themeClasses.text.primary.replace('text-', 'hover:text-'), 'p-2 rounded-lg transition-colors']"
-          :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-        >
-          <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-          </svg>
-          <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-          </svg>
-        </button>
-      </div>
-      
-      <div class="flex flex-col lg:flex-row w-full max-w-6xl gap-8">
-        <!-- Gas Bottle Visualization (Left Column) -->
-        <div class="relative w-full lg:w-1/2 h-[70vh]">
-          <!-- Gas Bottle Container -->
-          <div class="absolute inset-0 w-full h-full">
-            <!-- Collar with improved 3D effect -->
-            <div class="absolute top-0 w-full h-20 bg-gradient-to-r from-blue-900 to-blue-800 rounded-t-lg shadow-xl z-10 overflow-hidden">
-              <!-- Safety Cap with metallic shine -->
-              <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-6 bg-gradient-to-b from-gray-800 to-gray-700 rounded-t-lg shadow-inner">
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-              </div>
-              <!-- Collar ridges -->
-              <div class="absolute bottom-0 left-0 right-0 h-4 bg-blue-950/30"></div>
-            </div>
-            
-            <!-- Nozzle with more realistic details -->
-            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-10 h-10 bg-gradient-to-b from-gray-700 to-gray-600 rounded-full flex items-center justify-center shadow-lg z-20">
-              <div class="w-4 h-4 bg-gray-900 rounded-full shadow-inner">
-                <div class="absolute inset-0 rounded-full bg-gradient-to-br from-gray-600 to-gray-900 opacity-70"></div>
-              </div>
-              <div class="absolute top-1 left-1 w-2 h-2 rounded-full bg-white/30"></div>
-            </div>
-            
-            <!-- Gas Bottle Body with enhanced 3D effect -->
-            <div class="absolute top-20 bottom-10 w-full bg-gradient-to-r from-blue-800 to-blue-900 rounded-lg overflow-hidden shadow-2xl z-0">
-              <!-- Metallic highlights with animation -->
-              <div class="absolute top-0 left-0 w-full h-full opacity-30 bg-gradient-to-br from-white to-transparent animate-shine"></div>
-              
-              <!-- Horizontal bands for 3D effect -->
-              <div class="absolute top-8 left-6 right-6 h-1 bg-blue-700/70 rounded-full"></div>
-              <div class="absolute top-1/3 left-6 right-6 h-1 bg-blue-700/70 rounded-full"></div>
-              <div class="absolute bottom-1/3 left-6 right-6 h-1 bg-blue-700/70 rounded-full"></div>
-              <div class="absolute bottom-8 left-6 right-6 h-1 bg-blue-700/70 rounded-full"></div>
-              
-              <!-- Gas Level Container with improved liquid effects -->
-              <div class="absolute inset-x-0 bottom-0 w-full overflow-hidden transition-all duration-1000 ease-out" 
-                   :style="{ height: `${tank.level}%` }">
-                <div :class="`w-full h-full ${getStatusColor()} relative overflow-hidden`">
-                  <!-- Bubbles Animation with different sizes and speeds -->
-                  <div
-                    v-for="bubble in bubbles"
-                    :key="bubble.id"
-                    class="absolute rounded-full bg-white/70"
-                    :style="{
-                      left: bubble.left,
-                      width: bubble.size,
-                      height: bubble.size,
-                      filter: 'blur(1px)',
-                      animation: `rise ${bubble.animationDuration} ${bubble.delay} ease-in infinite`
-                    }"
-                  ></div>
-                  
-                  <!-- Liquid surface with more dynamic wobble -->
-                  <div class="absolute top-0 inset-x-0 h-8 bg-white/40 wobble-animation">
-                    <div class="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-b from-white/60 to-transparent"></div>
-                  </div>
-                  
-                  <!-- Liquid shimmer effect -->
-                  <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-                </div>
-              </div>
-              
-              <!-- Enhanced Labels with glow effect -->
-              <div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-20">
-                <div class="text-3xl font-bold text-white drop-shadow-lg glow">CALOR</div>
-                <div class="text-lg font-medium text-blue-200 mt-1 drop-shadow-md">6kg Propane</div>
-              </div>
-              
-              <!-- Improved Gas Level Indicator Window -->
-              <div class="absolute right-6 inset-y-1/4 w-8 h-60 bg-white/20 backdrop-blur-sm border-2 border-blue-300/50 rounded-lg overflow-hidden shadow-inner">
-                <!-- Graduation marks inside the window -->
-                <div class="absolute left-0 right-0 h-px bg-blue-300/80" style="top: 0%"></div>
-                <div class="absolute left-0 right-0 h-px bg-blue-300/80" style="top: 25%"></div>
-                <div class="absolute left-0 right-0 h-px bg-blue-300/80" style="top: 50%"></div>
-                <div class="absolute left-0 right-0 h-px bg-blue-300/80" style="top: 75%"></div>
-                <div class="absolute left-0 right-0 h-px bg-blue-300/80" style="top: 100%"></div>
-                
-                <div 
-                  :class="`absolute bottom-0 w-full transition-all duration-1000 ease-out ${getStatusColor()}`"
-                  :style="{ height: `${tank.level}%` }"
-                >
-                  <div class="absolute top-0 inset-x-0 h-4 bg-gradient-to-b from-white/50 to-transparent"></div>
-                </div>
-              </div>
-              
-              <!-- Enhanced Measurement markings with numbers -->
-              <div class="absolute right-20 inset-y-1/4 flex flex-col justify-between py-4 h-60">
-                <div class="flex items-center h-0">
-                  <div class="w-4 h-0.5 bg-blue-300/90"></div>
-                  <span class="text-xs font-bold text-blue-100 ml-1">100%</span>
-                </div>
-                <div class="flex items-center h-0">
-                  <div class="w-4 h-0.5 bg-blue-300/90"></div>
-                  <span class="text-xs font-bold text-blue-100 ml-1">75%</span>
-                </div>
-                <div class="flex items-center h-0">
-                  <div class="w-4 h-0.5 bg-blue-300/90"></div>
-                  <span class="text-xs font-bold text-blue-100 ml-1">50%</span>
-                </div>
-                <div class="flex items-center h-0">
-                  <div class="w-4 h-0.5 bg-blue-300/90"></div>
-                  <span class="text-xs font-bold text-blue-100 ml-1">25%</span>
-                </div>
-                <div class="flex items-center h-0">
-                  <div class="w-4 h-0.5 bg-blue-300/90"></div>
-                  <span class="text-xs font-bold text-blue-100 ml-1">0%</span>
-                </div>
-              </div>
-              
-              <!-- Reflection overlay with animation -->
-              <div class="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent animate-shine-slow"></div>
-            </div>
-            
-            <!-- Base with improved 3D effect -->
-            <div class="absolute bottom-0 w-full h-10 bg-gradient-to-r from-blue-900 to-blue-800 rounded-b-lg shadow-xl z-10 overflow-hidden">
-              <div class="absolute inset-0 bg-gradient-to-b from-blue-950/40 to-transparent"></div>
-              <div class="absolute top-0 left-0 right-0 h-2 bg-blue-950/40"></div>
-            </div>
-          </div>
+  <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden relative font-[\'Inter\',-apple-system,BlinkMacSystemFont,sans-serif]']">
+    
+    <!-- Sophisticated Background Accents -->
+    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-500/5 blur-[150px] -z-10 animate-pulse"></div>
+    <div class="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-teal-600/5 blur-[180px] -z-10 animate-pulse" style="animation-delay: 2s"></div>
+
+    <!-- Header / Nav -->
+    <header class="z-10 bg-white/[0.01] backdrop-blur-xl border-b border-white/5">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-8 py-4 sm:py-5 gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-1.5 h-1.5 sm:w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
+          <h1 class="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Infrastructure / <span class="text-white/80">Hardware Node Alpha</span></h1>
         </div>
         
-        <!-- Bottle Information Panel (Right Column) -->
-        <div class="w-full lg:w-1/2">
-          <div :class="[themeClasses.bg.card, themeClasses.shadow, 'p-6 rounded-xl h-full flex flex-col']">
-            <!-- Bottle Information Header -->
-            <div :class="[themeClasses.border.primary, 'flex justify-between items-center mb-6 pb-4 border-b']">
-              <h3 :class="[themeClasses.text.primary, 'text-2xl font-bold']">Cylinder Details</h3>
-              <span class="px-3 py-1 text-xs font-bold rounded-full" 
-                    :class="statusBadgeClass">
-                {{ tank.status }}
-                <span class="ml-1" v-if="tank.status === 'Critical'">⚠️</span>
+        <button 
+          @click="toggleTheme" 
+          class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white hover:border-teal-400/30 transition-all group"
+        >
+          <svg v-if="isDark" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-8 custom-scrollbar">
+      
+      <div class="flex flex-col lg:flex-row gap-8 items-start">
+        
+        <!-- Interactive 3D Volumetric Visualization -->
+        <div class="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] sm:rounded-[3.5rem] p-6 sm:p-12 min-h-[400px] sm:min-h-[700px] relative overflow-hidden group/viz">
+          <div class="absolute inset-0 bg-gradient-to-b from-teal-400/[0.02] to-transparent opacity-0 group-hover/viz:opacity-100 transition-opacity duration-1000"></div>
+          
+          <div class="relative w-full max-w-[320px] aspect-[1/2] flex justify-center">
+            
+            <!-- Metallic Hardware Structure -->
+            <div class="absolute inset-0 bg-gradient-to-r from-gray-800 to-gray-900 rounded-[5rem] border-[12px] border-white/5 shadow-2xl z-0 overflow-hidden">
+               <!-- Liquid Container -->
+               <div class="absolute inset-x-2 bottom-2 top-2 rounded-[4rem] bg-gray-950 overflow-hidden">
+                  <!-- Volumetric Liquid -->
+                  <div 
+                    class="absolute bottom-0 inset-x-0 transition-all duration-1000 ease-in-out"
+                    :class="[tank.level < 20 ? 'bg-red-500/80 shadow-[0_-20px_40px_rgba(239,68,68,0.3)]' : tank.level < 40 ? 'bg-yellow-500/80 shadow-[0_-20px_40px_rgba(234,179,8,0.3)]' : 'bg-teal-400/80 shadow-[0_-20px_40px_rgba(45,212,191,0.3)]']"
+                    :style="`height: ${tank.level}%`"
+                  >
+                    <!-- Wave Effect -->
+                    <div class="absolute top-0 inset-x-0 h-10 bg-white/20 blur-xl animate-pulse"></div>
+                    <div class="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-white/10 to-transparent"></div>
+                    
+                    <!-- Bubbles -->
+                    <div v-for="bubble in bubbles" :key="bubble.id" 
+                      class="absolute rounded-full bg-white/40 blur-[1px] animate-rise"
+                      :style="`left: ${bubble.left}; width: ${bubble.size}; height: ${bubble.size}; animation-duration: ${bubble.animationDuration}; animation-delay: ${bubble.delay};`"
+                    ></div>
+                  </div>
+               </div>
+
+               <!-- Reflections -->
+               <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
+               <div class="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+            </div>
+
+            <!-- Labels & Indicators -->
+            <div class="absolute inset-x-0 top-1/4 translate-y-2 pointer-events-none z-10 text-center">
+              <div class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.5em] text-white/20 mb-1 italic">Propane Node</div>
+              <div class="text-2xl sm:text-4xl font-black text-white italic tracking-tighter uppercase drop-shadow-2xl">V2.Alpha</div>
+            </div>
+
+            <div class="absolute right-[-60px] top-1/2 -translate-y-1/2 flex flex-col justify-between h-[300px] text-[9px] font-black uppercase tracking-widest text-white/20 italic pb-2">
+              <div class="flex items-center gap-2"><div class="w-4 h-0.5 bg-white/10"></div>100%</div>
+              <div class="flex items-center gap-2"><div class="w-4 h-0.5 bg-white/10"></div>75%</div>
+              <div class="flex items-center gap-2"><div class="w-4 h-0.5 bg-white/10"></div>50%</div>
+              <div class="flex items-center gap-2" :class="tank.level < 40 ? 'text-yellow-400/40' : ''"><div class="w-4 h-0.5 bg-current opacity-20"></div>25%</div>
+              <div class="flex items-center gap-2" :class="tank.level < 20 ? 'text-red-400/40' : ''"><div class="w-4 h-0.5 bg-current opacity-20"></div>MIN_CAP</div>
+            </div>
+          </div>
+
+          <div class="mt-8 sm:mt-12 text-center group-hover/viz:scale-105 transition-transform duration-700">
+             <div class="text-4xl sm:text-6xl font-black text-white italic tracking-tighter tabular-nums mb-1">{{ Math.round(tank.level) }}%</div>
+             <div class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Volumetric Saturation</div>
+          </div>
+        </div>
+
+        <!-- Metadata & Protocol Controls -->
+        <div class="w-full lg:w-1/2 space-y-8">
+          
+          <!-- Primary Metadata Card -->
+          <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 hover:border-white/10 transition-all duration-500">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 pb-6 border-b border-white/5 gap-4">
+               <div>
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Node Identification</h3>
+                <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Hardware Telemetry</h2>
+              </div>
+              <span :class="[statusBadgeClass, 'px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-current opacity-80 italic']">
+                {{ tank.status }} Protocol
               </span>
             </div>
-            
-            <!-- Bottle Specifications -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-              <div class="bg-gray-50 p-3 rounded-lg">
-                <p class="text-xs text-gray-500 uppercase font-medium">Gas Type</p>
-                <p class="text-lg font-bold">Propane</p>
-              </div>
-              <div class="bg-gray-50 p-3 rounded-lg">
-                <p class="text-xs text-gray-500 uppercase font-medium">Capacity</p>
-                <p class="text-lg font-bold">6 kg</p>
-              </div>
-              <div class="bg-gray-50 p-3 rounded-lg">
-                <p class="text-xs text-gray-500 uppercase font-medium">Serial No.</p>
-                <p class="text-lg font-bold">CAL-{{ Math.floor(Math.random() * 9000) + 1000 }}</p>
-              </div>
-              <div class="bg-gray-50 p-3 rounded-lg">
-                <p class="text-xs text-gray-500 uppercase font-medium">Manufacturer</p>
-                <p class="text-lg font-bold">Calor Gas Ltd</p>
+
+            <div class="grid grid-cols-2 gap-8 mb-10">
+              <div v-for="spec in tankSpecs" :key="spec.label" class="space-y-1">
+                <div class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">{{ spec.label }}</div>
+                <div class="text-lg font-black text-white italic tracking-tight uppercase">{{ spec.value }}</div>
               </div>
             </div>
-            
-            <!-- Current Status Card -->
-            <div class="mb-6 p-4 rounded-lg" :class="statusCardClass">
-              <div class="flex items-center gap-3">
-                <div class="p-2 rounded-full bg-white/20">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          :d="statusIconPath" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 class="font-bold" :class="statusTextClass">{{ statusMessage }}</h4>
-                  <p class="text-sm mt-1" :class="statusSubtextClass">
-                    {{ statusSubmessage }}
-                  </p>
+
+            <!-- Intelligence Notification -->
+            <div :class="[statusCardClass, 'p-6 rounded-2xl flex items-center gap-6 border backdrop-blur-md relative overflow-hidden group/alert']">
+              <div class="absolute inset-0 bg-white/5 opacity-0 group-hover/alert:opacity-100 transition-opacity"></div>
+              <div class="w-12 h-12 rounded-2xl bg-current opacity-10 flex items-center justify-center flex-shrink-0"></div>
+              <div class="relative z-10">
+                <h4 class="text-[10px] font-black uppercase tracking-[0.2em] italic mb-1" :class="statusTextClass">{{ statusMessage }}</h4>
+                <p class="text-[11px] font-bold text-white/40 uppercase tracking-widest leading-relaxed italic">{{ statusSubmessage }}</p>
+              </div>
+              <svg class="h-6 w-6 absolute right-6 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" :d="statusIconPath"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Secondary Interaction Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Consumption Analysis -->
+            <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 space-y-6">
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Cycle Analytics</h3>
+              <div class="space-y-4">
+                <div v-for="stat in usageStats" :key="stat.label" class="flex justify-between items-baseline border-b border-white/5 pb-2">
+                  <span class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">{{ stat.label }}</span>
+                  <span class="text-sm font-black text-white/80 italic tracking-tight uppercase">{{ stat.value }}</span>
                 </div>
               </div>
             </div>
-            
-            <!-- Usage Statistics -->
-            <div class="mb-6">
-              <h4 class="text-sm font-medium text-gray-500 mb-3">Usage Statistics</h4>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Current Level</span>
-                  <div class="flex items-center gap-2">
-                    <span class="font-bold" :class="levelTextClass">{{ tank.level }}%</span>
-                    <div class="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div class="h-full rounded-full transition-all duration-500" 
-                           :class="levelColorClass" 
-                           :style="{ width: `${tank.level}%` }"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Estimated Remaining</span>
-                  <span class="font-medium">{{ estimatedRemaining }} hours</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Daily Consumption</span>
-                  <span class="font-medium">1.2 kg/day</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Last Refill</span>
-                  <span class="font-medium">3 days ago</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Safety Information -->
-            <div class="mt-auto pt-4 border-t border-gray-200">
-              <h4 class="text-sm font-medium text-gray-500 mb-2">Safety Information</h4>
-              <ul class="text-sm text-gray-600 space-y-1.5">
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Store upright in a well-ventilated area</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Keep away from heat sources and flames</span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                  </svg>
-                  <span>Check for leaks regularly with soapy water</span>
+
+            <!-- Protocol Constraints -->
+            <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 space-y-6">
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Security Guidelines</h3>
+              <ul class="space-y-3">
+                <li v-for="rule in safetyRules" :key="rule" class="flex items-start gap-3">
+                  <div class="w-1 h-1 rounded-full bg-teal-400 mt-1.5 flex-shrink-0 shadow-[0_0_5px_rgba(45,212,191,0.5)]"></div>
+                  <span class="text-[9px] font-bold text-white/30 uppercase tracking-widest leading-relaxed italic">{{ rule }}</span>
                 </li>
               </ul>
             </div>
-            
-            <!-- Action Buttons -->
-            <div class="mt-6 flex gap-3">
-              <button 
-                @click="refillTank"
-                class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
-                </svg>
-                Order Refill
-              </button>
-              <button 
-                class="px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Details
-              </button>
-            </div>
           </div>
+
+          <!-- Executable Operations -->
+          <div class="flex flex-col sm:flex-row gap-4">
+            <button @click="refillTank" class="flex-1 py-4 sm:py-5 bg-teal-400 hover:bg-teal-300 rounded-2xl sm:rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 transition-all hover:shadow-[0_0_40px_rgba(45,212,191,0.4)] flex items-center justify-center gap-3 active:scale-95">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+              Initialize Refill Protocol
+            </button>
+            <button class="py-4 sm:px-8 sm:py-5 bg-white/5 border border-white/10 rounded-2xl sm:rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-all group flex items-center justify-center">
+              <svg class="h-5 w-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+          </div>
+
         </div>
+
       </div>
-    </div>
-  </template>
-  
-  <script setup>
+
+    </main>
+  </div>
+</template>
+
+<script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTheme } from '../../composables/useTheme';
 
 const router = useRouter();
-
-// Theme composable
 const { isDark, toggleTheme, themeClasses } = useTheme();
 
-// Tank state
+// Hardware State
 const tank = ref({ 
   level: 75, 
-  status: 'Normal' 
+  status: 'Nominal' 
 });
 
-// Bubbles animation
+const tankSpecs = [
+  { label: 'Propane Unit Type', value: 'V2 Cylinder' },
+  { label: 'Node Capacity', value: '6 KG / PRO' },
+  { label: 'Registry Serial', value: 'CAL-0842-AX' },
+  { label: 'Manufacturer ID', value: 'Calor LDT' }
+];
+
+const usageStats = computed(() => [
+  { label: 'Projected Uptime', value: `${estimatedRemaining.value} Cycles` },
+  { label: 'Depletion Rate', value: '1.2 KG / CYCLE' },
+  { label: 'Last Log Entry', value: '3 DAYS PRIOR' }
+]);
+
+const safetyRules = [
+  'STORE UPRIGHT IN VENTILATED ZONE',
+  'MAINTAIN THERMAL BIAS CLEARANCE',
+  'REGULAR LEAK DETECTION PROTOCOL',
+  'SECURE VALVE DURING DORMANT PHASES'
+];
+
+// Bubbles logic
 const bubbles = ref([]);
-let bubbleInterval = null;
-let animationFrameId = null;
+let bubbleTick = null;
 
-// Generate bubbles with safety checks
 const generateBubbles = () => {
-  if (!tank.value || tank.value.level <= 0) return;
-  
-  const newBubbles = [];
-  const bubbleCount = Math.floor(tank.value.level / 5) + 5;
-  
-  for (let i = 0; i < bubbleCount; i++) {
-    newBubbles.push({
-      id: `bubble-${Date.now()}-${i}`,
-      left: `${Math.random() * 80 + 10}%`,
-      size: `${Math.random() * 12 + 4}px`,
-      animationDuration: `${Math.random() * 5 + 3}s`,
-      delay: `${Math.random() * 4}s`,
-      opacity: Math.random() * 0.6 + 0.3
-    });
-  }
-  
-  bubbles.value = newBubbles;
+  const count = Math.floor(tank.value.level / 10) + 3;
+  bubbles.value = Array.from({ length: count }, (_, i) => ({
+    id: `b-${Date.now()}-${i}`,
+    left: `${10 + Math.random() * 80}%`,
+    size: `${2 + Math.random() * 8}px`,
+    animationDuration: `${2 + Math.random() * 4}s`,
+    delay: `${Math.random() * 3}s`
+  }));
 };
 
-// Cleanup all animations
-const cleanupAnimations = () => {
-  if (bubbleInterval) {
-    clearInterval(bubbleInterval);
-    bubbleInterval = null;
-  }
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
-};
-
-// Update tank status
 const updateTankStatus = () => {
-  if (!tank.value) return;
-  
-  let newStatus = 'Normal';
-  if (tank.value.level <= 15) {
-    newStatus = 'Critical';
-  } else if (tank.value.level <= 40) {
-    newStatus = 'Low';
-  }
-  
-  if (tank.value.status !== newStatus) {
-    tank.value.status = newStatus;
-    if (newStatus === 'Critical') {
-      generateBubbleBurst();
-    }
-  }
+  if (tank.value.level < 20) tank.value.status = 'Critical';
+  else if (tank.value.level < 40) tank.value.status = 'Low';
+  else tank.value.status = 'Nominal';
 };
 
-// Bubble burst effect
-const generateBubbleBurst = () => {
-  const burstBubbles = [];
-  for (let i = 0; i < 15; i++) {
-    burstBubbles.push({
-      id: `burst-${Date.now()}-${i}`,
-      left: `${Math.random() * 60 + 20}%`,
-      size: `${Math.random() * 6 + 2}px`,
-      animationDuration: `${Math.random() * 1 + 0.5}s`,
-      delay: '0s',
-      opacity: Math.random() * 0.8 + 0.2
-    });
-  }
-  bubbles.value = [...bubbles.value, ...burstBubbles];
-};
-
-// Refill tank animation
 const refillTank = () => {
-  const startLevel = tank.value.level;
-  const duration = 1500;
-  const startTime = performance.now();
-  
-  const animateRefill = (timestamp) => {
-    const progress = Math.min(1, (timestamp - startTime) / duration);
-    tank.value.level = startLevel + (100 - startLevel) * progress;
-    
-    if (progress < 0.5) {
-      generateBubbles();
-    }
-    
-    if (progress < 1) {
-      animationFrameId = requestAnimationFrame(animateRefill);
-    } else {
-      tank.value.status = 'Normal';
-    }
-  };
-  
-  animationFrameId = requestAnimationFrame(animateRefill);
+  let start = tank.value.level;
+  const target = 100;
+  const step = 0.5;
+  const int = setInterval(() => {
+    if (tank.value.level >= target) clearInterval(int);
+    else tank.value.level += step;
+  }, 10);
 };
 
-// Status color helpers
-const getStatusColor = () => {
-  switch (tank.value.status) {
-    case 'Normal': return 'bg-gradient-to-b from-green-400/90 to-green-600/90';
-    case 'Low': return 'bg-gradient-to-b from-yellow-400/90 to-yellow-600/90';
-    case 'Critical': return 'bg-gradient-to-b from-red-400/90 to-red-600/90';
-    default: return 'bg-gradient-to-b from-green-400/90 to-green-600/90';
-  }
-};
-
-// Computed properties
+// Computed UI Styles
 const statusBadgeClass = computed(() => ({
-  'Normal': 'bg-green-100 text-green-800',
-  'Low': 'bg-yellow-100 text-yellow-800',
-  'Critical': 'bg-red-100 text-red-800'
+  'Nominal': 'text-teal-400 border-teal-400/30 bg-teal-400/5',
+  'Low': 'text-yellow-400 border-yellow-400/30 bg-yellow-400/5',
+  'Critical': 'text-red-400 border-red-400/30 bg-red-400/5'
 }[tank.value.status]));
 
 const statusCardClass = computed(() => ({
-  'Normal': 'bg-green-50 border border-green-200',
-  'Low': 'bg-yellow-50 border border-yellow-200',
-  'Critical': 'bg-red-50 border border-red-200'
+  'Nominal': 'bg-teal-400/10 border-teal-400/20 text-teal-400',
+  'Low': 'bg-yellow-400/10 border-yellow-400/20 text-yellow-400',
+  'Critical': 'bg-red-400/10 border-red-400/20 text-red-500'
 }[tank.value.status]));
 
 const statusMessage = computed(() => ({
-  'Normal': 'Normal Operation',
-  'Low': 'Low Gas Level',
-  'Critical': 'Critical Level - Refill Needed!'
+  'Nominal': 'INTELLIGENCE_NOMINAL',
+  'Low': 'LOW_RESERVE_BIAS',
+  'Critical': 'CRITICAL_DEPLETION_ALARM'
 }[tank.value.status]));
 
+const statusSubmessage = computed(() => ({
+  'Nominal': 'System operating within specified volumetric parameters.',
+  'Low': 'Node reserves dropping below stable threshold. Recommend refill.',
+  'Critical': 'Node failure imminent. Order immediate infrastructure resupply.'
+}[tank.value.status]));
+
+const statusIconPath = computed(() => ({
+  'Nominal': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+  'Low': 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+  'Critical': 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+}[tank.value.status]));
+
+const statusTextClass = computed(() => tank.value.status === 'Critical' ? 'text-red-400' : tank.value.status === 'Low' ? 'text-yellow-400' : 'text-teal-400');
 const estimatedRemaining = computed(() => Math.round((tank.value.level / 100) * 48));
 
-// Watch for level changes
 watch(() => tank.value.level, updateTankStatus);
 
-// Component lifecycle
 onMounted(() => {
-  updateTankStatus();
   generateBubbles();
-  bubbleInterval = setInterval(generateBubbles, 2000);
+  bubbleTick = setInterval(generateBubbles, 3000);
 });
 
-onUnmounted(() => {
-  cleanupAnimations();
-});
+onUnmounted(() => clearInterval(bubbleTick));
 </script>
-  
-  <style scoped>
-  /* Base Styles */
-  .glow {
-    animation: glow-pulse 2s ease-in-out infinite alternate;
-  }
-  
-  .wobble-animation {
-    animation: wobble 4s ease-in-out infinite;
-  }
-  
-  .animate-shine {
-    animation: shine 8s linear infinite;
-  }
-  
-  .animate-shine-slow {
-    animation: shine-slow 6s ease-in-out infinite;
-  }
-  
-  .animate-shimmer {
-    animation: shimmer 3s linear infinite;
-  }
-  
-  /* Keyframe Animations */
-  @keyframes rise {
-    0% {
-      transform: translateY(0) scale(0.8);
-      opacity: 0;
-    }
-    10% {
-      opacity: v-bind('bubble.opacity');
-    }
-    90% {
-      opacity: v-bind('bubble.opacity');
-    }
-    100% {
-      transform: translateY(-100vh) scale(1.2);
-      opacity: 0;
-    }
-  }
-  
-  @keyframes wobble {
-    0%, 100% {
-      border-radius: 60% 40% 40% 60% / 60% 40% 60% 40%;
-      transform: translateX(0px);
-    }
-    25% {
-      border-radius: 50% 50% 40% 60% / 40% 50% 50% 60%;
-      transform: translateX(-3px);
-    }
-    50% {
-      border-radius: 40% 60% 50% 50% / 50% 40% 60% 50%;
-      transform: translateX(3px);
-    }
-    75% {
-      border-radius: 50% 50% 60% 40% / 60% 50% 50% 40%;
-      transform: translateX(-2px);
-    }
-  }
-  
-  @keyframes shine {
-    0% {
-      transform: translateX(-100%) skewX(-15deg);
-    }
-    100% {
-      transform: translateX(100%) skewX(-15deg);
-    }
-  }
-  
-  @keyframes shine-slow {
-    0%, 100% {
-      opacity: 0.1;
-    }
-    50% {
-      opacity: 0.3;
-    }
-  }
-  
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-  
-  @keyframes glow-pulse {
-    0%, 100% {
-      text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-    }
-    50% {
-      text-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
-    }
-  }
-  
-  @keyframes bubble-burst {
-    0% {
-      transform: scale(0.5);
-      opacity: 0;
-    }
-    50% {
-      transform: scale(1.2);
-      opacity: 0.8;
-    }
-    100% {
-      transform: scale(1.5);
-      opacity: 0;
-    }
-  }
-  
-  /* Transition Effects */
-  .transition-all {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .duration-300 {
-    transition-duration: 300ms;
-  }
-  
-  .duration-700 {
-    transition-duration: 700ms;
-  }
-  
-  .duration-1000 {
-    transition-duration: 1000ms;
-  }
-  
-  .ease-out {
-    transition-timing-function: ease-out;
-  }
-  
-  /* Custom Scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 3px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
-  }
-  
-  /* Bubble Styles */
-  .bubble {
-    position: absolute;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.7);
-    filter: blur(1px);
-    will-change: transform;
-  }
-  
-  /* Liquid Surface Effect */
-  .liquid-surface {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 12px;
-    background: linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.4),
-      rgba(255, 255, 255, 0.2)
-    );
-    border-radius: 50% 50% 0 0 / 20% 20% 0 0;
-  }
-  
-  /* Status Indicator Pulses */
-  .status-pulse {
-    animation: status-pulse 2s infinite;
-  }
-  
-  @keyframes status-pulse {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); /* Green */
-    }
-    50% {
-      box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
-    }
-  }
-  
-  .status-pulse-warning {
-    animation: status-pulse-warning 2s infinite;
-  }
-  
-  @keyframes status-pulse-warning {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); /* Yellow */
-    }
-    50% {
-      box-shadow: 0 0 0 10px rgba(234, 179, 8, 0);
-    }
-  }
-  
-  .status-pulse-critical {
-    animation: status-pulse-critical 1s infinite;
-  }
-  
-  @keyframes status-pulse-critical {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); /* Red */
-    }
-    50% {
-      box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-    }
-  }
-  
-  /* Graduation Mark Enhancements */
-  .graduation-mark {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      rgba(147, 197, 253, 0.8),
-      transparent
-    );
-  }
-  
-  .graduation-label {
-    position: absolute;
-    right: 0;
-    transform: translateX(120%);
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: rgba(191, 219, 254, 0.9);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* Responsive Adjustments */
-  @media (max-width: 1024px) {
-    .flex-col-lg {
-      flex-direction: column;
-    }
-    
-    .w-full-lg {
-      width: 100%;
-    }
-    
-    .h-auto-lg {
-      height: auto;
-    }
-    
-    .relative {
-      height: 60vh;
-    }
-  }
-  
-  @media (max-width: 640px) {
-    .liquid-surface {
-      height: 8px;
-    }
-    
-    .graduation-label {
-      font-size: 0.55rem;
-    }
-    
-    .relative {
-      height: 50vh;
-    }
-  }
-  </style>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+
+@keyframes rise {
+  0% { transform: translateY(0) scale(0.5); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translateY(-300px) scale(1.5); opacity: 0; }
+}
+
+.animate-rise {
+  animation: rise linear infinite;
+}
+</style>

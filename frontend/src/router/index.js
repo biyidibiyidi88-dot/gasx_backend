@@ -22,6 +22,11 @@ const routes = [
         component: () => import('../pages/private/GasTank.vue'),
       },
       {
+        path: 'buy-gas',
+        name: 'buy-gas',
+        component: () => import('../pages/private/BuyGas.vue'),
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: () => import('../pages/private/Systemsetting.vue'),

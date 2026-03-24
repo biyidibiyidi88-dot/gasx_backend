@@ -1,261 +1,230 @@
 <template>
   <header
     :class="[
-      themeClasses.bg.secondary,
-      themeClasses.shadow,
-      themeClasses.border.primary,
-      'fixed top-0 right-0 h-16 flex items-center justify-between px-4 sm:px-6 z-30 transition-all duration-300 border-b',
-      sidebarCollapsed ? 'left-0' : 'left-72',
-      isMobile ? 'left-0' : ''
+      isDark ? 'bg-gray-950/40 backdrop-blur-3xl border-white/5' : 'bg-white/95 backdrop-blur-xl border-gray-200',
+      'fixed top-0 right-0 h-16 sm:h-20 flex items-center justify-between px-6 sm:px-10 z-[80] transition-all duration-700 cubic-bezier(0.4, 0, 0.2, 1) border-b',
+      isMobile || sidebarCollapsed ? 'left-0' : 'left-80 shadow-[0_10px_40px_rgba(0,0,0,0.3)]'
     ]"
   >
-    <!-- Mobile menu button -->
-    <button 
-      v-if="isMobile" 
-      @click="emit('toggle-sidebar', !sidebarCollapsed)" 
-      :class="[themeClasses.text.secondary, 'hover:text-blue-400 focus:outline-none transition-colors']"
-      aria-label="Toggle sidebar"
-    >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-      </svg>
-    </button>
+    <!-- Left: Mobile Toggle & Context -->
+    <div class="flex items-center space-x-6">
+      <button 
+        v-if="isMobile" 
+        @click="emit('toggle-sidebar', !sidebarCollapsed)" 
+        class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all duration-300"
+        aria-label="Toggle sidebar"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
 
-    <!-- System status indicators -->
-    <div class="flex items-center space-x-4 ml-4">
-      <div class="hidden sm:flex items-center space-x-2">
-        <span :class="[themeClasses.text.muted, 'text-xs']">System Status:</span>
-        <span class="flex items-center">
-          <span class="w-2 h-2 rounded-full mr-1 animate-pulse"
-                :class="userStore.systemStatus.operational ? 'bg-green-500' : 'bg-red-500'"></span>
-          <span class="text-xs font-medium"
-                :class="userStore.systemStatus.operational ? 'text-green-400' : 'text-red-400'">
-            {{ userStore.systemStatus.operational ? 'Operational' : 'Degraded' }}
+      <div class="flex items-center space-x-6">
+        <div class="flex flex-col">
+          <span class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 sm:flex hidden">System Status</span>
+          <div class="flex items-center space-x-2 mt-1">
+            <span :class="['w-2.5 h-2.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]', userStore.systemStatus.operational ? 'bg-teal-400' : 'bg-red-500']"></span>
+            <span :class="['text-[10px] font-black uppercase tracking-widest', userStore.systemStatus.operational ? 'text-teal-400' : 'text-red-500', 'hidden sm:inline']">
+              {{ userStore.systemStatus.operational ? 'Operational' : 'Degraded' }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="h-8 w-px bg-white/5 hidden sm:block"></div>
+
+        <div class="hidden sm:flex flex-col">
+          <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Last Pulse</span>
+          <span class="text-xs font-black uppercase tracking-widest text-white mt-1">
+            {{ formatTime(userStore.systemStatus.lastUpdate) }}
           </span>
-        </span>
-      </div>
-      
-      <div class="hidden md:flex items-center space-x-2">
-        <span :class="[themeClasses.text.muted, 'text-xs']">Last Update:</span>
-        <span :class="[themeClasses.text.secondary, 'text-xs font-medium']">
-          {{ formatTime(userStore.systemStatus.lastUpdate) }}
-        </span>
+        </div>
       </div>
     </div>
 
-    <!-- User controls -->
-    <div class="flex items-center space-x-4">
-      <!-- Theme Toggle Button -->
+    <!-- Right: Actions & User -->
+    <div class="flex items-center space-x-6">
+      <!-- Theme Toggle -->
       <button 
         @click="toggleTheme" 
-        :class="[themeClasses.text.secondary, 'hover:text-blue-400 p-2 rounded-lg transition-colors']"
-        :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+        class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white hover:bg-teal-500 hover:text-gray-950 transition-all duration-500 group"
       >
-        <svg v-if="isDark" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg v-if="isDark" class="h-5 w-5 transform group-hover:rotate-45 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
         </svg>
         <svg v-else class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
         </svg>
       </button>
-      
-      <!-- Notification button -->
+
+      <!-- Notifications -->
       <div class="relative">
         <button 
-          :class="[themeClasses.text.secondary, isDark ? 'hover:text-blue-300' : 'hover:text-blue-600', 'focus:outline-none transition-colors relative p-1']"
           @click="toggleNotifications"
+          class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white hover:bg-teal-500 hover:text-gray-950 transition-all duration-500 relative"
           aria-label="Show notifications"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
           </svg>
           <span
             v-if="unreadNotificationsCount > 0"
-            class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border border-gray-900"
+            class="absolute -top-1 -right-1 flex h-4 w-4"
           >
-            <span class="absolute top-0 right-0 h-full w-full rounded-full bg-red-500 animate-ping opacity-75"></span>
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-gray-950 text-[8px] items-center justify-center font-black">{{ unreadNotificationsCount }}</span>
           </span>
         </button>
 
         <!-- Notifications dropdown -->
         <transition
-          enter-active-class="transition ease-out duration-100"
-          enter-from-class="transform opacity-0 scale-95"
-          enter-to-class="transform opacity-100 scale-100"
-          leave-active-class="transition ease-in duration-75"
-          leave-from-class="transform opacity-100 scale-100"
-          leave-to-class="transform opacity-0 scale-95"
+          enter-active-class="transition ease-out duration-500"
+          enter-from-class="transform opacity-0 -translate-y-4 scale-95"
+          enter-to-class="transform opacity-100 translate-y-0 scale-100"
+          leave-active-class="transition ease-in duration-300"
+          leave-from-class="transform opacity-100 translate-y-0 scale-100"
+          leave-to-class="transform opacity-0 -translate-y-4 scale-95"
         >
           <div
             v-show="notificationsOpen"
-            :class="[themeClasses.bg.card, themeClasses.shadow, themeClasses.border.primary, 'absolute right-0 mt-2 w-72 rounded-md py-1 z-40 border max-h-96 overflow-y-auto']"
+            class="absolute right-0 mt-4 w-96 rounded-3xl bg-gray-950/90 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-50"
             @click.stop
           >
-            <div :class="[themeClasses.border.primary, 'px-4 py-2 border-b flex justify-between items-center']">
-              <h3 :class="[themeClasses.text.heading, 'text-sm font-medium']">Notifications</h3>
+            <div class="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+              <h3 class="text-xs font-black uppercase tracking-[0.2em] text-white">Intelligence Log</h3>
               <button 
                 @click="markAllAsRead"
-                class="text-xs text-blue-400 hover:text-blue-300"
+                class="text-[10px] font-black uppercase tracking-widest text-teal-400 hover:text-teal-300 transition-colors"
                 :disabled="unreadNotificationsCount === 0"
               >
-                Mark all as read
+                Clear all
               </button>
             </div>
             
-            <template v-if="userStore.notifications.length > 0">
-              <div 
-                v-for="notification in userStore.notifications"
-                :key="notification.id"
-                :class="[
-                  themeClasses.border.primary,
-                  isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100/50',
-                  'px-4 py-3 border-b last:border-b-0 transition-colors',
-                  { 
-                    'bg-gray-700/30': !notification.read && isDark,
-                    'bg-gray-100/30': !notification.read && !isDark
-                  }
-                ]"
-                @click="handleNotificationClick(notification)"
-              >
-                <div class="flex items-start">
-                  <div class="flex-shrink-0 pt-0.5">
-                    <svg 
-                      class="h-5 w-5"
-                      :class="getNotificationIconClass(notification)"
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="getNotificationIconPath(notification)"/>
-                    </svg>
-                  </div>
-                  <div class="ml-3 flex-1">
-                    <p :class="[themeClasses.text.primary, 'text-sm font-medium']">
-                      {{ notification.title }}
-                    </p>
-                    <p :class="[themeClasses.text.secondary, 'text-xs mt-1']">
-                      {{ notification.message }}
-                    </p>
-                    <p :class="[themeClasses.text.muted, 'text-xs mt-1']">
-                      {{ formatTime(notification.timestamp) }}
-                    </p>
-                  </div>
-                  <div v-if="!notification.read" class="ml-2 flex-shrink-0">
-                    <span class="h-2 w-2 rounded-full bg-blue-500"></span>
+            <div class="max-h-[32rem] overflow-y-auto custom-scrollbar">
+              <template v-if="userStore.notifications.length > 0">
+                <div 
+                  v-for="notification in userStore.notifications"
+                  :key="notification.id"
+                  :class="[
+                    'px-6 py-5 border-b border-white/5 last:border-b-0 transition-all duration-300 hover:bg-white/[0.03] cursor-pointer',
+                    { 'bg-teal-500/[0.02]': !notification.read }
+                  ]"
+                  @click="handleNotificationClick(notification)"
+                >
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                      <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', getNotificationBgClass(notification)]">
+                        <svg 
+                          class="w-5 h-5"
+                          :class="getNotificationIconClass(notification)"
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" :d="getNotificationIconPath(notification)"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="ml-4 flex-1">
+                      <div class="flex items-center justify-between mb-1">
+                        <p class="text-[13px] font-black text-white uppercase tracking-tight">
+                          {{ notification.title }}
+                        </p>
+                        <span class="text-[9px] font-bold text-white/20 uppercase">
+                          {{ formatTime(notification.timestamp) }}
+                        </span>
+                      </div>
+                      <p class="text-xs text-white/40 leading-relaxed">
+                        {{ notification.message }}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              </template>
+              
+              <div v-else class="px-6 py-10 text-center">
+                <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-8 h-8 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                  </svg>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">System idle</p>
               </div>
-            </template>
-            
-            <div v-else class="px-4 py-4 text-center">
-              <p :class="[themeClasses.text.muted, 'text-sm']">No notifications</p>
             </div>
           </div>
         </transition>
       </div>
 
-      <!-- Fullscreen toggle -->
-      <button 
-        class="text-gray-400 hover:text-blue-400 focus:outline-none transition-colors hidden sm:block"
-        @click="toggleFullscreen"
-        aria-label="Toggle fullscreen"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
-        </svg>
-      </button>
-
-      <!-- User profile dropdown -->
-      <div class="relative">
+      <!-- User Avatar -->
+      <div class="relative ml-2">
         <button
-          class="flex items-center space-x-2 focus:outline-none"
+          class="flex items-center space-x-4 group"
           @click.stop="toggleDropdown"
-          aria-label="Toggle user dropdown"
+          aria-label="User menu"
         >
-          <div class="relative">
-            <!-- Profile Image with Fallback -->
-            <div v-if="userStore.userProfile?.profile_image_url" class="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500/30">
-              <img 
-                class="w-full h-full object-cover" 
-                :src="userStore.userProfile.profile_image_url" 
-                alt="User profile"
-                @error="handleImageError"
-              >
-            </div>
-            <!-- Fallback Avatar -->
-            <div v-else class="w-10 h-10 rounded-full bg-gray-600 border-2 border-blue-500/30 flex items-center justify-center">
-              <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-900"></span>
-          </div>
-
-          <div class="hidden md:block text-left">
-            <p class="text-xs font-medium text-gray-200 truncate max-w-[120px]">
-              {{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}
+          <div class="hidden md:flex flex-col text-right">
+            <p class="text-sm font-black text-white uppercase tracking-tighter leading-none mb-1">
+              {{ userStore.userProfile?.first_name }}
             </p>
-            <p class="text-xs text-gray-400">{{ userStore.userProfile?.role || 'User' }}</p>
+            <p class="text-[9px] font-black text-white/30 uppercase tracking-widest leading-none">
+              Control
+            </p>
           </div>
-          <svg
-            class="hidden md:block w-4 h-4 text-gray-500 transform transition-transform duration-200"
-            :class="{ 'rotate-180': dropdownOpen }"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
+          <div class="relative">
+            <div class="absolute inset-0 bg-teal-400 blur opacity-0 group-hover:opacity-40 transition-opacity"></div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-teal-500/50 transition-all duration-500 p-0.5 relative z-10">
+              <div class="w-full h-full rounded-xl overflow-hidden bg-gray-900 flex items-center justify-center">
+                <img v-if="userStore.userProfile?.profile_image_url" 
+                     class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
+                     :src="userStore.userProfile.profile_image_url" 
+                     alt="User"
+                     @error="handleImageError">
+                <svg v-else class="w-6 h-6 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
         </button>
 
         <!-- Dropdown menu -->
         <transition
-          enter-active-class="transition ease-out duration-100"
-          enter-from-class="transform opacity-0 scale-95"
-          enter-to-class="transform opacity-100 scale-100"
-          leave-active-class="transition ease-in duration-75"
-          leave-from-class="transform opacity-100 scale-100"
-          leave-to-class="transform opacity-0 scale-95"
+          enter-active-class="transition ease-out duration-500"
+          enter-from-class="transform opacity-0 -translate-y-4 scale-95"
+          enter-to-class="transform opacity-100 translate-y-0 scale-100"
+          leave-active-class="transition ease-in duration-300"
+          leave-from-class="transform opacity-100 translate-y-0 scale-100"
+          leave-to-class="transform opacity-0 -translate-y-4 scale-95"
         >
           <div
             v-show="dropdownOpen"
-            class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-xl py-1 z-40 border border-gray-700"
+            class="absolute right-0 mt-4 w-60 rounded-3xl bg-gray-950/90 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] py-2 z-50 overflow-hidden"
             @click.stop
           >
-            <div class="px-4 py-2 border-b border-gray-700">
-              <p class="text-sm font-medium text-white">{{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}</p>
-              <p class="text-xs text-gray-400">{{ userStore.userProfile?.email }}</p>
+            <div class="px-6 py-4 border-b border-white/5 bg-white/[0.02] mb-2">
+              <p class="text-[13px] font-black text-white uppercase tracking-tight truncate">{{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}</p>
+              <p class="text-[10px] text-white/30 truncate mt-0.5">{{ userStore.userProfile?.email }}</p>
             </div>
+            
             <router-link 
-              to="admin/profile" 
-              class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+              to="/admin/profile" 
+              class="flex items-center px-6 py-3.5 text-xs font-black uppercase tracking-widest text-white/50 hover:text-white hover:bg-white/[0.03] transition-all duration-300"
             >
-              <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              <svg class="w-4 h-4 mr-3 text-teal-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
               Profile
             </router-link>
-            <router-link 
-              to="/settings" 
-              class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+            
+            <button
+              @click="logout"
+              class="w-full flex items-center px-6 py-3.5 text-xs font-black uppercase tracking-widest text-red-400 hover:text-white hover:bg-red-500/80 transition-all duration-300"
             >
-              <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              Settings
-            </router-link>
-            <div class="border-t border-gray-700"></div>
-            <a
-              href="#"
-              class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-red-400"
-              @click.prevent="logout"
-            >
-              <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
               </svg>
               Logout
-            </a>
+            </button>
           </div>
         </transition>
       </div>
@@ -264,105 +233,42 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../../stores/user';
 import { useTheme } from '../../composables/useTheme';
 
-// Theme composable
-const { isDark, toggleTheme, themeClasses } = useTheme();
+const { isDark, toggleTheme } = useTheme();
+const userStore = useUserStore();
+const router = useRouter();
 
 const props = defineProps({
-  sidebarCollapsed: {
-    type: Boolean,
-    default: false
-  }
+  sidebarCollapsed: { type: Boolean, default: false },
+  isMobile: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['toggle-sidebar', 'show-notifications']);
+const emit = defineEmits(['toggle-sidebar']);
 
-const router = useRouter();
-const userStore = useUserStore();
-const isMobile = ref(window.innerWidth < 768);
-const dropdownOpen = ref(false);
 const notificationsOpen = ref(false);
+const dropdownOpen = ref(false);
 
-// Format time
+const unreadNotificationsCount = computed(() => 
+  userStore.notifications.filter(n => !n.read).length
+);
+
 const formatTime = (date) => {
+  if (!date) return '--:--';
   return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-// Computed properties
-const unreadNotificationsCount = computed(() => {
-  return userStore.notifications.filter(n => !n.read).length;
-});
-
-// Notification methods
 const toggleNotifications = () => {
   notificationsOpen.value = !notificationsOpen.value;
-  if (notificationsOpen.value && unreadNotificationsCount.value > 0) {
-    userStore.fetchNotifications();
-  }
+  if (dropdownOpen.value) dropdownOpen.value = false;
 };
 
-const markAllAsRead = async () => {
-  await userStore.clearNotifications();
-};
-
-const handleNotificationClick = async (notification) => {
-  if (!notification.read) {
-    await userStore.markNotificationAsRead(notification.id);
-  }
-  
-  // Handle navigation based on notification type
-  if (notification.link) {
-    router.push(notification.link);
-  }
-  
-  notificationsOpen.value = false;
-};
-
-const getNotificationIconClass = (notification) => {
-  switch (notification.type) {
-    case 'alert': return 'text-red-400';
-    case 'warning': return 'text-yellow-400';
-    case 'info': return 'text-blue-400';
-    case 'success': return 'text-green-400';
-    default: return 'text-gray-400';
-  }
-};
-
-const getNotificationIconPath = (notification) => {
-  switch (notification.type) {
-    case 'alert': 
-      return 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z';
-    case 'warning':
-      return 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
-    case 'info':
-      return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
-    case 'success':
-      return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
-    default:
-      return 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9';
-  }
-};
-
-// Toggle dropdown
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value;
-};
-
-// Toggle fullscreen
-const toggleFullscreen = () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.error(`Error attempting to enable fullscreen: ${err.message}`);
-    });
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
-  }
+  if (notificationsOpen.value) notificationsOpen.value = false;
 };
 
 // Close dropdown when clicking outside
@@ -377,12 +283,14 @@ const handleClickOutside = (event) => {
 
 // Handle image error
 const handleImageError = () => {
-  userStore.userProfile.profile_image_url = '';
+  if (userStore.userProfile) {
+    userStore.userProfile.profile_image_url = '';
+  }
 };
 
 // Check mobile view
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768;
+  // Mobile check logic is already in Defaultlayout, but kept here for consistency if needed
 };
 
 // Logout
@@ -395,6 +303,8 @@ const logout = async () => {
   }
 };
 
+let notificationsUpdateInterval;
+
 // Lifecycle hooks
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
@@ -404,16 +314,15 @@ onMounted(() => {
   userStore.fetchNotifications();
   
   // Set up periodic refresh (every 10 minutes)
-  const notificationsUpdateInterval = setInterval(userStore.fetchNotifications, 600000);
-  
-  onBeforeUnmount(() => {
-    clearInterval(notificationsUpdateInterval);
-  });
+  notificationsUpdateInterval = setInterval(userStore.fetchNotifications, 600000);
 });
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
   window.removeEventListener('resize', checkMobile);
+  if (notificationsUpdateInterval) {
+    clearInterval(notificationsUpdateInterval);
+  }
 });
 </script>
 
