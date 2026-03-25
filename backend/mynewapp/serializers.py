@@ -7,6 +7,7 @@ from rest_framework.authtoken.models import Token
 
 from .models import (
     Alert,
+    CookableFood,
     CustomUser,
     EmergencyAction,
     EmergencyContact,
@@ -665,3 +666,15 @@ class GasLeakAlertSerializer(serializers.Serializer):
         )
 
         return alert
+
+
+class CookableFoodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CookableFood
+        fields = [
+            "id",
+            "name",
+            "estimated_gas_required",
+            "cooking_time_minutes",
+            "image_url",
+        ]

@@ -24,6 +24,7 @@ from .views import (
     UserListView,
     UserProfileView,
     UserStatusUpdateView,
+    CookableFoodListView,
 )
 
 urlpatterns = [
@@ -58,6 +59,11 @@ urlpatterns = [
     path("houses/", HouseListCreateView.as_view(), name="house-list"),
     path("houses/<uuid:pk>/", HouseDetailView.as_view(), name="house-detail"),
     path("sensors/", GasSensorListView.as_view(), name="sensor-list"),
+    path(
+        "sensors/<int:sensor_id>/cookable-foods/",
+        CookableFoodListView.as_view(),
+        name="sensor-cookable-foods",
+    ),
     path("alerts/", AlertListView.as_view(), name="alert-list"),
     path("gas-readings/", GasReadingListView.as_view(), name="gas-reading-list"),
     path(

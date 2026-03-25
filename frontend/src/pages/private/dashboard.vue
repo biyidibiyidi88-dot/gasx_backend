@@ -209,6 +209,11 @@
         </div>
       </div>
 
+      <!-- Cookable Foods Module -->
+      <div class="h-[400px]">
+        <CookableFoodsWidget ref="cookableFoodsWidgetRef" />
+      </div>
+
       <!-- Quick Commands Row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
         <button 
@@ -326,6 +331,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../config/api'
 import { useTheme } from '../../composables/useTheme'
+import CookableFoodsWidget from '../../components/private/CookableFoodsWidget.vue'
 
 const router = useRouter()
 const { isDark, themeClasses } = useTheme()
@@ -374,6 +380,7 @@ const levelChartInstance = ref(null)
 const consumptionChartInstance = ref(null)
 const isPredicting = ref(false)
 const isRefreshing = ref(false)
+const cookableFoodsWidgetRef = ref(null)
 
 const tank = ref({
   level: 0,
@@ -472,6 +479,9 @@ const refreshData = async () => {
   isRefreshing.value = true
   lastUpdated.value = new Date()
   await fetchGasReadings()
+  if (cookableFoodsWidgetRef.value) {
+    cookableFoodsWidgetRef.value.refreshData()
+  }
   isRefreshing.value = false
 }
 

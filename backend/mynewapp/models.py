@@ -493,3 +493,28 @@ class GasRefillRecord(models.Model):
 
     def __str__(self):
         return f"{self.refill_amount}kg refill on {self.refill_date}"
+
+
+class CookableFood(models.Model):
+    name = models.CharField(_("food name"), max_length=150)
+    estimated_gas_required = models.DecimalField(
+        _("estimated gas required (kg)"),
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0)],
+        help_text=_("Estimated gas required to cook this food in kg"),
+    )
+    cooking_time_minutes = models.IntegerField(
+        _("cooking time (minutes)"),
+        validators=[MinValueValidator(1)],
+        help_text=_("Estimated cooking time in minutes"),
+    )
+    image_url = models.URLField(_("image URL"), blank=True, null=True)
+
+    class Meta:
+        ordering = ["estimated_gas_required"]
+        verbose_name = _("cookable food")
+        verbose_name_plural = _("cookable foods")
+
+    def __str__(self):
+        return f"{self.name} ({self.estimated_gas_required}kg)"

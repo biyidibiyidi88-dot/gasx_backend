@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Alert, CustomUser, GasReading, GasSensor, House, Notification
+from .models import Alert, CustomUser, GasReading, GasSensor, House, Notification, CookableFood
 from .serializers import (
     AlertSerializer,
     GasLeakAlertSerializer,
@@ -25,6 +25,7 @@ from .serializers import (
     UserManagementSerializer,
     UserProfileSerializer,
     UserSerializer,
+    CookableFoodSerializer,
 )
 from .services.ai_service import AIPredictionService
 from .services.email_service import email_service
@@ -778,3 +779,18 @@ class BulkDeleteGasReadingsView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class CookableFoodListView(generics.ListAPIView):
+    serializer_class = CookableFoodSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        sensor_id = self.kwargs.get("sensor_id")
+        try:
+            # Ensure the sensor belongs to the user
+            sensor = GasSensor.objects.get(id=sensor_id, house__user=self.request.user)
+            current_gas = sensor.current_gas_level
+            return CookableFood.objects.filter(estimated_gas_required__lte=current_gas).order_by("estimated_gas_required")
+        except GasSensor.DoesNotExist:
+            return CookableFood.objects.none()
