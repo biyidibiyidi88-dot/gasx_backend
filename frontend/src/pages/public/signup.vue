@@ -71,6 +71,26 @@
             </transition>
 
             <form @submit.prevent="handleSubmit" class="space-y-8">
+              <!-- Account Type Selection -->
+              <div class="space-y-4 border-b border-white/5 pb-8 mb-8">
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Account Type</label>
+                <div class="grid grid-cols-2 gap-4">
+                  <button type="button" @click="form.accountType = 'user'" :class="form.accountType === 'user' ? 'bg-teal-400/20 border-teal-400 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : 'bg-white/[0.03] border-white/5 text-white/40 hover:bg-white/[0.05]'" class="py-4 rounded-2xl border font-black uppercase tracking-widest text-[10px] transition-all duration-300">
+                    Regular User
+                  </button>
+                  <button type="button" @click="form.accountType = 'vendor'" :class="form.accountType === 'vendor' ? 'bg-teal-400/20 border-teal-400 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : 'bg-white/[0.03] border-white/5 text-white/40 hover:bg-white/[0.05]'" class="py-4 rounded-2xl border font-black uppercase tracking-widest text-[10px] transition-all duration-300">
+                    Gas Supplier
+                  </button>
+                </div>
+              </div>
+
+              <transition name="fade">
+                <div v-if="form.accountType === 'vendor'" class="space-y-2 pb-4">
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Commercial Store Name (Required)</label>
+                  <input v-model="form.storeName" type="text" placeholder="e.g. TotalEnergies Bonamoussadi" class="w-full px-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.05] focus:outline-none transition-all duration-500 text-white placeholder:text-white/10 font-bold" :class="{ 'border-red-500/50': errors.storeName }">
+                </div>
+              </transition>
+
               <!-- Name Fields -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                 <div class="space-y-2">
@@ -179,6 +199,8 @@ import api from '../../config/api';
 
 const router = useRouter();
 const form = ref({
+  accountType: 'user',
+  storeName: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -220,6 +242,9 @@ watch(() => form.value.confirmPassword, (val) => { if (val && val !== form.value
 
 const handleSubmit = async () => {
   errors.value = {};
+  if (form.value.accountType === 'vendor' && !form.value.storeName.trim()) {
+    errors.value.storeName = 'Required for Suppliers';
+  }
   if (!form.value.firstName.trim()) errors.value.firstName = 'Required';
   if (!form.value.lastName.trim()) errors.value.lastName = 'Required';
   if (!validateEmail(form.value.email)) errors.value.email = 'Required';
@@ -254,6 +279,21 @@ const handleSubmit = async () => {
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       api.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
+      
+      if (form.value.accountType === 'vendor') {
+         const fullAddress = [form.value.address, form.value.city, form.value.state_province, form.value.country].filter(Boolean).join(', ');
+         const formData = new FormData();
+         formData.append('store_name', form.value.storeName);
+         formData.append('address', fullAddress);
+         try {
+           await api.post("vendor/register/", formData, {
+             headers: { 'Content-Type': 'multipart/form-data' }
+           });
+         } catch(vendorErr) {
+           console.error('Failed creating vendor profile', vendorErr);
+         }
+      }
+      
       await router.push('/admin');
     } else {
       await router.push('/login');

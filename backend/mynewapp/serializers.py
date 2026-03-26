@@ -17,6 +17,8 @@ from .models import (
     House,
     Notification,
     SensorMaintenanceRecord,
+    VendorProfile,
+    GasBottle,
 )
 
 User = get_user_model()
@@ -428,6 +430,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return "Super Admin"
         elif obj.is_admin:
             return "Admin"
+        if hasattr(obj, "vendor_profile"):
+            return "Vendor"
         return "User"
 
     def get_active_alerts_count(self, obj):
@@ -677,4 +681,68 @@ class CookableFoodSerializer(serializers.ModelSerializer):
             "estimated_gas_required",
             "cooking_time_minutes",
             "image_url",
+        ]
+
+
+class GasBottleSerializer(serializers.ModelSerializer):
+    brand_display = serializers.CharField(source="get_brand_display", read_only=True)
+    size_display = serializers.CharField(source="get_size_display", read_only=True)
+
+    class Meta:
+        model = GasBottle
+        fields = [
+            "id",
+            "vendor",
+            "brand",
+            "brand_display",
+            "size",
+            "size_display",
+            "price",
+            "stock_quantity",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["vendor", "created_at", "updated_at"]
+
+
+class VendorProfileSerializer(serializers.ModelSerializer):
+    gas_bottles = GasBottleSerializer(many=True, read_only=True)
+    user_email = serializers.CharField(source="user.email", read_only=True)
+    user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+
+    class Meta:
+        model = VendorProfile
+        fields = [
+            "id",
+            "user",
+            "user_email",
+            "user_name",
+            "store_name",
+            "latitude",
+            "longitude",
+            "address",
+            "is_approved",
+            "birth_certificate",
+            "identity_card",
+            "institution_document",
+            "gas_bottles",
+            "created_at",
+        ]
+        read_only_fields = ["user", "created_at", "is_approved"]
+
+
+class PublicVendorProfileSerializer(serializers.ModelSerializer):
+    gas_bottles = GasBottleSerializer(many=True, read_only=True)
+    user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+
+    class Meta:
+        model = VendorProfile
+        fields = [
+            "id",
+            "user_name",
+            "store_name",
+            "latitude",
+            "longitude",
+            "address",
+            "gas_bottles",
         ]

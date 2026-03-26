@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Alert, CustomUser, GasReading, GasSensor, House, Notification, CookableFood
+from .models import Alert, CustomUser, GasReading, GasSensor, House, Notification, CookableFood, VendorProfile, GasBottle
 from .serializers import (
     AlertSerializer,
     GasLeakAlertSerializer,
@@ -26,6 +26,9 @@ from .serializers import (
     UserProfileSerializer,
     UserSerializer,
     CookableFoodSerializer,
+    VendorProfileSerializer,
+    GasBottleSerializer,
+    PublicVendorProfileSerializer,
 )
 from .services.ai_service import AIPredictionService
 from .services.email_service import email_service
@@ -794,3 +797,101 @@ class CookableFoodListView(generics.ListAPIView):
             return CookableFood.objects.filter(estimated_gas_required__lte=current_gas).order_by("estimated_gas_required")
         except GasSensor.DoesNotExist:
             return CookableFood.objects.none()
+
+
+class VendorRegistrationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        if hasattr(request.user, "vendor_profile"):
+            return Response({"error": "User already has a vendor profile"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = VendorProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VendorProfileDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = VendorProfileSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self):
+        try:
+            return self.request.user.vendor_profile
+        except VendorProfile.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        profile = self.get_object()
+        if not profile:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data)
+
+
+class VendorGasBottleListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GasBottleSerializer
+
+    def get_queryset(self):
+        if hasattr(self.request.user, "vendor_profile"):
+            return GasBottle.objects.filter(vendor=self.request.user.vendor_profile)
+        return GasBottle.objects.none()
+
+    def perform_create(self, serializer):
+        if hasattr(self.request.user, "vendor_profile"):
+            serializer.save(vendor=self.request.user.vendor_profile)
+
+
+class VendorGasBottleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GasBottleSerializer
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        if hasattr(self.request.user, "vendor_profile"):
+            return GasBottle.objects.filter(vendor=self.request.user.vendor_profile)
+        return GasBottle.objects.none()
+
+
+class AdminVendorValidationListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = VendorProfileSerializer
+
+    def get_queryset(self):
+        status_filter = self.request.query_params.get("status")
+        if status_filter == "pending":
+            return VendorProfile.objects.filter(is_approved=False).order_by("-created_at")
+        return VendorProfile.objects.all().order_by("-created_at")
+
+
+class AdminVendorValidationUpdateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def patch(self, request, pk):
+        try:
+            vendor = VendorProfile.objects.get(pk=pk)
+            is_approved = request.data.get("is_approved")
+            if is_approved is not None:
+                vendor.is_approved = is_approved
+                vendor.save()
+                return Response(
+                    {"message": f"Vendor {'approved' if is_approved else 'rejected'} successfully"}, 
+                    status=status.HTTP_200_OK
+                )
+            return Response({"error": "is_approved field required"}, status=status.HTTP_400_BAD_REQUEST)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class PublicVendorListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PublicVendorProfileSerializer
+
+    def get_queryset(self):
+        return VendorProfile.objects.filter(is_approved=True)
+

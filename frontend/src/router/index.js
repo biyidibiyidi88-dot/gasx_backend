@@ -58,6 +58,26 @@ const routes = [
         name: 'ai-chat',
         component: () => import('../pages/AiChatPage.vue'),
       },
+      {
+        path: 'gas-map',
+        name: 'gas-map',
+        component: () => import('../pages/private/GasMap.vue'),
+      },
+      {
+        path: 'vendor-inventory',
+        name: 'vendor-inventory',
+        component: () => import('../pages/private/vendor/VendorInventory.vue'),
+      },
+      {
+        path: 'vendor-profile',
+        name: 'vendor-profile',
+        component: () => import('../pages/private/vendor/VendorProfile.vue'),
+      },
+      {
+        path: 'vendor-validation',
+        name: 'vendor-validation',
+        component: () => import('../pages/private/admin/VendorValidation.vue'),
+      },
     ],
   },
   {

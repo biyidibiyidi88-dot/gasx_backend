@@ -25,6 +25,13 @@ from .views import (
     UserProfileView,
     UserStatusUpdateView,
     CookableFoodListView,
+    VendorRegistrationView,
+    VendorProfileDetailView,
+    VendorGasBottleListCreateView,
+    VendorGasBottleDetailView,
+    AdminVendorValidationListView,
+    AdminVendorValidationUpdateView,
+    PublicVendorListView,
 )
 
 urlpatterns = [
@@ -89,4 +96,17 @@ urlpatterns = [
     ),
     # gas related end points
     path("gas/prediction/", GasPredictionView.as_view(), name="gas-prediction"),
+    
+    # Vendor endpoints
+    path("vendor/register/", VendorRegistrationView.as_view(), name="vendor-register"),
+    path("vendor/profile/", VendorProfileDetailView.as_view(), name="vendor-profile"),
+    path("vendor/gas-bottles/", VendorGasBottleListCreateView.as_view(), name="vendor-gas-bottles"),
+    path("vendor/gas-bottles/<int:pk>/", VendorGasBottleDetailView.as_view(), name="vendor-gas-bottle-detail"),
+    
+    # Admin vendor validation
+    path("admin/vendors/validation/", AdminVendorValidationListView.as_view(), name="admin-vendor-validation-list"),
+    path("admin/vendors/validation/<int:pk>/", AdminVendorValidationUpdateView.as_view(), name="admin-vendor-validation-update"),
+    
+    # Public endpoints
+    path("public/vendors/", PublicVendorListView.as_view(), name="public-vendor-list"),
 ]

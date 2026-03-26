@@ -1,11 +1,11 @@
 <template>
-  <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-hidden relative font-[\'Inter\',-apple-system,BlinkMacSystemFont,sans-serif]']">
+  <div :class="[themeClasses.bg.primary, 'bg-transparent flex-1 flex flex-col overflow-hidden relative font-[\'Inter\',-apple-system,BlinkMacSystemFont,sans-serif]'] ">
     <!-- Sophisticated Background Accents -->
     <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-teal-500/5 blur-[150px] -z-0 pointer-events-none animate-pulse"></div>
     <div class="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-600/5 blur-[180px] -z-0 pointer-events-none animate-pulse" style="animation-delay: 2s"></div>
 
     <!-- Header / Status Bar -->
-    <header class="z-10 bg-white/[0.01] backdrop-blur-xl border-b border-white/5">
+    <header class="z-10 bg-transparent backdrop-blur-xl border-b border-white/5">
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center space-x-4">
           <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>

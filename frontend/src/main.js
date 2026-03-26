@@ -3,6 +3,7 @@ import App from './App.vue';
 import router from './router';
 import api from './config/api';
 import './style.css';
+import '@tomtom-international/web-sdk-maps/dist/maps.css';
 import { createPinia } from 'pinia';
 
 const app = createApp(App);

@@ -518,3 +518,76 @@ class CookableFood(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.estimated_gas_required}kg)"
+
+
+class VendorProfile(models.Model):
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="vendor_profile"
+    )
+    store_name = models.CharField(_("store name"), max_length=255)
+    latitude = models.FloatField(_("latitude"), blank=True, null=True)
+    longitude = models.FloatField(_("longitude"), blank=True, null=True)
+    address = models.CharField(_("address"), max_length=255, blank=True, default="")
+    is_approved = models.BooleanField(_("approved"), default=False)
+    birth_certificate = models.FileField(
+        _("birth certificate"), upload_to="vendor_docs/birth_certs/", blank=True, null=True
+    )
+    identity_card = models.FileField(
+        _("identity card"), upload_to="vendor_docs/id_cards/", blank=True, null=True
+    )
+    institution_document = models.FileField(
+        _("institution document"), upload_to="vendor_docs/institution_docs/", blank=True, null=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("vendor profile")
+        verbose_name_plural = _("vendor profiles")
+
+    def __str__(self):
+        return f"{self.store_name} ({self.user.get_full_name()})"
+
+
+class GasBottle(models.Model):
+    BRAND_CHOICES = (
+        ("BOCOM", "Bocom"),
+        ("TOTAL", "Total"),
+        ("GREEN_OIL", "Green Oil"),
+        ("SCTM", "SCTM"),
+        ("CAMGAZ", "Camgaz"),
+        ("TRADEX", "Tradex"),
+        ("MRS", "MRS"),
+        ("AFT", "AFT"),
+        ("OTHER", "Other"),
+    )
+
+    SIZE_CHOICES = (
+        ("SMALL_6KG", "Small (6kg)"),
+        ("MEDIUM_12_5KG", "Medium (12.5kg)"),
+        ("BIG_50KG", "Big (50kg)"),
+    )
+
+    vendor = models.ForeignKey(
+        VendorProfile, on_delete=models.CASCADE, related_name="gas_bottles"
+    )
+    brand = models.CharField(_("brand"), max_length=50, choices=BRAND_CHOICES)
+    size = models.CharField(_("size"), max_length=50, choices=SIZE_CHOICES)
+    price = models.DecimalField(
+        _("price (CFA)"), max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    stock_quantity = models.IntegerField(
+        _("stock quantity"), default=0, validators=[MinValueValidator(0)]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("gas bottle")
+        verbose_name_plural = _("gas bottles")
+        unique_together = ("vendor", "brand", "size")
+
+    def __str__(self):
+        return f"{self.get_brand_display()} - {self.get_size_display()} ({self.vendor.store_name})"
