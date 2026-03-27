@@ -67,7 +67,7 @@
 
       <!-- Map Area -->
       <div class="flex-1 relative bg-gray-950 order-1 lg:order-2 h-[60vh] lg:h-full z-10 min-h-[400px]">
-        <div id="vendor-map" class="absolute inset-0 w-full h-full"></div>
+        <div ref="mapContainer" class="absolute inset-0 w-full h-full"></div>
         
         <!-- Loading Overlay -->
         <div v-if="!mapLoaded" class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
@@ -116,7 +116,8 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import api from '../../config/api';
 import { useTheme } from '../../composables/useTheme';
-import maplibregl from 'maplibre-gl';
+import tt from '@tomtom-international/web-sdk-maps';
+import ttServices from '@tomtom-international/web-sdk-services';
 
 
 
@@ -128,9 +129,13 @@ const routingActive = ref(false);
 
 const mapLoaded = ref(false);
 const mapError = ref('');
+const mapContainer = ref(null);
 let map = null;
 let markers = [];
 let userLocation = null;
+
+
+
 
 const API_KEY = import.meta.env.VITE_TOMTOM_API_KEY || 'rCTBFt5f1TGazCyYag0gwW5QREP5oyVM';
 
@@ -167,22 +172,36 @@ const drawRoute = async () => {
   }
   try {
     const dest = selectedVendor.value;
-    const url = `https://api.tomtom.com/routing/1/calculateRoute/${userLocation[1]},${userLocation[0]}:${dest.latitude},${dest.longitude}/json?key=${API_KEY}&routeType=fastest&traffic=false`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const coords = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-    const geojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } };
+    const routeOptions = {
+        key: API_KEY,
+        locations: [
+            userLocation,
+            [parseFloat(dest.longitude), parseFloat(dest.latitude)]
+        ],
+        routeType: 'fastest',
+        traffic: false
+    };
+
+    const response = await ttServices.services.calculateRoute(routeOptions);
+    const geojson = response.toGeoJson();
+    
     if (map.getSource('route')) {
       map.getSource('route').setData(geojson);
     } else {
-      map.addSource('route', { type: 'geojson', data: geojson });
-      map.addLayer({ id: 'route', type: 'line', source: 'route',
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: {
+          type: 'geojson',
+          data: geojson
+        },
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: { 'line-color': '#2dd4bf', 'line-width': 5, 'line-opacity': 0.9 }
       });
     }
     routingActive.value = true;
-    const bounds = new maplibregl.LngLatBounds(userLocation, userLocation);
+    const bounds = new tt.LngLatBounds();
+    bounds.extend(userLocation);
     bounds.extend([parseFloat(dest.longitude), parseFloat(dest.latitude)]);
     map.fitBounds(bounds, { padding: 60 });
   } catch (err) {
@@ -211,7 +230,7 @@ const plotMarkers = () => {
   markers.forEach(m => m.remove());
   markers = [];
   
-  const bounds = new maplibregl.LngLatBounds();
+  const bounds = new tt.LngLatBounds();
   let hasValidMarkers = false;
 
   vendors.value.forEach(vendor => {
@@ -225,7 +244,7 @@ const plotMarkers = () => {
       const el = document.createElement('div');
       el.className = 'w-6 h-6 rounded-full bg-teal-400 border-2 border-white shadow-[0_0_15px_rgba(45,212,191,0.8)] cursor-pointer hover:scale-110 transition-transform';
       
-      const marker = new maplibregl.Marker({ element: el })
+      const marker = new tt.Marker({ element: el })
         .setLngLat(pos)
         .addTo(map);
       
@@ -244,28 +263,18 @@ const plotMarkers = () => {
   }
 };
 
+
+
 const initMap = async () => {
   const defaultCenter = [9.7085, 4.0511]; // Lng, Lat
   
   try {
-    map = new maplibregl.Map({
-      container: 'vendor-map',
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            tiles: [
-              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            ],
-            tileSize: 256,
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          }
-        },
-        layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm' }]
-      },
+    if (!mapContainer.value) return;
+    
+    map = tt.map({
+      key: API_KEY,
+      container: mapContainer.value,
+      style: `https://api.tomtom.com/map/1/style/21.1.0-0/basic_night.json?key=${API_KEY}`,
       center: defaultCenter,
       zoom: 13
     });
@@ -273,15 +282,15 @@ const initMap = async () => {
     map.on('load', () => {
       mapLoaded.value = true;
 
-      map.addControl(new maplibregl.NavigationControl(), 'top-left');
-      new ResizeObserver(() => map && map.resize()).observe(document.getElementById('vendor-map'));
+      map.addControl(new tt.NavigationControl(), 'top-left');
+      new ResizeObserver(() => map && map.resize()).observe(mapContainer.value);
       plotMarkers();
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             userLocation = [pos.coords.longitude, pos.coords.latitude];
             map.setCenter(userLocation);
-            new maplibregl.Marker({ color: '#2dd4bf' }).setLngLat(userLocation).addTo(map);
+            new tt.Marker({ color: '#2dd4bf' }).setLngLat(userLocation).addTo(map);
             plotMarkers();
           },
           () => plotMarkers(),

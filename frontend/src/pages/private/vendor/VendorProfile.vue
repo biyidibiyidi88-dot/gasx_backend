@@ -134,7 +134,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import api from '../../../config/api';
 import { useTheme } from '../../../composables/useTheme';
-import maplibregl from 'maplibre-gl';
+import tt from '@tomtom-international/web-sdk-maps';
 
 
 
@@ -162,6 +162,9 @@ const pickerMapLoaded = ref(false);
 let pickerMap = null;
 let pickerMarker = null;
 
+
+
+
 const API_KEY = import.meta.env.VITE_TOMTOM_API_KEY || 'rCTBFt5f1TGazCyYag0gwW5QREP5oyVM';
 
 const loadProfile = async () => {
@@ -172,7 +175,7 @@ const loadProfile = async () => {
       if (pickerMap && profile.value.latitude) {
         const pos = [parseFloat(profile.value.longitude), parseFloat(profile.value.latitude)];
         if (!pickerMarker) {
-          pickerMarker = new maplibregl.Marker({ color: '#2dd4bf', draggable: true })
+          pickerMarker = new tt.Marker({ color: '#2dd4bf', draggable: true })
             .setLngLat(pos).addTo(pickerMap);
           pickerMarker.on('dragend', () => {
             const lngLat = pickerMarker.getLngLat();
@@ -215,7 +218,7 @@ const fetchCurrentLocation = () => {
         if (pickerMap) {
           const pos = [profile.value.longitude, profile.value.latitude];
           if (!pickerMarker) {
-            pickerMarker = new maplibregl.Marker({ color: '#2dd4bf', draggable: true })
+            pickerMarker = new tt.Marker({ color: '#2dd4bf', draggable: true })
               .setLngLat(pos).addTo(pickerMap);
             pickerMarker.on('dragend', () => {
               const lngLat = pickerMarker.getLngLat();
@@ -248,24 +251,10 @@ const initPickerMap = async () => {
     const initialLat = profile.value.latitude || 4.0511;
     const initialLng = profile.value.longitude || 9.7085;
 
-    pickerMap = new maplibregl.Map({
+    pickerMap = tt.map({
+      key: API_KEY,
       container: 'location-picker-map',
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            tiles: [
-              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            ],
-            tileSize: 256,
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          }
-        },
-        layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm' }]
-      },
+      style: `https://api.tomtom.com/map/1/style/21.1.0-0/basic_night.json?key=${API_KEY}`,
       center: [initialLng, initialLat],
       zoom: profile.value.latitude ? 15 : 12
     });
@@ -273,7 +262,7 @@ const initPickerMap = async () => {
     pickerMap.on('load', () => {
       pickerMapLoaded.value = true;
 
-      pickerMarker = new maplibregl.Marker({ color: '#2dd4bf', draggable: true })
+      pickerMarker = new tt.Marker({ color: '#2dd4bf', draggable: true })
         .setLngLat([initialLng, initialLat])
         .addTo(pickerMap);
 
