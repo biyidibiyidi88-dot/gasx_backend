@@ -134,7 +134,11 @@
 import { ref, onMounted, nextTick } from 'vue';
 import api from '../../../config/api';
 import { useTheme } from '../../../composables/useTheme';
-import tt from '@tomtom-international/web-sdk-maps';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+// JAWG ACCESS TOKEN
+const JAWG_TOKEN = 'QWSZT4r4RnGLINur1NGRr2YTcTCLVbIPPbijitdYg4K5imZqo0dqSzPajpWqMPWB';
 
 
 
@@ -165,7 +169,6 @@ let pickerMarker = null;
 
 
 
-const API_KEY = import.meta.env.VITE_TOMTOM_API_KEY || 'rCTBFt5f1TGazCyYag0gwW5QREP5oyVM';
 
 const loadProfile = async () => {
   try {
@@ -251,10 +254,10 @@ const initPickerMap = async () => {
     const initialLat = profile.value.latitude || 4.0511;
     const initialLng = profile.value.longitude || 9.7085;
 
-    pickerMap = tt.map({
-      key: API_KEY,
+    mapboxgl.accessToken = JAWG_TOKEN;
+    pickerMap = new mapboxgl.Map({
       container: 'location-picker-map',
-      style: `https://api.tomtom.com/map/1/style/21.1.0-0/basic_night.json?key=${API_KEY}`,
+      style: `https://api.jawg.io/styles/jawg-dark.json?access-token=${JAWG_TOKEN}`,
       center: [initialLng, initialLat],
       zoom: profile.value.latitude ? 15 : 12
     });
@@ -262,7 +265,10 @@ const initPickerMap = async () => {
     pickerMap.on('load', () => {
       pickerMapLoaded.value = true;
 
-      pickerMarker = new tt.Marker({ color: '#2dd4bf', draggable: true })
+      const el = document.createElement('div');
+      el.className = 'w-4 h-4 rounded-full bg-teal-400 border-2 border-white shadow-[0_0_10px_rgba(45,212,191,1)] cursor-move hover:scale-125 transition-transform';
+
+      pickerMarker = new mapboxgl.Marker({ element: el, draggable: true })
         .setLngLat([initialLng, initialLat])
         .addTo(pickerMap);
 
