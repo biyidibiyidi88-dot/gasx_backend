@@ -1,5 +1,8 @@
 {
   "appId": "com.tchoua.gasmonitor",
   "appName": "Gas Monitor",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
 }

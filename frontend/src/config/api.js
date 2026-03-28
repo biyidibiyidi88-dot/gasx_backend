@@ -1,7 +1,21 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 // Smart API configuration that detects environment
 const getApiBaseUrl = () => {
+  const isDevelopment = import.meta.env.DEV;
+
+  // Android build routing logic
+  if (Capacitor.isNativePlatform()) {
+    if (isDevelopment) {
+      // Local dev builds map strictly to the host computer's backend
+      return 'http://10.0.2.2:8000/api/';
+    } else {
+      // Production builds map strictly to the Render cloud backend
+      return 'https://gas-monitor-sfk3.onrender.com/api/';
+    }
+  }
+
   // If we have an explicit environment variable, use it (highest priority)
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
@@ -11,9 +25,6 @@ const getApiBaseUrl = () => {
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' ||
                      window.location.hostname === '0.0.0.0';
-
-  // Check if we're in development mode AND running locally
-  const isDevelopment = import.meta.env.DEV;
   
   // Only use local backend if we're both in dev mode AND on localhost
   if (isDevelopment && isLocalhost) {
