@@ -11,8 +11,8 @@ const getApiBaseUrl = () => {
       // Local dev builds map strictly to the host computer's backend
       return 'http://10.0.2.2:8000/api/';
     } else {
-      // Production builds map strictly to the Render cloud backend
-      return 'https://gas-monitor-sfk3.onrender.com/api/';
+      // Production builds map strictly to the Railway cloud backend
+      return 'https://web-production-c4400.up.railway.app/api/';
     }
   }
 
@@ -31,8 +31,8 @@ const getApiBaseUrl = () => {
     // Local development - use local Django server
     return 'http://127.0.0.1:8000/';
   } else {
-    // Production or deployed frontend - use Render backend
-    return 'https://gas-monitor-sfk3.onrender.com/api';
+    // Production or deployed frontend - use Railway backend
+    return 'https://web-production-c4400.up.railway.app/api';
   }
 };
 
