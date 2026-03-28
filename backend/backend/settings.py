@@ -25,7 +25,9 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '172.20.10.6',                  # keep if you're testing locally
     '.onrender.com',                # Allow all Render subdomains
+    '.railway.app',                 # Allow all Railway subdomains
     os.getenv('RENDER_EXTERNAL_HOSTNAME', ''),  # Render hostname
+    os.getenv('RAILWAY_STATIC_URL', ''),        # Railway static URL
 ]
 
 
