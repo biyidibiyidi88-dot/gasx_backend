@@ -1,0 +1,62 @@
+Analyzing mobilefrontend...                                     
+
+  error • The getter 'black' isn't defined for the type 'FontWeight' • lib/core/theme/app_theme.dart:35:34 • undefined_getter
+  error • The getter 'black' isn't defined for the type 'FontWeight' • lib/core/theme/app_theme.dart:42:34 • undefined_getter
+  error • The getter 'black' isn't defined for the type 'FontWeight' • lib/core/theme/app_theme.dart:59:34 • undefined_getter
+  error • The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  • lib/core/theme/app_theme.dart:66:18 • argument_type_not_assignable
+  error • The getter 'black' isn't defined for the type 'FontWeight' • lib/core/theme/app_theme.dart:82:36 • undefined_getter
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/auth_models.dart:11:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/auth_models.dart:12:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/auth_models.dart:14:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:10:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:12:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:13:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:14:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:15:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:25:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:35:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:36:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/dashboard_models.dart:37:6 • invalid_annotation_target
+warning • The annotation 'JsonKey.new' can only be used on fields or getters • lib/data/models/vendor_models.dart:13:6 • invalid_annotation_target
+warning • Unused import: 'package:flutter/material.dart' • lib/presentation/routing/app_router.dart:1:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/dashboard_screen.dart:86:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/dashboard_screen.dart:88:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/dashboard_screen.dart:117:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/dashboard_screen.dart:119:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/dashboard_screen.dart:155:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/landing_screen.dart:28:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/login_screen.dart:65:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/login_screen.dart:77:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/login_screen.dart:97:75 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/login_screen.dart:123:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/login_screen.dart:125:68 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/settings_screen.dart:28:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/settings_screen.dart:30:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/settings_screen.dart:36:56 • deprecated_member_use
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/presentation/screens/settings_screen.dart:87:9 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/settings_screen.dart:109:39 • deprecated_member_use
+warning • Unused import: '../../domain/providers/auth_provider.dart' • lib/presentation/screens/signup_screen.dart:6:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/signup_screen.dart:54:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/signup_screen.dart:91:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/screens/signup_screen.dart:93:68 • deprecated_member_use
+  error • Invalid constant value • lib/presentation/screens/vendor_inventory_screen.dart:16:87 • invalid_constant
+  error • The getter 'black' isn't defined for the type 'FontWeight' • lib/presentation/screens/vendor_inventory_screen.dart:16:98 • undefined_getter
+  error • Target of URI doesn't exist: '../core/theme/app_theme.dart' • lib/presentation/widgets/custom_button.dart:2:8 • uri_does_not_exist
+  error • Undefined name 'AppTheme' • lib/presentation/widgets/custom_button.dart:25:32 • undefined_identifier
+  error • Undefined name 'AppTheme' • lib/presentation/widgets/custom_button.dart:25:53 • undefined_identifier
+  error • Undefined name 'AppTheme' • lib/presentation/widgets/custom_button.dart:31:40 • undefined_identifier
+  error • Invalid constant value • lib/presentation/widgets/custom_button.dart:53:61 • invalid_constant
+  error • Undefined name 'AppTheme' • lib/presentation/widgets/custom_button.dart:53:61 • undefined_identifier
+  error • Invalid constant value • lib/presentation/widgets/custom_button.dart:60:31 • invalid_constant
+  error • The getter 'black' isn't defined for the type 'FontWeight' • lib/presentation/widgets/custom_button.dart:60:42 • undefined_getter
+  error • Target of URI doesn't exist: '../core/theme/app_theme.dart' • lib/presentation/widgets/custom_text_field.dart:2:8 • uri_does_not_exist
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/gas_gauge.dart:79:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/gas_gauge.dart:114:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/main_scaffold.dart:16:62 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/vendor_bottle_card.dart:20:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/vendor_bottle_card.dart:22:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/vendor_bottle_card.dart:33:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/presentation/widgets/vendor_bottle_card.dart:67:47 • deprecated_member_use
+  error • The name 'MyApp' isn't a class • test/widget_test.dart:16:35 • creation_with_non_type
+
+58 issues found. (ran in 2.6s)

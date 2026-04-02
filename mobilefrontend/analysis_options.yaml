@@ -1,0 +1,18 @@
+include: package:flutter_lints/analysis_options.yaml
+
+linter:
+  rules:
+    - camel_case_types
+    - library_prefixes
+    - non_constant_identifier_names
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_fields
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  errors:
+    invalid_annotation_target: ignore
+    deprecated_member_use: ignore

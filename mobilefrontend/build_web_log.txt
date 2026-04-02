@@ -1,0 +1,516 @@
+Compiling lib/main.dart for the Web...                          
+Unexpected wasm dry run failure (255):
+
+Unhandled exception:
+Unsupported operation: Cannot extract a file path from a org-dartlang-untranslatable-uri URI
+#0      _Uri.toFilePath (dart:core/uri.dart:3432)
+#1      DryRunSummarizer._lintChecks (package:dart2wasm/dry_run.dart:167)
+#2      DryRunSummarizer.summarize (package:dart2wasm/dry_run.dart:236)
+#3      _runCfePhase (package:dart2wasm/compile.dart:355)
+<asynchronous suspension>
+#4      compile (package:dart2wasm/compile.dart:222)
+<asynchronous suspension>
+#5      generateWasm (package:dart2wasm/generate_wasm.dart:63)
+<asynchronous suspension>
+#6      main (file:///b/s/w/ir/x/w/sdk/pkg/dart2wasm/bin/dart2wasm.dart:10)
+<asynchronous suspension>
+
+Use --no-wasm-dry-run to disable these warnings.
+Target dart2js failed: ProcessException: Process exited abnormally with exit code 1:
+Error: Couldn't resolve the package 'url_launcher' in 'package:url_launcher/url_launcher.dart'.
+lib/presentation/screens/gas_map_screen.dart:4:8:
+Error: Error when reading '../../../../.pub-cache/hosted/pub.dev/latlong2-0.9.1/lib/latlong2.dart': Error reading '../../../../.pub-cache/hosted/pub.dev/latlong2-0.9.1/lib/latlong2.dart'  (No such file or directory)
+import 'package:latlong2/latlong2.dart';
+       ^
+lib/presentation/screens/gas_map_screen.dart:5:8:
+Error: Not found: 'package:url_launcher/url_launcher.dart'
+import 'package:url_launcher/url_launcher.dart';
+       ^
+lib/data/models/notification_models.dart:3:6:
+Error: Error when reading 'lib/data/models/notification_models.freezed.dart': Error reading 'lib/data/models/notification_models.freezed.dart'  (No such file or directory)
+part 'notification_models.freezed.dart';
+     ^
+lib/data/models/notification_models.dart:4:6:
+Error: Error when reading 'lib/data/models/notification_models.g.dart': Error reading 'lib/data/models/notification_models.g.dart'  (No such file or directory)
+part 'notification_models.g.dart';
+     ^
+lib/data/models/chat_models.dart:3:6:
+Error: Error when reading 'lib/data/models/chat_models.freezed.dart': Error reading 'lib/data/models/chat_models.freezed.dart'  (No such file or directory)
+part 'chat_models.freezed.dart';
+     ^
+lib/data/models/chat_models.dart:4:6:
+Error: Error when reading 'lib/data/models/chat_models.g.dart': Error reading 'lib/data/models/chat_models.g.dart'  (No such file or directory)
+part 'chat_models.g.dart';
+     ^
+lib/data/models/notification_models.dart:3:6:
+Error: Can't use 'lib/data/models/notification_models.freezed.dart' as a part, because it has no 'part of' declaration.
+part 'notification_models.freezed.dart';
+     ^
+lib/data/models/notification_models.dart:4:6:
+Error: Can't use 'lib/data/models/notification_models.g.dart' as a part, because it has no 'part of' declaration.
+part 'notification_models.g.dart';
+     ^
+lib/data/models/chat_models.dart:3:6:
+Error: Can't use 'lib/data/models/chat_models.freezed.dart' as a part, because it has no 'part of' declaration.
+part 'chat_models.freezed.dart';
+     ^
+lib/data/models/chat_models.dart:4:6:
+Error: Can't use 'lib/data/models/chat_models.g.dart' as a part, because it has no 'part of' declaration.
+part 'chat_models.g.dart';
+     ^
+lib/presentation/screens/buy_gas_screen.dart:83:26:
+Error: Type 'Vendor' not found.
+  Widget _buildRadarView(Vendor? selected) {
+                         ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:150:43:
+Error: Type 'Vendor' not found.
+  Widget _buildVendorList(AsyncValue<List<Vendor>> vendorsAsync, Vendor? selected) {
+                                          ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:150:66:
+Error: Type 'Vendor' not found.
+  Widget _buildVendorList(AsyncValue<List<Vendor>> vendorsAsync, Vendor? selected) {
+                                                                 ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:200:32:
+Error: Type 'Vendor' not found.
+  Widget _buildInventoryMatrix(Vendor selected) {
+                               ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:19:3:
+Error: Type 'Vendor' not found.
+  Vendor? _selectedVendor;
+  ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:47:36:
+Error: Type 'Vendor' not found.
+  Widget _buildMap(AsyncValue<List<Vendor>> vendorsAsync) {
+                                   ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:124:46:
+Error: Type 'Vendor' not found.
+  Widget _buildVendorOverlay(AsyncValue<List<Vendor>> vendorsAsync) {
+                                             ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:190:27:
+Error: Type 'Vendor' not found.
+  Widget _buildDetailCard(Vendor v) {
+                          ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:246:34:
+Error: Type 'Vendor' not found.
+  Future<void> _launchNavigation(Vendor v) async {
+                                 ^^^^^^
+lib/data/models/notification_models.dart:7:30:
+Error: Type '_$NotificationModel' not found.
+class NotificationModel with _$NotificationModel {
+                             ^^^^^^^^^^^^^^^^^^^
+lib/data/models/chat_models.dart:7:24:
+Error: Type '_$ChatMessage' not found.
+class ChatMessage with _$ChatMessage {
+                       ^^^^^^^^^^^^^
+lib/data/repositories/vendor_repository.dart:9:15:
+Error: Type 'Vendor' not found.
+  Future<List<Vendor>> getVendors() async {
+              ^^^^^^
+lib/data/models/notification_models.dart:17:8:
+Error: Couldn't find constructor '_NotificationModel'.
+  }) = _NotificationModel;
+       ^
+lib/data/models/notification_models.dart:17:8:
+Error: Redirection constructor target not found: '_NotificationModel'
+  }) = _NotificationModel;
+       ^
+lib/data/models/chat_models.dart:12:8:
+Error: Couldn't find constructor '_ChatMessage'.
+  }) = _ChatMessage;
+       ^
+lib/data/models/chat_models.dart:12:8:
+Error: Redirection constructor target not found: '_ChatMessage'
+  }) = _ChatMessage;
+       ^
+lib/domain/providers/vendor_provider.dart:11:45:
+Error: 'Vendor' isn't a type.
+final vendorsProvider = FutureProvider<List<Vendor>>((ref) async {
+                                            ^^^^^^
+lib/domain/providers/vendor_provider.dart:15:46:
+Error: 'Vendor' isn't a type.
+final selectedVendorProvider = StateProvider<Vendor?>((ref) => null);
+                                             ^^^^^^
+lib/presentation/screens/dashboard_screen.dart:147:85:
+Error: No named parameter with the name 'italic'.
+                  style: const TextStyle(fontSize: 64, fontWeight: FontWeight.w900, italic: true, color: Colors.white),
+                                                                                    ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/dashboard_screen.dart:181:117:
+Error: No named parameter with the name 'italic'.
+          Text(value, style: const TextStyle(fontSize: 14, color: AppTheme.accentTeal, fontWeight: FontWeight.w900, italic: true)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/dashboard_screen.dart:215:112:
+Error: No named parameter with the name 'italic'.
+          Text(value, style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.bold, italic: true)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:114:73:
+Error: The getter 'isResolved' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+    if (_activeFilter == 'unread') return notifications.where((n) => !n.isResolved).toList();
+                                                                        ^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:115:72:
+Error: The getter 'alertType' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+    if (_activeFilter == 'alerts') return notifications.where((n) => n.alertType != 'SYSTEM').toList();
+                                                                       ^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:116:72:
+Error: The getter 'alertType' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+    if (_activeFilter == 'system') return notifications.where((n) => n.alertType == 'SYSTEM').toList();
+                                                                       ^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:173:91:
+Error: No named parameter with the name 'italic'.
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, italic: true, color: Colors.white),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:121:39:
+Error: The getter 'severityLevel' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+    final color = _getSeverityColor(n.severityLevel, n.isResolved);
+                                      ^^^^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:121:56:
+Error: The getter 'isResolved' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+    final color = _getSeverityColor(n.severityLevel, n.isResolved);
+                                                       ^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:152:42:
+Error: The getter 'alertType' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                  child: Icon(_getIcon(n.alertType), color: color, size: 20),
+                                         ^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:163:58:
+Error: The getter 'triggeredAt' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                            DateFormat('HH:mm').format(n.triggeredAt),
+                                                         ^^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:166:34:
+Error: The getter 'isResolved' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                          if (!n.isResolved)
+                                 ^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:172:27:
+Error: The getter 'alertMessage' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                        n.alertMessage.toUpperCase(),
+                          ^^^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:178:34:
+Error: The getter 'sensorName' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                          Text(n.sensorName ?? 'SYSTEM GRID', style: TextStyle(fontSize: 9, color: AppTheme.accentTeal.withOpacity(0.6), fontWeight: FontWeight.w900, letterSpacing: 1)),
+                                 ^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:183:43:
+Error: The getter 'houseAddress' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                            child: Text(n.houseAddress ?? 'CORE LOCATION', style: const TextStyle(fontSize: 9, color: Colors.white24, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)),
+                                          ^^^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:187:30:
+Error: The getter 'isResolved' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                      if (!n.isResolved) ...[
+                             ^^^^^^^^^^
+lib/presentation/screens/notification_screen.dart:192:59:
+Error: The getter 'id' isn't defined for the type 'NotificationModel'.
+ - 'NotificationModel' is from 'package:gas_monitor_flutter/data/models/notification_models.dart' ('lib/data/models/notification_models.dart').
+                              onPressed: () => _resolve(n.id),
+                                                          ^^
+lib/presentation/screens/notification_screen.dart:233:110:
+Error: No named parameter with the name 'italic'.
+          const Text('ZERO DEVIATIONS DETECTED', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, italic: true, color: Colors.white24)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/ai_chat_screen.dart:115:102:
+Error: No named parameter with the name 'italic'.
+              const Text('AI ASSISTANT', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, italic: true, letterSpacing: -1, color: Colors.white)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/ai_chat_screen.dart:166:107:
+Error: No named parameter with the name 'italic'.
+            const Text('INTELLIGENCE UPLINK', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, italic: true, color: Colors.white)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/ai_chat_screen.dart:180:28:
+Error: The getter 'role' isn't defined for the type 'ChatMessage'.
+ - 'ChatMessage' is from 'package:gas_monitor_flutter/data/models/chat_models.dart' ('lib/data/models/chat_models.dart').
+    final isUser = message.role == 'user';
+                           ^^^^
+lib/presentation/screens/ai_chat_screen.dart:204:23:
+Error: The getter 'content' isn't defined for the type 'ChatMessage'.
+ - 'ChatMessage' is from 'package:gas_monitor_flutter/data/models/chat_models.dart' ('lib/data/models/chat_models.dart').
+              message.content,
+                      ^^^^^^^
+lib/presentation/screens/ai_chat_screen.dart:210:48:
+Error: The getter 'timestamp' isn't defined for the type 'ChatMessage'.
+ - 'ChatMessage' is from 'package:gas_monitor_flutter/data/models/chat_models.dart' ('lib/data/models/chat_models.dart').
+            DateFormat('HH:mm').format(message.timestamp),
+                                               ^^^^^^^^^
+lib/presentation/screens/ai_chat_screen.dart:251:119:
+Error: No named parameter with the name 'italic'.
+                hintStyle: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.1), fontWeight: FontWeight.w900, italic: true),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/profile_screen.dart:18:33:
+Error: The getter 'authProvider' isn't defined for the type '_ProfileScreenState'.
+ - '_ProfileScreenState' is from 'package:gas_monitor_flutter/presentation/screens/profile_screen.dart' ('lib/presentation/screens/profile_screen.dart').
+    final authState = ref.watch(authProvider);
+                                ^^^^^^^^^^^^
+lib/presentation/screens/profile_screen.dart:96:140:
+Error: No named parameter with the name 'italic'.
+                Text('${user.firstName} ${user.lastName}'.toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, italic: true, letterSpacing: -1)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/profile_screen.dart:135:119:
+Error: No named parameter with the name 'italic'.
+          style: TextStyle(fontSize: 13, color: enabled ? Colors.white : Colors.white24, fontWeight: FontWeight.bold, italic: true),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:83:26:
+Error: 'Vendor' isn't a type.
+  Widget _buildRadarView(Vendor? selected) {
+                         ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:150:43:
+Error: 'Vendor' isn't a type.
+  Widget _buildVendorList(AsyncValue<List<Vendor>> vendorsAsync, Vendor? selected) {
+                                          ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:150:66:
+Error: 'Vendor' isn't a type.
+  Widget _buildVendorList(AsyncValue<List<Vendor>> vendorsAsync, Vendor? selected) {
+                                                                 ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:182:146:
+Error: No named parameter with the name 'italic'.
+                          Text(v.storeName.toUpperCase(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.white, italic: true)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:200:32:
+Error: 'Vendor' isn't a type.
+  Widget _buildInventoryMatrix(Vendor selected) {
+                               ^^^^^^
+lib/presentation/screens/buy_gas_screen.dart:234:163:
+Error: No named parameter with the name 'italic'.
+                        child: Text(item['type'].toString().toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white, italic: true)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:19:3:
+Error: 'Vendor' isn't a type.
+  Vendor? _selectedVendor;
+  ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:47:36:
+Error: 'Vendor' isn't a type.
+  Widget _buildMap(AsyncValue<List<Vendor>> vendorsAsync) {
+                                   ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:51:30:
+Error: Not a constant expression.
+        initialCenter: const LatLng(4.0511, 9.7085), // Douala
+                             ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:61:55:
+Error: The getter 'latitude' isn't defined for the type 'Object?'.
+ - 'Object' is from 'dart:core'.
+            data: (vendors) => vendors.where((v) => v.latitude != null && v.longitude != null).map((v) {
+                                                      ^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:61:77:
+Error: The getter 'longitude' isn't defined for the type 'Object?'.
+ - 'Object' is from 'dart:core'.
+            data: (vendors) => vendors.where((v) => v.latitude != null && v.longitude != null).map((v) {
+                                                                            ^^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:62:42:
+Error: The getter 'latitude' isn't defined for the type 'Object?'.
+ - 'Object' is from 'dart:core'.
+              final lat = double.parse(v.latitude!);
+                                         ^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:63:42:
+Error: The getter 'longitude' isn't defined for the type 'Object?'.
+ - 'Object' is from 'dart:core'.
+              final lng = double.parse(v.longitude!);
+                                         ^^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:65:24:
+Error: The method 'LatLng' isn't defined for the type '_GasMapScreenState'.
+ - '_GasMapScreenState' is from 'package:gas_monitor_flutter/presentation/screens/gas_map_screen.dart' ('lib/presentation/screens/gas_map_screen.dart').
+                point: LatLng(lat, lng),
+                       ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:86:16:
+Error: A value of type 'List<dynamic>' can't be returned from a function with return type 'List<Marker>'.
+ - 'List' is from 'dart:core'.
+ - 'Marker' is from 'package:flutter_map/src/layer/marker_layer/marker_layer.dart' ('../../../../.pub-cache/hosted/pub.dev/flutter_map-8.2.2/lib/src/layer/marker_layer/marker_layer.dart').
+            }).toList(),
+               ^
+lib/presentation/screens/gas_map_screen.dart:124:46:
+Error: 'Vendor' isn't a type.
+  Widget _buildVendorOverlay(AsyncValue<List<Vendor>> vendorsAsync) {
+                                             ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:142:106:
+Error: No named parameter with the name 'italic'.
+              child: Text('LOCAL SUPPLIERS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, italic: true, color: Colors.white)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:157:47:
+Error: The method 'LatLng' isn't defined for the type '_GasMapScreenState'.
+ - '_GasMapScreenState' is from 'package:gas_monitor_flutter/presentation/screens/gas_map_screen.dart' ('lib/presentation/screens/gas_map_screen.dart').
+                          _mapController.move(LatLng(double.parse(v.latitude!), double.parse(v.longitude!)), 15);
+                                              ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:190:27:
+Error: 'Vendor' isn't a type.
+  Widget _buildDetailCard(Vendor v) {
+                          ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:214:121:
+Error: No named parameter with the name 'italic'.
+                      Text(v.storeName.toUpperCase(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, italic: true, color: Colors.white)),
+                                                                                          ^^^^^^
+../../../../flutter/packages/flutter/lib/src/painting/text_style.dart:480:9:
+Info: Found this candidate, but the arguments don't match.
+  const TextStyle({
+        ^^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:246:34:
+Error: 'Vendor' isn't a type.
+  Future<void> _launchNavigation(Vendor v) async {
+                                 ^^^^^^
+lib/presentation/screens/gas_map_screen.dart:249:15:
+Error: The method 'canLaunchUrl' isn't defined for the type '_GasMapScreenState'.
+ - '_GasMapScreenState' is from 'package:gas_monitor_flutter/presentation/screens/gas_map_screen.dart' ('lib/presentation/screens/gas_map_screen.dart').
+    if (await canLaunchUrl(Uri.parse(url))) {
+              ^^^^^^^^^^^^
+lib/presentation/screens/gas_map_screen.dart:250:13:
+Error: The method 'launchUrl' isn't defined for the type '_GasMapScreenState'.
+ - '_GasMapScreenState' is from 'package:gas_monitor_flutter/presentation/screens/gas_map_screen.dart' ('lib/presentation/screens/gas_map_screen.dart').
+      await launchUrl(Uri.parse(url));
+            ^^^^^^^^^
+lib/domain/providers/auth_provider.dart:61:16:
+Error: 'DioException' isn't a type.
+      if (e is DioException && e.response?.data != null) {
+               ^^^^^^^^^^^^
+lib/domain/providers/auth_provider.dart:61:34:
+Error: The getter 'response' isn't defined for the type 'Object'.
+ - 'Object' is from 'dart:core'.
+      if (e is DioException && e.response?.data != null) {
+                                 ^^^^^^^^
+lib/domain/providers/auth_provider.dart:62:24:
+Error: The getter 'response' isn't defined for the type 'Object'.
+ - 'Object' is from 'dart:core'.
+        final data = e.response!.data;
+                       ^^^^^^^^
+lib/domain/providers/auth_provider.dart:88:16:
+Error: 'DioException' isn't a type.
+      if (e is DioException && e.response?.data != null) {
+               ^^^^^^^^^^^^
+lib/domain/providers/auth_provider.dart:88:34:
+Error: The getter 'response' isn't defined for the type 'Object'.
+ - 'Object' is from 'dart:core'.
+      if (e is DioException && e.response?.data != null) {
+                                 ^^^^^^^^
+lib/domain/providers/auth_provider.dart:89:24:
+Error: The getter 'response' isn't defined for the type 'Object'.
+ - 'Object' is from 'dart:core'.
+        final data = e.response!.data;
+                       ^^^^^^^^
+lib/data/models/notification_models.dart:19:68:
+Error: Method not found: '_$NotificationModelFromJson'.
+  factory NotificationModel.fromJson(Map<String, dynamic> json) => _$NotificationModelFromJson(json);
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/data/models/chat_models.dart:14:62:
+Error: Method not found: '_$ChatMessageFromJson'.
+  factory ChatMessage.fromJson(Map<String, dynamic> json) => _$ChatMessageFromJson(json);
+                                                             ^^^^^^^^^^^^^^^^^^^^^
+lib/data/repositories/auth_repository.dart:39:52:
+Error: Member not found: 'userProfile'.
+      final response = await _dio.get(ApiConstants.userProfile);
+                                                   ^^^^^^^^^^^
+lib/data/repositories/chat_repository.dart:27:46:
+Error: The getter 'role' isn't defined for the type 'ChatMessage'.
+ - 'ChatMessage' is from 'package:gas_monitor_flutter/data/models/chat_models.dart' ('lib/data/models/chat_models.dart').
+            ...history.map((m) => {'role': m.role, 'content': m.content}),
+                                             ^^^^
+lib/data/repositories/chat_repository.dart:27:65:
+Error: The getter 'content' isn't defined for the type 'ChatMessage'.
+ - 'ChatMessage' is from 'package:gas_monitor_flutter/data/models/chat_models.dart' ('lib/data/models/chat_models.dart').
+            ...history.map((m) => {'role': m.role, 'content': m.content}),
+                                                                ^^^^^^^
+lib/data/repositories/vendor_repository.dart:12:49:
+Error: The getter 'Vendor' isn't defined for the type 'VendorRepository'.
+ - 'VendorRepository' is from 'package:gas_monitor_flutter/data/repositories/vendor_repository.dart' ('lib/data/repositories/vendor_repository.dart').
+      return (response.data as List).map((v) => Vendor.fromJson(v)).toList();
+                                                ^^^^^^
+Error: Compilation failed.
+  Command: /home/tchoua/flutter/bin/cache/dart-sdk/bin/dart compile js --platform-binaries=/home/tchoua/flutter/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.41.4 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=ff37bef603 -DFLUTTER_ENGINE_REVISION=e4b8dca3f1 -DFLUTTER_DART_VERSION=3.11.1 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/e4b8dca3f1b4ede4c30371002441c88c12187ed6/ --native-null-assertions --no-source-maps -O4 --minify -o /home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/.dart_tool/flutter_build/114f3896b2857025628b6a9ef4912603/app.dill --packages=/home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/.dart_tool/package_config.json --cfe-only /home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/.dart_tool/flutter_build/114f3896b2857025628b6a9ef4912603/main.dart
+#0      RunResult.throwException (package:flutter_tools/src/base/process.dart:153:5)
+#1      _DefaultProcessUtils.run (package:flutter_tools/src/base/process.dart:379:19)
+<asynchronous suspension>
+#2      Dart2JSTarget.build (package:flutter_tools/src/build_system/targets/web.dart:208:5)
+<asynchronous suspension>
+#3      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:937:9)
+<asynchronous suspension>
+#4      Future.wait.<anonymous closure> (dart:async/future.dart:546:21)
+<asynchronous suspension>
+#5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:875:32)
+<asynchronous suspension>
+#6      Future.wait.<anonymous closure> (dart:async/future.dart:546:21)
+<asynchronous suspension>
+#7      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:875:32)
+<asynchronous suspension>
+#8      FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:684:16)
+<asynchronous suspension>
+#9      WebBuilder.buildWeb (package:flutter_tools/src/web/compile.dart:107:34)
+<asynchronous suspension>
+#10     BuildWebCommand.runCommand (package:flutter_tools/src/commands/build_web.dart:300:5)
+<asynchronous suspension>
+#11     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1590:27)
+<asynchronous suspension>
+#12     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#13     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+<asynchronous suspension>
+#14     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:496:9)
+<asynchronous suspension>
+#15     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#16     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:431:5)
+<asynchronous suspension>
+#17     FlutterCommandRunner.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:307:33)
+<asynchronous suspension>
+#18     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:104:11)
+<asynchronous suspension>
+#19     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+<asynchronous suspension>
+#20     main (package:flutter_tools/executable.dart:103:3)
+<asynchronous suspension>
+
+Compiling lib/main.dart for the Web...                             21.2s
+Error: Failed to compile application for the Web.
