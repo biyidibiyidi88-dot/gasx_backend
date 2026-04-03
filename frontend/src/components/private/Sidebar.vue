@@ -10,7 +10,7 @@
         'w-0 overflow-hidden hidden': !isOpen && isMobile,
         'p-6 sm:p-8': isMobile
       }
-    ]" role="navigation" aria-label="Gas Tracking Sidebar">
+    ]" role="navigation" aria-label="GaSX Sidebar">
     
     <!-- Mobile Close Button -->
     <button 
@@ -40,7 +40,7 @@
         </div>
         <div class="flex flex-col text-left">
           <h1 class="text-2xl font-black tracking-tighter text-white uppercase leading-none">
-            Gas<span class="text-teal-400">Track</span>
+            Ga<span class="text-teal-400">SX</span>
           </h1>
           <div class="flex items-center space-x-1.5 mt-1">
             <span class="w-1 h-1 rounded-full bg-teal-500 animate-pulse"></span>

@@ -14,7 +14,7 @@
               </svg>
             </div>
             <span class="text-2xl font-black tracking-tighter text-white">
-              Gas<span class="text-teal-400">Track</span>
+              Ga<span class="text-teal-400">SX</span>
             </span>
           </router-link>
           <p class="text-gray-400 text-sm leading-relaxed max-w-xs">
@@ -70,7 +70,7 @@
 
       <!-- Copyright -->
       <div class="mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[11px] font-bold uppercase tracking-widest text-white/20">
-        <p>&copy; {{ new Date().getFullYear() }} GasTrack AI. All rights reserved.</p>
+        <p>&copy; {{ new Date().getFullYear() }} GaSX AI. All rights reserved.</p>
         <div class="flex space-x-8 mt-4 md:mt-0">
           <router-link to="/privacy" class="hover:text-white transition-colors">Privacy</router-link>
           <router-link to="/terms" class="hover:text-white transition-colors">Terms</router-link>

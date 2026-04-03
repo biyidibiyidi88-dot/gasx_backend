@@ -18,8 +18,8 @@ from datetime import datetime, timedelta
 import time
 
 # Configuration
-API_BASE_URL = "https://gas-monitor-sfk3.onrender.com/api"
-API_TOKEN = "972e4539789c26414553c450b2994111b7ebccae"
+API_BASE_URL = "http://127.0.0.1:8000/api"
+API_TOKEN = "ac0e3588ae5d3f7d01f341d0cddcba30276f686b"
 DEFAULT_SENSOR_ID = 13
 
 # Tank specifications

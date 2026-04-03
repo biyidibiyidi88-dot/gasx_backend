@@ -401,6 +401,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "accept_terms",
             "newsletter_subscription",
             "is_admin",
+            "preferred_bottle_size",
+            "preferred_bottle_brand",
             "houses",
             "emergency_contacts",
             "created_at",

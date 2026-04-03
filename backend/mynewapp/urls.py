@@ -18,6 +18,7 @@ from .views import (
     NotificationSettingsView,
     PasswordChangeView,
     ProfileImageView,
+    ProfileDeleteView,
     RegisterView,
     UserDetailView,
     UserInviteView,
@@ -42,6 +43,7 @@ urlpatterns = [
     # User endpoints
     path("auth/password-change/", PasswordChangeView.as_view(), name="password-change"),
     path("users/profile/", UserProfileView.as_view(), name="user-profile"),
+    path("users/profile/delete/", ProfileDeleteView.as_view(), name="profile-delete"),
     path(
         "users/profile/image/", ProfileImageView.as_view(), name="profile-image"
     ),  # Add this line

@@ -39,7 +39,7 @@
               <h2 class="text-4xl sm:text-7xl font-black text-white tracking-tighter uppercase italic leading-none mb-6 sm:mb-10">Our Genesis</h2>
               
               <div class="space-y-6 sm:space-y-8 text-lg sm:text-xl text-white/30 font-bold uppercase tracking-tighter italic leading-relaxed">
-                <p>Founded in 2023, GasMonitor emerged with a singular purpose: to replace binary protocols with intelligent awareness.</p>
+                <p>Founded in 2023, GaSX emerged with a singular purpose: to replace binary protocols with intelligent awareness.</p>
                 <p>We've evolved into a trusted global node, securing thousands of households through zero-latency sensing and predictive analysis.</p>
               </div>
             </div>

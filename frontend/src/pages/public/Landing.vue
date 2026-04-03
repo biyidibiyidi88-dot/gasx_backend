@@ -1,5 +1,5 @@
 <template>
-  <div class="home-page min-h-screen pt-24 pb-16 sm:pt-48 sm:pb-40 overflow-hidden font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif]  relative selection:bg-teal-400 selection:text-gray-900">
+  <div class="home-page min-h-screen pt-24 pb-16 sm:pt-48 sm:pb-40 bg-transparent overflow-hidden font-['Inter',-apple-system,BlinkMacSystemFont,sans-serif]  relative selection:bg-teal-400 selection:text-gray-900">
     
     <!-- Sophisticated 3D Background Elements -->
     <div class="fixed inset-0 pointer-events-none -z-10">

@@ -86,6 +86,16 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+class ProfileDeleteView(generics.DestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
+
 class PasswordChangeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

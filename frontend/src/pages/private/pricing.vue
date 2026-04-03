@@ -203,7 +203,7 @@ const handlePayment = async () => {
   try {
     const res = await axios.post(`${CAMPAY_BASE_URL}/collect/`, {
       amount: selectedPlan.value.apiPrice, currency: 'XAF', from: phone,
-      description: `Gas Monitor ${selectedPlan.value.name} Tier Sync`,
+      description: `GaSX ${selectedPlan.value.name} Tier Sync`,
       external_reference: `BIAS-${Date.now()}`
     }, { headers: { 'Authorization': `Token ${CAMPAY_ACCESS_TOKEN}`, 'Content-Type': 'application/json' }})
     transactionRef.value = res.data.reference

@@ -57,6 +57,32 @@ class CustomUser(AbstractUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
     last_activity = models.DateTimeField(default=timezone.now)
+    
+    # Gas Bottle Preferences
+    BOTTLE_SIZE_CHOICES = (
+        ("SMALL_6KG", "Small (6kg)"),
+        ("MEDIUM_12_5KG", "Medium (12.5kg)"),
+        ("BIG_50KG", "Big (50kg)"),
+    )
+    
+    BOTTLE_BRAND_CHOICES = (
+        ("BOCOM", "Bocom"),
+        ("TOTAL", "Total"),
+        ("GREEN_OIL", "Green Oil"),
+        ("SCTM", "SCTM"),
+        ("CAMGAZ", "Camgaz"),
+        ("TRADEX", "Tradex"),
+        ("MRS", "MRS"),
+        ("AFT", "AFT"),
+        ("OTHER", "Other"),
+    )
+
+    preferred_bottle_size = models.CharField(
+        max_length=20, choices=BOTTLE_SIZE_CHOICES, default="MEDIUM_12_5KG"
+    )
+    preferred_bottle_brand = models.CharField(
+        max_length=50, choices=BOTTLE_BRAND_CHOICES, default="TOTAL"
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]

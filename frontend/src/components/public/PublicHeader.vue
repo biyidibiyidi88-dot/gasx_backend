@@ -9,17 +9,15 @@
             class="flex items-center space-x-3 group"
             aria-label="Home"
           >
+            <span class="text-xl sm:text-3xl font-black tracking-tighter text-white hidden sm:inline-block">
+              Ga<span class="text-teal-400">SX</span>
+            </span>
             <div class="relative">
               <div class="absolute inset-0 bg-teal-500 blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
-              <div class="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center transform group-hover:scale-110 transition-all duration-500 shadow-2xl shadow-teal-500/20">
-                <svg class="w-6 h-6 sm:w-7 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div class="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-blue-600 flex items-center justify-center transform group-hover:scale-110 transition-all duration-500 shadow-2xl shadow-teal-500/20 overflow-hidden">
+                <img src="/favicon.png" alt="Logo" class="w-full h-full object-cover">
               </div>
             </div>
-            <span class="text-xl sm:text-3xl font-black tracking-tighter text-white hidden sm:inline-block">
-              Gas<span class="text-teal-400">Track</span>
-            </span>
           </router-link>
         </div>
 

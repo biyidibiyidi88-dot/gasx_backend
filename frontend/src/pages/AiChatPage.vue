@@ -285,14 +285,14 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_KEY}`,
         'HTTP-Referer': window.location.href,
-        'X-Title': 'Gas Monitor Bipsync AI'
+        'X-Title': 'GaSX Bipsync AI'
       },
       body: JSON.stringify({
         model: selectedModel.value,
         messages: [
           {
             role: 'system',
-            content: 'You are the Bipsync AI, a high-fidelity intelligence hub for Gas Monitor. You specialize in technical telemetry, safety optimization, and industrial gas logistics. Maintain a professional, data-centric, and sophisticated tone.'
+            content: 'You are the Bipsync AI, a high-fidelity intelligence hub for GaSX. You specialize in technical telemetry, safety optimization, and industrial gas logistics. Maintain a professional, data-centric, and sophisticated tone.'
           },
           ...messages.value.map(m => ({ role: m.role, content: m.content }))
         ],
