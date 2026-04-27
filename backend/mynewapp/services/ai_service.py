@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class AIPredictionService:
     API_URL = "https://openrouter.ai/api/v1/chat/completions"
     API_KEY = "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"
-    BOTTLE_CAPACITY = 20
+    DEFAULT_BOTTLE_CAPACITY = 12.50
 
     # Available models with fallback order
     MODEL_PRIORITY = [
@@ -72,7 +72,7 @@ class AIPredictionService:
             raise
 
     @classmethod
-    def _validate_prediction(cls, prediction, metrics):
+    def _validate_prediction(cls, prediction, metrics, bottle_capacity):
         """Validate prediction accuracy with enhanced list handling"""
         try:
             # Handle cases where remaining_kg or projected_days are lists
@@ -101,9 +101,9 @@ class AIPredictionService:
                 )
             
             # Remaining gas should be within tank capacity
-            if not (0 <= remaining_kg <= cls.BOTTLE_CAPACITY):
+            if not (0 <= remaining_kg <= bottle_capacity):
                 raise ValueError(
-                    f"Reported remaining {remaining_kg}kg invalid. Should be between 0-{cls.BOTTLE_CAPACITY}kg"
+                    f"Reported remaining {remaining_kg}kg invalid. Should be between 0-{bottle_capacity}kg"
                 )
             
             if not (0.5 <= prediction.get('confidence', 0) <= 0.95):
@@ -118,7 +118,11 @@ class AIPredictionService:
             return False
 
     @classmethod
-    def predict_days_remaining(cls, history_data, current_remaining_kg=None):
+    def predict_days_remaining(cls, history_data, current_remaining_kg=None, bottle_capacity=None):
+        """Predict remaining gas days with robust error handling"""
+        if bottle_capacity is None:
+            bottle_capacity = cls.DEFAULT_BOTTLE_CAPACITY
+        bottle_capacity = float(bottle_capacity)
         """Predict remaining gas days with robust error handling"""
         try:
             if not cls.API_KEY:
@@ -130,7 +134,7 @@ class AIPredictionService:
             # If current remaining gas not provided, estimate from latest data
             if current_remaining_kg is None:
                 # Assume we start with some reasonable amount based on consumption patterns
-                current_remaining_kg = max(1.0, cls.BOTTLE_CAPACITY * 0.3)  # Default to 30% capacity
+                current_remaining_kg = max(1.0, bottle_capacity * 0.3)  # Default to 30% capacity
             
             current_remaining_kg = float(current_remaining_kg)
             cls._debug_log(f"Current remaining gas: {current_remaining_kg}kg", level='info')
@@ -144,7 +148,7 @@ class AIPredictionService:
             prompt = f"""Act as a precise gas consumption analyzer. Follow strictly:
 
             Constraints:
-            - Bottle capacity: {cls.BOTTLE_CAPACITY}kg
+            - Bottle capacity: {bottle_capacity}kg
             - Current remaining: {current_remaining_kg:.2f}kg
             - Max possible days: {current_remaining_kg/metrics['avg_daily']:.1f}
 
@@ -202,7 +206,7 @@ class AIPredictionService:
                     
                     prediction = json.loads(json_match.group())
                     
-                    if cls._validate_prediction(prediction, metrics):
+                    if cls._validate_prediction(prediction, metrics, bottle_capacity):
                         cls._debug_log(f"Valid prediction from {model}", level='info')
                         return prediction
                     

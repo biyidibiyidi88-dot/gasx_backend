@@ -19,20 +19,22 @@ import time
 
 # Configuration
 API_BASE_URL = "http://127.0.0.1:8000/api"
-API_TOKEN = "ac0e3588ae5d3f7d01f341d0cddcba30276f686b"
+API_TOKEN = "84eae07987192e82a910087ba4112cc7f29055fd"
 DEFAULT_SENSOR_ID = 13
 
-# Tank specifications
-TANK_CAPACITY = 20.0  # kg of gas
-DAILY_DEPLETION_PHASE1 = TANK_CAPACITY / 6  # ~3.33kg/day (0% in 6 days)
-DAILY_DEPLETION_PHASE2 = (TANK_CAPACITY * 0.6) / 4  # 3kg/day (40% in 4 days)
+# Default Tank specifications
+DEFAULT_CAPACITY = 12.5  # kg of gas
 
-def generate_test_cycle(start_date, sensor_id):
+def generate_test_cycle(start_date, sensor_id, capacity=DEFAULT_CAPACITY):
     """Generate the precise 10-day test cycle with realistic data"""
     readings = []
     current_date = start_date
-    current_gas = TANK_CAPACITY  # Start at 100%
+    current_gas = capacity  # Start at 100%
     num_readings_per_day = 3
+    
+    # Calculate depletions based on capacity
+    daily_depletion_p1 = capacity / 6  # ~100% in 6 days
+    daily_depletion_p2 = (capacity * 0.6) / 4  # ~60% in 4 days
 
     print("🔧 Gas Monitor - Precise 10-Day Test Cycle")
     print("=" * 60)
@@ -45,7 +47,7 @@ def generate_test_cycle(start_date, sensor_id):
 
     # Phase 1: Full depletion in 6 days
     print("📉 PHASE 1: Full Depletion")
-    per_reading_depletion_p1 = DAILY_DEPLETION_PHASE1 / num_readings_per_day
+    per_reading_depletion_p1 = daily_depletion_p1 / num_readings_per_day
     for day in range(6):
         current_date = start_date + timedelta(days=day)
         print(f"  Day {day+1} ({current_date.strftime('%Y-%m-%d')}):")
@@ -61,15 +63,15 @@ def generate_test_cycle(start_date, sensor_id):
                 "reading_timestamp": reading_time.isoformat() + "Z",
             }
             readings.append(reading)
-            print(f"    - Reading at {reading_time.strftime('%H:%M')}: {reading['remaining_gas']:.2f}kg ({(reading['remaining_gas']/TANK_CAPACITY)*100:.1f}%)")
+            print(f"    - Reading at {reading_time.strftime('%H:%M')}: {reading['remaining_gas']:.2f}kg ({(reading['remaining_gas']/capacity)*100:.1f}%)")
 
     # Refill to 100%
     print("\n⛽ REFILL EVENT")
     refill_date = current_date + timedelta(days=1)
-    current_gas = TANK_CAPACITY
+    current_gas = capacity
     refill_reading = {
         "sensor": sensor_id,
-        "remaining_gas": round(current_gas, 2),
+        "remaining_gas": round(capacity, 2),
         "reading_timestamp": refill_date.replace(hour=10, minute=0).isoformat() + "Z",
     }
     readings.append(refill_reading)
@@ -77,7 +79,7 @@ def generate_test_cycle(start_date, sensor_id):
 
     # Phase 2: Partial depletion in 4 days
     print("\n📉 PHASE 2: Partial Depletion")
-    per_reading_depletion_p2 = DAILY_DEPLETION_PHASE2 / num_readings_per_day
+    per_reading_depletion_p2 = daily_depletion_p2 / num_readings_per_day
     for day in range(4):
         # Start day count from where phase 1 left off
         current_day_num = day + 7
@@ -85,7 +87,7 @@ def generate_test_cycle(start_date, sensor_id):
         print(f"  Day {current_day_num} ({current_date.strftime('%Y-%m-%d')}):")
         for i in range(num_readings_per_day):
             consumption = per_reading_depletion_p2 * random.uniform(0.9, 1.1)
-            current_gas = max(TANK_CAPACITY * 0.4, current_gas - consumption)
+            current_gas = max(capacity * 0.4, current_gas - consumption)
             
             reading_time = current_date.replace(hour=8 + i * 6, minute=random.randint(0, 59))
             reading = {
@@ -94,7 +96,7 @@ def generate_test_cycle(start_date, sensor_id):
                 "reading_timestamp": reading_time.isoformat() + "Z",
             }
             readings.append(reading)
-            print(f"    - Reading at {reading_time.strftime('%H:%M')}: {reading['remaining_gas']:.2f}kg ({(reading['remaining_gas']/TANK_CAPACITY)*100:.1f}%)")
+            print(f"    - Reading at {reading_time.strftime('%H:%M')}: {reading['remaining_gas']:.2f}kg ({(reading['remaining_gas']/capacity)*100:.1f}%)")
 
     print(f"\n✅ Test cycle complete with {len(readings)} readings")
     return readings
@@ -128,6 +130,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run precise 10-day test cycle")
     parser.add_argument("--sensor-id", type=int, default=DEFAULT_SENSOR_ID,
                       help=f"Sensor ID (default: {DEFAULT_SENSOR_ID})")
+    parser.add_argument("--capacity", type=float, default=DEFAULT_CAPACITY,
+                      help=f"Gas capacity in kg (default: {DEFAULT_CAPACITY})")
     parser.add_argument("--start-date", required=True,
                       help="Start date (YYYY-MM-DD)")
     
@@ -140,7 +144,7 @@ def main():
         return
     
     print(f"🚀 Starting 10-day test cycle for sensor {args.sensor_id}")
-    readings = generate_test_cycle(start_date, args.sensor_id)
+    readings = generate_test_cycle(start_date, args.sensor_id, args.capacity)
     
     if not readings:
         print("❌ No readings generated!")

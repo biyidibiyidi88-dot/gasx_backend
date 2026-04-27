@@ -23,7 +23,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '172.20.10.6',                  # keep if you're testing locally
+    '172.20.10.6',  
+    '10.0.2.2',                 # keep if you're testing locally
     '.onrender.com',                # Allow all Render subdomains
     '.railway.app',                 # Allow all Railway subdomains
     os.getenv('RENDER_EXTERNAL_HOSTNAME', ''),  # Render hostname
@@ -83,6 +84,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://10.0.2.2:8000",
     "https://gas-monitor-frontend.vercel.app",
     "https://gas-monitor-frontend-git-main.vercel.app",
     "https://gas-monitor-frontend-tchouas-projects.vercel.app",

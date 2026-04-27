@@ -311,18 +311,25 @@ class GasPredictionView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            # Get readings from the last 7 days
-            end_date = timezone.now()
-            start_date = end_date - timedelta(days=7)
-
+            # Fetch the most recent readings (unlimited time window, up to 100 points) 
+            # to ensure we have data even if the last reading was long ago.
             readings = GasReading.objects.filter(
-                sensor=sensor, reading_timestamp__gte=start_date
-            ).order_by("-reading_timestamp")
+                sensor=sensor
+            ).order_by("-reading_timestamp")[:100]
 
             if not readings.exists():
                 return Response(
-                    {"error": "No gas readings available for prediction"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "status_code": 200,
+                        "message": "Collecting initial data",
+                        "projected_days": 0,
+                        "confidence": 0,
+                        "trend": "collecting",
+                        "recommendation": "Please wait for more readings to be recorded for a precise prediction.",
+                        "calculation": "No historical readings found in the last 30 days",
+                        "history_data": []
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
             # Prepare history data for AI prediction
@@ -372,8 +379,17 @@ class GasPredictionView(APIView):
 
             if not history_data:
                 return Response(
-                    {"error": "Insufficient data for prediction"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "status_code": 200,
+                        "message": "Insufficient data for trend analysis",
+                        "projected_days": 0,
+                        "confidence": 0,
+                        "trend": "collecting",
+                        "recommendation": "Analyzing consumption patterns... more data needed for high-confidence prediction.",
+                        "calculation": "Insufficient consumption events (minimum 2 distinct time periods required)",
+                        "history_data": []
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
             # Get current remaining gas from latest reading
@@ -384,9 +400,11 @@ class GasPredictionView(APIView):
                 float(latest_reading.remaining_gas) if latest_reading else 1.0
             )
 
-            # Get prediction from AI service
+            # Get prediction from AI service with dynamic bottle capacity
             prediction = AIPredictionService.predict_days_remaining(
-                history_data, current_remaining_kg
+                history_data, 
+                current_remaining_kg,
+                bottle_capacity=sensor.house.user.gas_capacity
             )
 
             # Format response
@@ -544,7 +562,7 @@ class DailyGasConsumptionView(APIView):
                     'min_remaining_kg': round(day_data['min_remaining'] if day_data['min_remaining'] != float('inf') else 0, 2),
                     'max_remaining_kg': round(day_data['max_remaining'], 2),
                     'reading_count': day_data['reading_count'],
-                    'gas_percentage': round((avg_remaining / 20.0) * 100, 1)  # Assuming 20kg tank capacity
+                    'gas_percentage': round((avg_remaining / max(float(request.user.gas_capacity), 0.1)) * 100, 1)  # Use dynamic tank capacity
                 })
 
             return Response({
@@ -570,48 +588,58 @@ class GasReadingCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        # Save the gas reading
-        gas_reading = serializer.save()
+        user = self.request.user
+        raw_weight = serializer.validated_data.get('raw_weight')
+        remaining_gas = serializer.validated_data.get('remaining_gas')
 
-        # Check if gas level is at or below critical threshold (15%)
+        # If raw_weight is provided, calculate remaining_gas: raw_weight - tare_weight
+        if raw_weight is not None:
+            tare_weight = float(user.tare_weight)
+            calculated_gas = float(raw_weight) - tare_weight
+            # Ensure it's not negative
+            remaining_gas = max(0.0, calculated_gas)
+            
+        # Save with calculated (or provided) remaining_gas
+        gas_reading = serializer.save(remaining_gas=remaining_gas)
+
+        # Check if gas level is at or below critical thresholds
         sensor = gas_reading.sensor
-        remaining_gas = float(gas_reading.remaining_gas)
+        remaining_gas_val = float(gas_reading.remaining_gas)
 
-        # Calculate percentage based on 20kg tank capacity (from memory)
-        TANK_CAPACITY = 20.0  # kg
-        gas_percentage = (remaining_gas / TANK_CAPACITY) * 100
+        # Calculate percentage based on user's dynamic tank capacity
+        try:
+            TANK_CAPACITY = max(float(user.gas_capacity), 0.1)
+        except (AttributeError, TypeError, ValueError):
+            TANK_CAPACITY = 12.5  # default fallback
+        
+        gas_percentage = (remaining_gas_val / TANK_CAPACITY) * 100
 
-        # Alert thresholds to match frontend: 20% (low), 10% (critical)
+        # Alert thresholds: 20% (low), 10% (critical)
         LOW_THRESHOLD = 20.0
         CRITICAL_THRESHOLD = 10.0
 
         if gas_percentage <= LOW_THRESHOLD:
-            # Mark the reading as alert triggered
             gas_reading.is_alert_triggered = True
             gas_reading.save()
 
-            # Check if there's already an unresolved alert for this sensor
             existing_alert = Alert.objects.filter(
                 sensor=sensor, alert_type="GAS_LEVEL_LOW", is_resolved=False
             ).first()
 
-            # Only create a new alert if there isn't an existing unresolved one
             if not existing_alert:
-                # Determine severity based on gas level (matching frontend thresholds)
-                if gas_percentage <= CRITICAL_THRESHOLD:  # <= 10%
+                if gas_percentage <= CRITICAL_THRESHOLD:
                     severity = "CRITICAL"
-                elif gas_percentage <= 15:  # 10% < level <= 15%
+                elif gas_percentage <= 15:
                     severity = "HIGH"
-                else:  # 15% < level <= 20%
+                else:
                     severity = "MEDIUM"
 
-                # Create the alert
                 Alert.objects.create(
-                    user=sensor.house.user,
+                    user=user,
                     sensor=sensor,
                     alert_type="GAS_LEVEL_LOW",
                     severity_level=severity,
-                    alert_message=f"Critical gas level detected! {sensor.sensor_name} has only {remaining_gas}kg ({gas_percentage:.1f}%) remaining. Please refill soon.",
+                    alert_message=f"Critical gas level detected! {sensor.sensor_name} has only {remaining_gas_val:.2f}kg ({gas_percentage:.1f}%) remaining. Please refill soon.",
                     is_resolved=False,
                 )
 

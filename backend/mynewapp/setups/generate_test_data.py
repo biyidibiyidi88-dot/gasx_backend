@@ -22,14 +22,13 @@ import time
 import math
 
 # Configuration
-API_BASE_URL = "https://gas-monitor-sfk3.onrender.com/api"
-API_TOKEN = "972e4539789c26414553c450b2994111b7ebccae"
+API_BASE_URL = "http://127.0.0.1:8000/api"
+API_TOKEN = "84eae07987192e82a910087ba4112cc7f29055fd"
 DEFAULT_SENSOR_ID = 13
 
-# Tank specifications (matching ESP32 code)
-TANK_EMPTY_WEIGHT = 6.0  # kg
-TANK_FULL_WEIGHT = 26.0  # kg (6kg tank + 20kg gas)
-MAX_GAS_CAPACITY = TANK_FULL_WEIGHT - TANK_EMPTY_WEIGHT  # 20kg
+# Default Tank specifications
+DEFAULT_TARE = 12.5  # kg
+DEFAULT_CAPACITY = 12.5  # kg
 
 # ESP32 behavior simulation
 MIN_WEIGHT_CHANGE = 0.1  # kg - minimum change to trigger reading
@@ -89,23 +88,24 @@ def should_send_reading(current_weight, last_sent_weight, time_since_last):
     
     return True
 
-def generate_month_data(start_date, days=30, sensor_id=DEFAULT_SENSOR_ID):
+def generate_month_data(start_date, days=30, sensor_id=DEFAULT_SENSOR_ID, capacity=DEFAULT_CAPACITY, tare=DEFAULT_TARE):
     """
     Generate realistic gas readings for the specified period.
     """
     readings = []
     current_date = start_date
     
-    # Start with a nearly full tank (18-20kg of gas)
-    current_gas_weight = random.uniform(18.0, 20.0)
-    current_total_weight = TANK_EMPTY_WEIGHT + current_gas_weight
+    # Start with a nearly full tank (80-100% of capacity)
+    current_gas_weight = random.uniform(capacity * 0.8, capacity)
+    current_total_weight = tare + current_gas_weight
     last_sent_weight = current_total_weight
     last_reading_time = 0
     
     print(f"🏁 Starting simulation:")
     print(f"   📅 Period: {days} days from {start_date.strftime('%Y-%m-%d')}")
-    print(f"   ⛽ Initial gas: {current_gas_weight:.2f}kg ({(current_gas_weight/MAX_GAS_CAPACITY)*100:.1f}%)")
+    print(f"   ⛽ Initial gas: {current_gas_weight:.2f}kg ({(current_gas_weight/capacity)*100:.1f}%)")
     print(f"   📊 Sensor ID: {sensor_id}")
+    print(f"   🎛️  Bottle: {capacity}kg Capacity, {tare}kg Tare")
     print()
     
     for day in range(days):
@@ -131,7 +131,7 @@ def generate_month_data(start_date, days=30, sensor_id=DEFAULT_SENSOR_ID):
         for hour, minute, consumption in consumption_events:
             # Consume gas
             current_gas_weight = max(0, current_gas_weight - consumption)
-            current_total_weight = TANK_EMPTY_WEIGHT + current_gas_weight
+            current_total_weight = tare + current_gas_weight
             daily_consumption += consumption
             
             # Create timestamp for this event
@@ -159,7 +159,7 @@ def generate_month_data(start_date, days=30, sensor_id=DEFAULT_SENSOR_ID):
                 day_readings += 1
         
         # Progress update
-        gas_percentage = (current_gas_weight / MAX_GAS_CAPACITY) * 100
+        gas_percentage = (current_gas_weight / capacity) * 100
         print(f"📅 Day {day+1:2d} ({current_date.strftime('%Y-%m-%d')}): "
               f"{current_gas_weight:5.2f}kg ({gas_percentage:5.1f}%) | "
               f"Consumed: {daily_consumption:.2f}kg | "
@@ -267,6 +267,20 @@ def main():
     )
     
     parser.add_argument(
+        "--capacity", 
+        type=float, 
+        default=DEFAULT_CAPACITY,
+        help=f"Gas capacity in kg (default: {DEFAULT_CAPACITY})"
+    )
+    
+    parser.add_argument(
+        "--tare", 
+        type=float, 
+        default=DEFAULT_TARE,
+        help=f"Empty bottle weight in kg (default: {DEFAULT_TARE})"
+    )
+    
+    parser.add_argument(
         "--dry-run", 
         action="store_true",
         help="Generate data but don't upload to backend"
@@ -285,7 +299,7 @@ def main():
     print("=" * 55)
     
     # Generate realistic data
-    readings = generate_month_data(start_date, args.days, args.sensor_id)
+    readings = generate_month_data(start_date, args.days, args.sensor_id, args.capacity, args.tare)
     
     if not readings:
         print("❌ No readings generated!")
@@ -295,7 +309,7 @@ def main():
         print(f"\n🔍 Dry run mode - generated {len(readings)} readings")
         print("📄 Sample readings:")
         for i, reading in enumerate(readings[:5]):
-            print(f"   {i+1}. {reading['timestamp']}: {reading['remaining_gas']}kg")
+            print(f"   {i+1}. {reading['reading_timestamp']}: {reading['remaining_gas']}kg")
         if len(readings) > 5:
             print(f"   ... and {len(readings)-5} more")
         return

@@ -1,0 +1,1 @@
+ /home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/.dart_tool/flutter_build/28e39db38ec542a958a817a3c58e5bc7/dart_build_result.json:  /home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/.dart_tool/package_config.json /home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/pubspec.yaml /home/tchoua/flutter/bin/cache/dart-sdk/version

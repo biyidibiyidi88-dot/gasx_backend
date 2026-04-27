@@ -66,12 +66,16 @@ class CustomUser(AbstractUser, PermissionsMixin):
     )
     
     BOTTLE_BRAND_CHOICES = (
+        ("SCTM", "SCTM"),
+        ("TOTAL_ENERGIES", "TotalEnergies"),
+        ("TRADEX", "Tradex"),
+        ("STAR_GAS", "StarGas"),
+        ("AZA_MRS", "Aza Gas / MRS"),
+        ("GLOCAL_GAS", "Glocal Gas"),
         ("BOCOM", "Bocom"),
         ("TOTAL", "Total"),
         ("GREEN_OIL", "Green Oil"),
-        ("SCTM", "SCTM"),
         ("CAMGAZ", "Camgaz"),
-        ("TRADEX", "Tradex"),
         ("MRS", "MRS"),
         ("AFT", "AFT"),
         ("OTHER", "Other"),
@@ -81,7 +85,13 @@ class CustomUser(AbstractUser, PermissionsMixin):
         max_length=20, choices=BOTTLE_SIZE_CHOICES, default="MEDIUM_12_5KG"
     )
     preferred_bottle_brand = models.CharField(
-        max_length=50, choices=BOTTLE_BRAND_CHOICES, default="TOTAL"
+        max_length=50, choices=BOTTLE_BRAND_CHOICES, default="TOTAL_ENERGIES"
+    )
+    tare_weight = models.DecimalField(
+        _("tare weight"), max_digits=5, decimal_places=2, default=12.50
+    )
+    gas_capacity = models.DecimalField(
+        _("gas capacity"), max_digits=5, decimal_places=2, default=12.50
     )
 
     USERNAME_FIELD = "email"
@@ -578,12 +588,16 @@ class VendorProfile(models.Model):
 
 class GasBottle(models.Model):
     BRAND_CHOICES = (
+        ("SCTM", "SCTM"),
+        ("TOTAL_ENERGIES", "TotalEnergies"),
+        ("TRADEX", "Tradex"),
+        ("STAR_GAS", "StarGas"),
+        ("AZA_MRS", "Aza Gas / MRS"),
+        ("GLOCAL_GAS", "Glocal Gas"),
         ("BOCOM", "Bocom"),
         ("TOTAL", "Total"),
         ("GREEN_OIL", "Green Oil"),
-        ("SCTM", "SCTM"),
         ("CAMGAZ", "Camgaz"),
-        ("TRADEX", "Tradex"),
         ("MRS", "MRS"),
         ("AFT", "AFT"),
         ("OTHER", "Other"),

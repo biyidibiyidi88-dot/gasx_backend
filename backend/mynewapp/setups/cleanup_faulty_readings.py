@@ -19,8 +19,8 @@ import sys
 from datetime import datetime
 
 # Configuration
-API_BASE_URL = "https://gas-monitor-sfk3.onrender.com/api"
-API_TOKEN = "972e4539789c26414553c450b2994111b7ebccae"
+API_BASE_URL = "http://127.0.0.1:8000/api"
+API_TOKEN = "84eae07987192e82a910087ba4112cc7f29055fd"
 
 def clear_gas_readings(sensor_id=None):
     """

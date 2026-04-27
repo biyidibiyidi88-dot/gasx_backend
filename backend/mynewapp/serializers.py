@@ -52,6 +52,10 @@ class UserSerializer(serializers.ModelSerializer):
             "profile_image",
             "profile_image_url",
             "is_active",
+            "preferred_bottle_size",
+            "preferred_bottle_brand",
+            "tare_weight",
+            "gas_capacity",
         ]
         extra_kwargs = {
             "password": {"write_only": True},
@@ -187,23 +191,7 @@ class GasSensorSerializer(serializers.ModelSerializer):
         return None
 
 
-class GasReadingSerializer(serializers.ModelSerializer):
-    sensor_name = serializers.CharField(source="sensor.sensor_name", read_only=True)
-    sensor_type = serializers.CharField(source="sensor.sensor_type", read_only=True)
 
-    class Meta:
-        model = GasReading
-        fields = [
-            "id",
-            "sensor",
-            "sensor_name",
-            "sensor_type",
-            "remaining_gas",
-            "reading_timestamp",
-            "is_alert_triggered",
-            "created_at",
-        ]
-        read_only_fields = ["created_at"]
 
 
 class AlertSerializer(serializers.ModelSerializer):
@@ -403,6 +391,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "is_admin",
             "preferred_bottle_size",
             "preferred_bottle_brand",
+            "tare_weight",
+            "gas_capacity",
             "houses",
             "emergency_contacts",
             "created_at",
@@ -549,6 +539,9 @@ class GasReadingSerializer(serializers.ModelSerializer):
     sensor_type = serializers.CharField(source="sensor.sensor_type", read_only=True)
     date = serializers.SerializerMethodField()
     is_weekend = serializers.SerializerMethodField()
+    raw_weight = serializers.DecimalField(
+        max_digits=10, decimal_places=2, required=False, write_only=True
+    )
 
     class Meta:
         model = GasReading
@@ -558,12 +551,16 @@ class GasReadingSerializer(serializers.ModelSerializer):
             "sensor_name",
             "sensor_type",
             "remaining_gas",
+            "raw_weight",
             "reading_timestamp",
             "is_alert_triggered",
             "date",
             "is_weekend",
         ]
         read_only_fields = ["date", "is_weekend"]
+        extra_kwargs = {
+            "remaining_gas": {"required": False}
+        }
 
     def get_date(self, obj):
         return obj.reading_timestamp.date().isoformat()

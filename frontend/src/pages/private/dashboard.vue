@@ -139,8 +139,12 @@
 
               <div v-else class="space-y-8 relative z-10">
                 <div class="text-center py-4">
-                  <div class="text-6xl font-black text-white italic tracking-tighter mb-1 group-hover/pred:scale-110 transition-transform duration-700">{{ prediction.days_remaining }}</div>
-                  <div class="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Projected Uptime / Days</div>
+                  <div class="text-6xl font-black text-white italic tracking-tighter mb-1 group-hover/pred:scale-110 transition-transform duration-700">
+                    {{ prediction.trend === 'collecting' || prediction.days_remaining === 0 ? '--' : prediction.days_remaining }}
+                  </div>
+                  <div class="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
+                    {{ prediction.trend === 'collecting' ? 'Intelligence Gathering...' : 'Projected Uptime / Days' }}
+                  </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
@@ -385,7 +389,7 @@ const cookableFoodsWidgetRef = ref(null)
 const tank = ref({
   level: 0,
   lastRefill: '2025-06-01',
-  capacity: 20,
+  capacity: 12.5, // Default improved to common size
   type: 'Propane', 
   serialNumber: 'HTK-2025-0425',
   installationDate: '2025-04-25'
@@ -534,7 +538,12 @@ const checkForAlerts = () => {
 }
 
 const fetchGasReadings = async () => {
-  try {
+    // Fetch user profile first to get actual capacity
+    const profileRes = await api.get('profile/')
+    if (profileRes.data) {
+      tank.value.capacity = parseFloat(profileRes.data.gas_capacity) || 12.5
+    }
+
     const res = await api.get('sensors/')
     const sensors = res.data
     if (sensors.length > 0) {

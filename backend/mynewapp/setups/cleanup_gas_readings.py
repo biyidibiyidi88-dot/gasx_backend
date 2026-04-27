@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 def get_auth_headers():
     """Return authentication headers with API token."""
-    token = "972e4539789c26414553c450b2994111b7ebccae"  # User's API token
+    token = "84eae07987192e82a910087ba4112cc7f29055fd"  # User's API token
     return {
         "Authorization": f"Token {token}",
         "Content-Type": "application/json"
@@ -18,7 +18,7 @@ def get_auth_headers():
 
 def get_base_url():
     """Return the base API URL."""
-    return "https://gas-monitor-sfk3.onrender.com/api"
+    return "http://127.0.0.1:8000/api"
 
 def get_gas_readings():
     """Fetch all gas readings from the API."""
