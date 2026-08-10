@@ -1,1 +1,0 @@
- /home/tchoua/Desktop/gasmonitor/Gas_Monitor/mobilefrontend/.dart_tool/flutter_build/5c70fd8d200c0ff40d537e76315c7644/native_assets.json: 
