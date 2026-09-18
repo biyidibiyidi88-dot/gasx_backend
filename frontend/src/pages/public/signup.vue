@@ -74,12 +74,15 @@
               <!-- Account Type Selection -->
               <div class="space-y-4 border-b border-white/5 pb-8 mb-8">
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Account Type</label>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-3">
                   <button type="button" @click="form.accountType = 'user'" :class="form.accountType === 'user' ? 'bg-teal-400/20 border-teal-400 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : 'bg-white/[0.03] border-white/5 text-white/40 hover:bg-white/[0.05]'" class="py-4 rounded-2xl border font-black uppercase tracking-widest text-[10px] transition-all duration-300">
                     Regular User
                   </button>
                   <button type="button" @click="form.accountType = 'vendor'" :class="form.accountType === 'vendor' ? 'bg-teal-400/20 border-teal-400 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : 'bg-white/[0.03] border-white/5 text-white/40 hover:bg-white/[0.05]'" class="py-4 rounded-2xl border font-black uppercase tracking-widest text-[10px] transition-all duration-300">
                     Gas Supplier
+                  </button>
+                  <button type="button" @click="form.accountType = 'delivery'" :class="form.accountType === 'delivery' ? 'bg-orange-400/20 border-orange-400 text-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.2)]' : 'bg-white/[0.03] border-white/5 text-white/40 hover:bg-white/[0.05]'" class="py-4 rounded-2xl border font-black uppercase tracking-widest text-[10px] transition-all duration-300">
+                    Delivery Person
                   </button>
                 </div>
               </div>
@@ -269,7 +272,8 @@ const handleSubmit = async () => {
       state_province: form.value.state_province || '',
       country: form.value.country,
       accept_terms: form.value.acceptTerms,
-      newsletter_subscription: form.value.newsletter
+      newsletter_subscription: form.value.newsletter,
+      is_delivery_person: form.value.accountType === 'delivery',
     };
     
     const response = await api.post("auth/register/", payload);

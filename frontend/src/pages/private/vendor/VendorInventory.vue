@@ -130,7 +130,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import api from '../../../config/api';
-import { useTheme } from '../../../composables/';
+import { useTheme } from '../../../composables/useTheme';
 
 const { themeClasses } = useTheme();
 const inventory = ref([]);

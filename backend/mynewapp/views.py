@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model, login, logout
 from django.core.files.storage import default_storage
+from django.db import models
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.authtoken.models import Token
@@ -12,9 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Alert, CustomUser, GasReading, GasSensor, House, Notification, CookableFood, VendorProfile, GasBottle
+from .models import Alert, CustomUser, Delivery, GasReading, GasSensor, House, Notification, CookableFood, VendorProfile, GasBottle
 from .serializers import (
     AlertSerializer,
+    DeliverySerializer,
     GasLeakAlertSerializer,
     GasReadingSerializer,
     GasSensorSerializer,
@@ -262,8 +264,26 @@ class MarkNotificationAsReadView(APIView):
             notification = Notification.objects.get(
                 id=notification_id, alert__user=request.user
             )
-            # In a real app, you might want to mark this as read in some way
-            # For now, we'll just return the notification
+            # Mark the alert as resolved
+            alert = notification.alert
+            if not alert.is_resolved:
+                alert.is_resolved = True
+                alert.resolved_at = timezone.now()
+                alert.resolved_by = request.user
+                alert.save()
+                
+                # Broadcast alert update via WebSocket
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{request.user.id}",
+                        {
+                            "type": "send_alert",
+                        }
+                    )
+            
             return Response(
                 NotificationSerializer(notification).data, status=status.HTTP_200_OK
             )
@@ -618,6 +638,7 @@ class GasReadingCreateView(generics.CreateAPIView):
         LOW_THRESHOLD = 20.0
         CRITICAL_THRESHOLD = 10.0
 
+        alert_created = False
         if gas_percentage <= LOW_THRESHOLD:
             gas_reading.is_alert_triggered = True
             gas_reading.save()
@@ -634,13 +655,44 @@ class GasReadingCreateView(generics.CreateAPIView):
                 else:
                     severity = "MEDIUM"
 
-                Alert.objects.create(
+                address = sensor.house.address_line_1 if sensor.house else "Unknown Location"
+                time_str = timezone.now().strftime('%d %b %Y, %H:%M:%S')
+                alert = Alert.objects.create(
                     user=user,
                     sensor=sensor,
                     alert_type="GAS_LEVEL_LOW",
                     severity_level=severity,
-                    alert_message=f"Critical gas level detected! {sensor.sensor_name} has only {remaining_gas_val:.2f}kg ({gas_percentage:.1f}%) remaining. Please refill soon.",
+                    alert_message=f"Gas level is low ({gas_percentage:.1f}%) on sensor '{sensor.sensor_name}' at {address} — {time_str}.",
                     is_resolved=False,
+                )
+                
+                # Create a database notification record as well
+                Notification.objects.create(
+                    alert=alert,
+                    notification_method="PUSH",
+                    recipient_address=user.email,
+                    notification_status="SENT"
+                )
+                alert_created = True
+
+        # Broadcast gas reading update to user group
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{user.id}",
+                {
+                    "type": "send_gas_reading",
+                }
+            )
+            # If an alert was created, also broadcast alert update
+            if alert_created:
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{user.id}",
+                    {
+                        "type": "send_alert",
+                    }
                 )
 
         return gas_reading
@@ -709,6 +761,18 @@ class GasLeakAlertCreateView(APIView):
                     )
                 except Exception as e:
                     logging.error(f"Failed to create notification record: {str(e)}")
+
+                # Broadcast alert update via WebSocket
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{alert.user.id}",
+                        {
+                            "type": "send_alert",
+                        }
+                    )
 
                 # Return success response with alert details
                 response_data = {
@@ -933,3 +997,76 @@ class PublicVendorListView(generics.ListAPIView):
     def get_queryset(self):
         return VendorProfile.objects.filter(is_approved=True)
 
+
+class DeliveryListCreateView(generics.ListCreateAPIView):
+    """
+    GET:  - Clients see their own orders
+          - Delivery persons see PENDING (unassigned) or orders assigned to them
+          - Vendors see orders that came to their store
+    POST: Clients create a new delivery order (status=PENDING)
+    """
+    serializer_class = DeliverySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin or user.is_superuser:
+            return Delivery.objects.all().select_related(
+                "client", "vendor", "gas_bottle", "delivery_person"
+            )
+        if user.is_delivery_person:
+            return Delivery.objects.filter(
+                models.Q(status="PENDING", delivery_person__isnull=True) |
+                models.Q(delivery_person=user)
+            ).select_related("client", "vendor", "gas_bottle", "delivery_person")
+        if hasattr(user, "vendor_profile"):
+            return Delivery.objects.filter(
+                vendor=user.vendor_profile
+            ).select_related("client", "vendor", "gas_bottle", "delivery_person")
+        # Regular client
+        return Delivery.objects.filter(client=user).select_related(
+            "client", "vendor", "gas_bottle", "delivery_person"
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(client=self.request.user)
+
+
+class DeliveryDetailUpdateView(generics.RetrieveUpdateAPIView):
+    """
+    GET:    Retrieve a single delivery (accessible by client, assigned driver, vendor, admin)
+    PATCH:  Delivery person can self-assign and update status
+            When status changes to DELIVERED, decrement gas_bottle stock
+    """
+    serializer_class = DeliverySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin or user.is_superuser:
+            return Delivery.objects.all()
+        if user.is_delivery_person:
+            return Delivery.objects.filter(
+                models.Q(status="PENDING", delivery_person__isnull=True) |
+                models.Q(delivery_person=user)
+            )
+        if hasattr(user, "vendor_profile"):
+            return Delivery.objects.filter(vendor=user.vendor_profile)
+        return Delivery.objects.filter(client=user)
+
+    def perform_update(self, serializer):
+        old_status = self.get_object().status
+        instance = serializer.save()
+
+        # Auto-assign delivery person on ASSIGNED status
+        if instance.status == "ASSIGNED" and instance.delivery_person is None:
+            if self.request.user.is_delivery_person:
+                instance.delivery_person = self.request.user
+                instance.save(update_fields=["delivery_person"])
+
+        # Decrement stock when delivered
+        if old_status != "DELIVERED" and instance.status == "DELIVERED":
+            bottle = instance.gas_bottle
+            if bottle.stock_quantity > 0:
+                bottle.stock_quantity -= 1
+                bottle.save(update_fields=["stock_quantity"])

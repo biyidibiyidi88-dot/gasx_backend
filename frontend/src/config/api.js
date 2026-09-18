@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
       return 'http://10.0.2.2:8000/api/';
     } else {
       // Production builds map strictly to the Railway cloud backend
-      return 'https://web-production-c4400.up.railway.app/api/';
+      return 'https://gasx-backend-production.up.railway.app/api/';
     }
   }
 
@@ -32,7 +32,7 @@ const getApiBaseUrl = () => {
     return 'http://127.0.0.1:8000/';
   } else {
     // Production or deployed frontend - use Railway backend
-    return 'https://web-production-c4400.up.railway.app/api';
+    return 'https://gasx-backend-production.up.railway.app/api';
   }
 };
 

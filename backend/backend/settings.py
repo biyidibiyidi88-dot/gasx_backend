@@ -36,6 +36,7 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'mynewapp',
     'django.contrib.auth',
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',  # for cross-origin requests
+    'channels',
 ]
 
 REST_FRAMEWORK = {
@@ -119,6 +121,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = 'backend.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
@@ -134,7 +143,7 @@ database_url = os.getenv('DATABASE_URL')
 try:
     if database_url:
         DATABASES = {
-            'default': dj_database_url.config(conn_max_age=600)
+            'default': dj_database_url.config(conn_max_age=0)
         }
     else:
         DATABASES = {

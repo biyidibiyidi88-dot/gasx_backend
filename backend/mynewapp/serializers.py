@@ -9,6 +9,7 @@ from .models import (
     Alert,
     CookableFood,
     CustomUser,
+    Delivery,
     EmergencyAction,
     EmergencyContact,
     GasReading,
@@ -44,6 +45,7 @@ class UserSerializer(serializers.ModelSerializer):
             "country",
             "is_verified",
             "is_admin",
+            "is_delivery_person",
             "accept_terms",
             "newsletter_subscription",
             "created_at",
@@ -422,6 +424,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return "Super Admin"
         elif obj.is_admin:
             return "Admin"
+        elif obj.is_delivery_person:
+            return "Delivery Person"
         if hasattr(obj, "vendor_profile"):
             return "Vendor"
         return "User"
@@ -474,6 +478,10 @@ class UserManagementSerializer(serializers.ModelSerializer):
             return "superadmin"
         elif obj.is_admin:
             return "admin"
+        elif obj.is_delivery_person:
+            return "delivery_person"
+        elif hasattr(obj, "vendor_profile"):
+            return "vendor"
         return "user"
 
     def get_status(self, obj):
@@ -568,6 +576,10 @@ class GasReadingSerializer(serializers.ModelSerializer):
     def get_is_weekend(self, obj):
         return obj.reading_timestamp.weekday() >= 5  # Saturday or Sunday
 
+    def create(self, validated_data):
+        validated_data.pop('raw_weight', None)
+        return super().create(validated_data)
+
 
 class GasLeakAlertSerializer(serializers.Serializer):
     """Serializer for ESP32 gas leak alerts"""
@@ -635,11 +647,9 @@ class GasLeakAlertSerializer(serializers.Serializer):
                     f" (concentration: {validated_data['gas_concentration']} ppm)"
                 )
 
-            location_text = ""
-            if validated_data.get("location_details"):
-                location_text = f" in {validated_data['location_details']}"
-
-            alert_message = f"Gas leak detected by {sensor.sensor_name}{location_text}{concentration_text}. Immediate attention required!"
+            address_str = sensor.house.address_line_1 if sensor.house else "Unknown Location"
+            time_str = timezone.now().strftime('%d %b %Y, %H:%M:%S')
+            alert_message = f"Gas leak detected on sensor '{sensor.sensor_name}' at {address_str}{concentration_text} — {time_str}. Immediate attention required!"
 
         # Check for existing unresolved gas leak alert for this sensor
         existing_alert = Alert.objects.filter(
@@ -728,6 +738,53 @@ class VendorProfileSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["user", "created_at", "is_approved"]
+
+
+class DeliverySerializer(serializers.ModelSerializer):
+    client_name = serializers.CharField(source="client.get_full_name", read_only=True)
+    client_email = serializers.EmailField(source="client.email", read_only=True)
+    vendor_name = serializers.CharField(source="vendor.store_name", read_only=True)
+    vendor_address = serializers.CharField(source="vendor.address", read_only=True)
+    vendor_latitude = serializers.FloatField(source="vendor.latitude", read_only=True)
+    vendor_longitude = serializers.FloatField(source="vendor.longitude", read_only=True)
+    delivery_person_name = serializers.SerializerMethodField()
+    bottle_detail = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = Delivery
+        fields = [
+            "id",
+            "client",
+            "client_name",
+            "client_email",
+            "vendor",
+            "vendor_name",
+            "vendor_address",
+            "vendor_latitude",
+            "vendor_longitude",
+            "gas_bottle",
+            "bottle_detail",
+            "delivery_person",
+            "delivery_person_name",
+            "status",
+            "status_display",
+            "delivery_address",
+            "latitude",
+            "longitude",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["client", "created_at", "updated_at", "status_display"]
+
+    def get_delivery_person_name(self, obj):
+        if obj.delivery_person:
+            return obj.delivery_person.get_full_name()
+        return None
+
+    def get_bottle_detail(self, obj):
+        b = obj.gas_bottle
+        return f"{b.get_brand_display()} {b.get_size_display()} — {b.price} FCFA"
 
 
 class PublicVendorProfileSerializer(serializers.ModelSerializer):

@@ -78,6 +78,16 @@ const routes = [
         name: 'vendor-validation',
         component: () => import('../pages/private/admin/VendorValidation.vue'),
       },
+      {
+        path: 'delivery-dashboard',
+        name: 'delivery-dashboard',
+        component: () => import('../pages/private/delivery/DeliveryDashboard.vue'),
+      },
+      {
+        path: 'delivery-route/:id',
+        name: 'delivery-route',
+        component: () => import('../pages/private/delivery/DeliveryRoute.vue'),
+      },
     ],
   },
   {

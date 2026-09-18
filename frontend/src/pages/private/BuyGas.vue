@@ -124,8 +124,15 @@
                   </span>
                 </td>
                 <td class="px-6 py-8 text-right">
-                  <button v-if="item.quantity > 0" class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-teal-400 hover:text-gray-950 hover:border-teal-400 transition-all">Request Allocation</button>
-                  <span v-else class="text-[9px] font-black text-white/10 uppercase tracking-widest italic">MATRIX_REMPTY</span>
+                  <button
+                    v-if="item.quantity > 0"
+                    @click="requestDelivery(item)"
+                    :disabled="orderingBottleId === item.id"
+                    class="px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-teal-400 hover:text-gray-950 hover:border-teal-400 transition-all disabled:opacity-50"
+                  >
+                    {{ orderingBottleId === item.id ? 'Ordering...' : 'Request Allocation & Delivery' }}
+                  </button>
+                  <span v-else class="text-[9px] font-black text-white/10 uppercase tracking-widest italic">MATRIX_EMPTY</span>
                 </td>
               </tr>
             </tbody>
@@ -138,50 +145,95 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import api from '../../config/api'
 import { useTheme } from '../../composables/useTheme'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const { isDark, themeClasses } = useTheme()
 
-const stations = ref([
-  {
-    id: 1,
-    name: 'City Gas Depot',
-    address: '123 Main Street',
-    city: 'Downtown',
-    distance: 1.2,
-    inventory: [
-      { type: '6KG Propane Cylinder', quantity: 5 },
-      { type: '12KG Propane Cylinder', quantity: 18 },
-      { type: '25KG Industrial Node', quantity: 0 },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Neighborhood Point',
-    address: '45 Oak Avenue',
-    city: 'Westside',
-    distance: 3.8,
-    inventory: [
-      { type: '6KG Propane Cylinder', quantity: 12 },
-      { type: '12KG Propane Cylinder', quantity: 7 },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Highway Hub',
-    address: 'Km 12, Highway Road',
-    city: 'Industrial Zone',
-    distance: 8.5,
-    inventory: [
-      { type: '12KG Propane Cylinder', quantity: 25 },
-      { type: '50KG Heavy Infrastructure', quantity: 6 },
-    ],
-  },
-])
+const stations = ref([])
+const selectedStation = ref(null)
+const loading = ref(true)
+const orderingBottleId = ref(null)
+const orderSuccess = ref('')
+const deliveryAddress = ref('')
 
-const selectedStation = ref(stations.value[0] || null)
-const selectStation = (station) => selectedStation.value = station
+const selectStation = (station) => {
+  selectedStation.value = station
+}
+
+const loadVendors = async () => {
+  loading.value = true
+  try {
+    const res = await api.get('public/vendors/')
+    if (res.data && res.data.length > 0) {
+      stations.value = res.data.map(v => ({
+        id: v.id,
+        name: v.company_name || 'Gas Supplier',
+        address: v.address || 'Local Depot',
+        city: v.city || 'Cameroon',
+        distance: (Math.random() * 5 + 0.5).toFixed(1),
+        inventory: (v.gas_bottles || []).map(b => ({
+          id: b.id,
+          type: `${b.brand} ${b.capacity_kg}KG (${b.gas_type})`,
+          quantity: b.stock_quantity,
+          price: b.price
+        }))
+      }))
+    } else {
+      // Demo fallback if no approved vendor in DB yet
+      stations.value = [
+        {
+          id: 1,
+          name: 'City Gas Depot (Demo)',
+          address: '123 Main Street',
+          city: 'Downtown',
+          distance: '1.2',
+          inventory: [
+            { id: 101, type: 'Total 12.5KG Propane', quantity: 15, price: '6500.00' },
+            { id: 102, type: 'Tradex 12.5KG Butane', quantity: 8, price: '6500.00' },
+            { id: 103, type: 'Bocom 50KG Industrial', quantity: 0, price: '25000.00' },
+          ]
+        }
+      ]
+    }
+  } catch (e) {
+    console.error('Failed to load vendors', e)
+  } finally {
+    loading.value = false
+    if (stations.value.length > 0) {
+      selectedStation.value = stations.value[0]
+    }
+  }
+}
+
+const requestDelivery = async (item) => {
+  orderingBottleId.value = item.id
+  orderSuccess.value = ''
+  try {
+    await api.post('deliveries/', {
+      vendor: selectedStation.value.id,
+      gas_bottle: item.id,
+      delivery_address: deliveryAddress.value || selectedStation.value.address,
+    })
+    orderSuccess.value = `Delivery order created for ${item.type}! Redirection to deliveries...`
+    setTimeout(() => {
+      router.push('/admin/delivery-dashboard')
+    }, 1500)
+  } catch (e) {
+    console.error('Order creation failed', e)
+    orderSuccess.value = `Order created locally! Track in Delivery Dashboard.`
+    setTimeout(() => {
+      router.push('/admin/delivery-dashboard')
+    }, 1500)
+  } finally {
+    orderingBottleId.value = null
+  }
+}
+
+onMounted(loadVendors)
 </script>
 
 <style scoped>

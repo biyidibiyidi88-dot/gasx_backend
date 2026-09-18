@@ -538,6 +538,7 @@ const checkForAlerts = () => {
 }
 
 const fetchGasReadings = async () => {
+  try {
     // Fetch user profile first to get actual capacity
     const profileRes = await api.get('profile/')
     if (profileRes.data) {

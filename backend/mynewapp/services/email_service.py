@@ -25,6 +25,11 @@ class EmailService:
             html_content = self._generate_gas_leak_email_html(user, alert)
             text_content = self._generate_gas_leak_email_text(user, alert)
             
+            # If in debug mode, mock the email send to prevent blocking API calls
+            if settings.DEBUG:
+                logger.info(f"[DEBUG MODE] Mocking email send to {user.email}")
+                return True, "mock-email-id-success"
+            
             # Send email via Resend
             params = {
                 "from": settings.DEFAULT_FROM_EMAIL,

@@ -49,6 +49,7 @@ class CustomUser(AbstractUser, PermissionsMixin):
     )
     is_verified = models.BooleanField(_("verified"), default=False)
     is_admin = models.BooleanField(_("admin"), default=False)
+    is_delivery_person = models.BooleanField(_("delivery person"), default=False)
     accept_terms = models.BooleanField(_("terms accepted"), default=False)
     newsletter_subscription = models.BooleanField(
         _("newsletter subscribed"), default=False
@@ -631,3 +632,79 @@ class GasBottle(models.Model):
 
     def __str__(self):
         return f"{self.get_brand_display()} - {self.get_size_display()} ({self.vendor.store_name})"
+
+
+class Delivery(models.Model):
+    STATUS_CHOICES = (
+        ("PENDING", "Pending"),
+        ("ASSIGNED", "Assigned"),
+        ("OUT_FOR_DELIVERY", "Out for Delivery"),
+        ("DELIVERED", "Delivered"),
+        ("CANCELLED", "Cancelled"),
+    )
+
+    client = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="deliveries_ordered"
+    )
+    vendor = models.ForeignKey(
+        VendorProfile, on_delete=models.CASCADE, related_name="deliveries_received"
+    )
+    gas_bottle = models.ForeignKey(
+        GasBottle, on_delete=models.CASCADE, related_name="deliveries"
+    )
+    delivery_person = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deliveries_handled",
+        limit_choices_to={"is_delivery_person": True},
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="PENDING"
+    )
+    delivery_address = models.CharField(max_length=255)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = _("delivery")
+        verbose_name_plural = _("deliveries")
+
+    def __str__(self):
+        return f"Delivery {self.id} for {self.client.email} ({self.status})"
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+@receiver(post_save, sender=GasReading)
+def broadcast_gas_reading(sender, instance, created, **kwargs):
+    if created:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            user = instance.sensor.house.user
+            async_to_sync(channel_layer.group_send)(
+                f"user_{user.id}",
+                {
+                    "type": "send_gas_reading",
+                }
+            )
+
+@receiver(post_save, sender=Alert)
+def broadcast_alert(sender, instance, created, **kwargs):
+    if created:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            user = instance.user
+            async_to_sync(channel_layer.group_send)(
+                f"user_{user.id}",
+                {
+                    "type": "send_alert",
+                }
+            )

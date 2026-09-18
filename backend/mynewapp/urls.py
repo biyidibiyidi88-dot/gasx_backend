@@ -4,6 +4,8 @@ from .views import (
     AlertListView,
     BulkDeleteGasReadingsView,
     DailyGasConsumptionView,
+    DeliveryDetailUpdateView,
+    DeliveryListCreateView,
     GasLeakAlertCreateView,
     GasPredictionView,
     GasReadingCreateView,
@@ -111,4 +113,8 @@ urlpatterns = [
     
     # Public endpoints
     path("public/vendors/", PublicVendorListView.as_view(), name="public-vendor-list"),
+
+    # Delivery endpoints
+    path("deliveries/", DeliveryListCreateView.as_view(), name="delivery-list"),
+    path("deliveries/<int:pk>/", DeliveryDetailUpdateView.as_view(), name="delivery-detail"),
 ]

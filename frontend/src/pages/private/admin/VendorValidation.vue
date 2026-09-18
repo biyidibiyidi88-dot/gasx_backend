@@ -87,7 +87,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import api from '../../../../../config/api';
+import api from '../../../config/api';
 import { useTheme } from '../../../composables/useTheme';
 import DocumentLink from './components/DocumentLink.vue';
 
