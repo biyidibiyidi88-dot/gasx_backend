@@ -1,6 +1,7 @@
 /*
  * ESP32 Gas Monitor - Quality Data Version
- * Features: Quality data validation, valve control button, optimized weight transmission
+ * Features: Quality data validation, valve control button, remote valve control,
+ *           non-blocking screen refresh, raw weight payload transmission
  */
 
 #include <WiFi.h>
@@ -23,17 +24,21 @@ const int SERVO_PIN = 4;
 const int LED_NORMAL_PIN = 5;
 const int LED_WARNING_PIN = 18;
 const int LED_CRITICAL_PIN = 19;
-const int BUZZER_PIN = 233;  // Changed from 21 to avoid LCD conflict
+const int BUZZER_PIN = 23;  // Fixed pin 23
+// LEDC (PWM) config for buzzer
+const int BUZZER_LEDC_CHANNEL = 0;   // use channel 0
+const int BUZZER_LEDC_FREQ = 2000;   // 2 kHz tone
+const int BUZZER_LEDC_RES = 8;       // 8-bit resolution
 const int CONFIG_BUTTON_PIN = 0;
 const int ALARM_SILENCE_PIN = 26;
 const int VALVE_CONTROL_BUTTON_PIN = 25;  // New button for valve control
 
-// Configuration - Same authentication
-const char* API_TOKEN = "972e4539789c26414553c450b2994111b7ebccae";
+// Configuration
+const char* API_TOKEN = "84eae07987192e82a910087ba4112cc7f29055fd";
 const int SENSOR_ID = 13;
 const char* DEVICE_ID = "ESP32_GAS_001";
 const char* LOCATION = "Home Gas Monitor";
-const char* api_base_url = "https://gas-monitor-sfk3.onrender.com/api";
+const char* api_base_url = "https://web-production-c23ce.up.railway.app/api";
 
 // Thresholds
 const int GAS_NORMAL_THRESHOLD = 200;
@@ -49,6 +54,7 @@ const unsigned long WEIGHT_READING_INTERVAL = 10000;
 const unsigned long ALERT_COOLDOWN = 10000;
 const unsigned long BUTTON_DEBOUNCE = 500;
 const unsigned long WIFI_CHECK_INTERVAL = 10000;
+const unsigned long LCD_REFRESH_INTERVAL = 500; // 500ms non-blocking refresh rate
 
 // Servo positions
 const int SERVO_OPEN_POSITION = 0;
@@ -78,6 +84,7 @@ struct {
   unsigned long lastAlarmSilencePress = 0;
   unsigned long lastValveButtonPress = 0;
   unsigned long lastWiFiCheck = 0;
+  unsigned long lastLCDUpdate = 0;
   bool wifiConnected = false;
   bool scaleCalibrated = false;
   bool valveClosed = false;
@@ -110,12 +117,16 @@ void setup() {
   pinMode(LED_WARNING_PIN, OUTPUT);
   pinMode(LED_CRITICAL_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+  // Configure LEDC PWM for buzzer
+  ledcSetup(BUZZER_LEDC_CHANNEL, BUZZER_LEDC_FREQ, BUZZER_LEDC_RES);
+  ledcAttachPin(BUZZER_PIN, BUZZER_LEDC_CHANNEL);
   pinMode(CONFIG_BUTTON_PIN, INPUT_PULLUP);
   pinMode(ALARM_SILENCE_PIN, INPUT_PULLUP);
   pinMode(VALVE_CONTROL_BUTTON_PIN, INPUT_PULLUP);  // New valve control button
 
-  valveServo.attach(SERVO_PIN);
-  openValve();
+  // Restore saved valve state from flash storage (do NOT move motor on boot!)
+  state.valveClosed = preferences.getBool("valve_closed", false);
+  Serial.printf("ℹ️ Valve boot state loaded: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
 
   testLEDs();
   initializeLoadCell();
@@ -142,9 +153,17 @@ void loop() {
   handleButtons();
   monitorGas();
   monitorWeight();
+  handleLCDRefresh();
   sendRegularReadings();
   handleSerialCommands();
   delay(10);
+}
+
+void handleLCDRefresh() {
+  if (millis() - state.lastLCDUpdate >= LCD_REFRESH_INTERVAL) {
+    state.lastLCDUpdate = millis();
+    updateLCDDisplay();
+  }
 }
 
 // Core Functions
@@ -189,7 +208,7 @@ void handleButtons() {
     lcd.print("Valve Status:");
     lcd.setCursor(0, 1);
     lcd.print(state.valveClosed ? "CLOSED" : "OPEN");
-    delay(2000);
+    delay(800);
     updateLCDDisplay();
   }
 
@@ -218,8 +237,8 @@ void monitorGas() {
   state.currentSeverity = newSeverity;
   updateStatusLED();
   
-  // Handle alerts for HIGH and CRITICAL levels (not just on changes)
-  if (newSeverity >= GAS_HIGH) {
+  // Handle alerts for MEDIUM, HIGH and CRITICAL levels immediately upon gas detection
+  if (newSeverity >= GAS_MEDIUM) {
     handleGasAlert(gasLevel, newSeverity);
   }
 }
@@ -356,37 +375,79 @@ void readWeightSensor() {
   }
 }
 
+// Device Command Processing Function
+void processDeviceCommands(JsonObject doc) {
+  if (doc.containsKey("valve_command")) {
+    String valveCmd = doc["valve_command"].as<String>();
+    valveCmd.toUpperCase();
+    if (valveCmd == "CLOSE" && !state.valveClosed) {
+      closeValve();
+      Serial.println("🔒 Remote command: Valve CLOSED");
+    } else if (valveCmd == "OPEN" && state.valveClosed) {
+      openValve();
+      Serial.println("🔓 Remote command: Valve OPENED");
+    }
+  }
+
+  if (doc.containsKey("alarm_command")) {
+    String alarmCmd = doc["alarm_command"].as<String>();
+    alarmCmd.toUpperCase();
+    if (alarmCmd == "SILENCE" && state.alarmActive) {
+      silenceAlarm();
+      Serial.println("🔇 Remote command: Alarm SILENCED");
+    } else if (alarmCmd == "ARM" && !state.alarmActive) {
+      state.alarmActive = true;
+      Serial.println("🔊 Remote command: Alarm ARMED");
+    }
+  }
+}
+
+void pollDeviceCommands() {
+  if (!state.wifiConnected) return;
+
+  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) + "/device-command/");
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.addHeader("Authorization", "Token " + String(API_TOKEN));
+
+  int code = http.GET();
+  if (code == 200) {
+    String responseStr = http.getString();
+    StaticJsonDocument<512> resDoc;
+    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      processDeviceCommands(resDoc.as<JsonObject>());
+    }
+  }
+  http.end();
+}
+
 // API Communication Functions
 void sendGasReading() {
   if (!state.wifiConnected) return;
   
   http.begin(String(api_base_url) + "/gas-readings/create/");
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + String(API_TOKEN));
   
-  // Use actual weight if available, otherwise estimate from gas sensor
-  float remainingGas;
-  if (state.scaleCalibrated && state.currentWeight > 0) {
-    // Use actual weight measurement (subtract empty tank weight)
-    remainingGas = max(0.0f, state.currentWeight - TANK_EMPTY_WEIGHT);
-  } else {
-    // Estimate from gas sensor reading (0-1000 -> 0-20kg)
-    remainingGas = map(state.currentGasLevel, 0, 1000, 0, 20);
-    remainingGas = max(0.0f, remainingGas);
-  }
+  float rawWeight = (state.scaleCalibrated && state.currentWeight > 0) ? state.currentWeight : 0.0f;
+  float rawRounded = roundf(rawWeight * 100.0f) / 100.0f;
   
-  // Backend expects exact field names from GasReadingSerializer
-  StaticJsonDocument<1024> doc;
-  doc["sensor"] = SENSOR_ID;  // Backend expects 'sensor' field with sensor ID
-  doc["remaining_gas"] = remainingGas;  // Actual gas weight in kg
+  StaticJsonDocument<512> doc;
+  doc["sensor"] = SENSOR_ID;
+  doc["raw_weight"] = rawRounded;
   
   String payload;
   serializeJson(doc, payload);
   
   int httpResponseCode = http.POST(payload);
   
-  if (httpResponseCode == 201) {
-    Serial.printf("✅ Gas reading sent: %.2f kg\n", remainingGas);
+  if (httpResponseCode == 201 || httpResponseCode == 200) {
+    String responseStr = http.getString();
+    Serial.printf("✅ Gas raw weight reading sent: %.2f kg\n", rawRounded);
+    StaticJsonDocument<512> resDoc;
+    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      processDeviceCommands(resDoc.as<JsonObject>());
+    }
   } else {
     Serial.printf("❌ Gas reading failed: %d\n", httpResponseCode);
     if (httpResponseCode > 0) {
@@ -400,31 +461,34 @@ void sendGasReading() {
 void sendWeightReading() {
   if (!state.wifiConnected || !state.scaleCalibrated) return;
   
-  // Only send if weight is valid and positive
   if (state.currentWeight < 0) {
     Serial.println("⚠️  Skipping weight transmission - invalid reading");
     return;
   }
   
   http.begin(String(api_base_url) + "/gas-readings/create/");
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + String(API_TOKEN));
   
-  // Calculate gas weight (subtract empty tank weight)
-  float gasWeight = max(0.0f, state.currentWeight - TANK_EMPTY_WEIGHT);
-  float gasWeightRounded = round(gasWeight * 100.0) / 100.0;
+  float rawRounded = roundf(state.currentWeight * 100.0f) / 100.0f;
   
-  StaticJsonDocument<1024> doc;
-  doc["sensor"] = SENSOR_ID;  // Changed from sensor_id to sensor
-  doc["remaining_gas"] = gasWeightRounded;  // Properly rounded
+  StaticJsonDocument<512> doc;
+  doc["sensor"] = SENSOR_ID;
+  doc["raw_weight"] = rawRounded;
   
   String payload;
   serializeJson(doc, payload);
   
   int httpResponseCode = http.POST(payload);
   
-  if (httpResponseCode == 201) {
-    Serial.printf("✅ Weight reading sent: %.2f kg\n", gasWeightRounded);
+  if (httpResponseCode == 201 || httpResponseCode == 200) {
+    String responseStr = http.getString();
+    Serial.printf("✅ Raw weight reading sent: %.2f kg\n", rawRounded);
+    StaticJsonDocument<512> resDoc;
+    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      processDeviceCommands(resDoc.as<JsonObject>());
+    }
   } else {
     Serial.printf("❌ Weight reading failed: %d\n", httpResponseCode);
     if (httpResponseCode > 0) {
@@ -449,11 +513,11 @@ void handleGasAlert(int gasLevel, GasSeverity severity) {
   
   Serial.printf("🚨 Gas Alert: %s (Level: %d)\n", severityStr.c_str(), gasLevel);
   
-  if (severity >= GAS_HIGH) {
+  if (severity >= GAS_MEDIUM) {
     // Always activate alarm and close valve immediately for safety
     activateAlarm(severity);
     
-    // Close valve on HIGH or CRITICAL levels for immediate safety
+    // Close valve on MEDIUM, HIGH or CRITICAL levels for immediate safety
     if (!state.valveClosed) {
       closeValve();
       Serial.printf("🔒 Valve automatically closed due to %s gas level\n", severityStr.c_str());
@@ -473,6 +537,7 @@ void sendGasLeakAlert(int gasLevel, String severity) {
   if (!state.wifiConnected) return;
   
   http.begin(String(api_base_url) + "/alerts/gas-leak/");
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + String(API_TOKEN));
   
@@ -510,17 +575,36 @@ void toggleValve() {
 }
 
 void openValve() {
+  Serial.println("🔄 Actuating servo to OPEN...");
+  valveServo.attach(SERVO_PIN);
   valveServo.write(SERVO_OPEN_POSITION);
   delay(SERVO_DELAY_MS);
+  valveServo.detach(); // Detach signal to stop continuous 360-degree rotation
   state.valveClosed = false;
-  Serial.println("🔓 Valve opened");
+  preferences.putBool("valve_closed", false);
+  Serial.println("🔓 Valve opened & servo detached");
 }
 
 void closeValve() {
+  Serial.println("🔄 Actuating servo to CLOSE...");
+  valveServo.attach(SERVO_PIN);
   valveServo.write(SERVO_CLOSED_POSITION);
   delay(SERVO_DELAY_MS);
+  valveServo.detach(); // Detach signal to stop continuous 360-degree rotation
   state.valveClosed = true;
-  Serial.println("🔒 Valve closed");
+  preferences.putBool("valve_closed", true);
+  Serial.println("🔒 Valve closed & servo detached");
+}
+
+// Buzzer helpers (LEDC PWM)
+void buzzerOn() {
+  ledcWriteTone(BUZZER_LEDC_CHANNEL, BUZZER_LEDC_FREQ);
+  ledcWrite(BUZZER_LEDC_CHANNEL, 128);
+}
+
+void buzzerOff() {
+  ledcWriteTone(BUZZER_LEDC_CHANNEL, 0);
+  ledcWrite(BUZZER_LEDC_CHANNEL, 0);
 }
 
 void activateAlarm(GasSeverity severity) {
@@ -530,23 +614,23 @@ void activateAlarm(GasSeverity severity) {
   switch (severity) {
     case GAS_CRITICAL:
       // Continuous alarm
-      digitalWrite(BUZZER_PIN, HIGH);
+      buzzerOn();
       break;
     case GAS_HIGH:
       // Fast beeping
       for (int i = 0; i < 10; i++) {
-        digitalWrite(BUZZER_PIN, HIGH);
+        buzzerOn();
         delay(100);
-        digitalWrite(BUZZER_PIN, LOW);
+        buzzerOff();
         delay(100);
       }
       break;
     case GAS_MEDIUM:
       // Slow beeping
       for (int i = 0; i < 5; i++) {
-        digitalWrite(BUZZER_PIN, HIGH);
+        buzzerOn();
         delay(300);
-        digitalWrite(BUZZER_PIN, LOW);
+        buzzerOff();
         delay(300);
       }
       break;
@@ -556,7 +640,7 @@ void activateAlarm(GasSeverity severity) {
 }
 
 void silenceAlarm() {
-  digitalWrite(BUZZER_PIN, LOW);
+  buzzerOff();
   state.alarmActive = false;
   Serial.println("🔇 Alarm silenced");
 }

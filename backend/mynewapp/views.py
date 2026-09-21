@@ -619,11 +619,16 @@ class GasReadingCreateView(generics.CreateAPIView):
             # Ensure it's not negative
             remaining_gas = max(0.0, calculated_gas)
             
-        # Save with calculated (or provided) remaining_gas
-        gas_reading = serializer.save(remaining_gas=remaining_gas)
+        # Save with calculated (or provided) remaining_gas and raw_weight
+        gas_reading = serializer.save(remaining_gas=remaining_gas, raw_weight=raw_weight)
+
+        # Also update sensor's raw_weight
+        sensor = gas_reading.sensor
+        if raw_weight is not None:
+            sensor.raw_weight = raw_weight
+            sensor.save(update_fields=['raw_weight'])
 
         # Check if gas level is at or below critical thresholds
-        sensor = gas_reading.sensor
         remaining_gas_val = float(gas_reading.remaining_gas)
 
         # Calculate percentage based on user's dynamic tank capacity
@@ -696,6 +701,129 @@ class GasReadingCreateView(generics.CreateAPIView):
                 )
 
         return gas_reading
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        gas_reading = self.perform_create(serializer)
+        sensor = gas_reading.sensor
+        
+        # Include current remote commands in response so ESP32 can act immediately
+        headers = self.get_success_headers(serializer.data)
+        response_data = serializer.data
+        response_data['valve_command'] = sensor.desired_valve_state
+        response_data['alarm_command'] = sensor.desired_alarm_state
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class SensorValveControlView(APIView):
+    """
+    API endpoint to remotely open or close the gas valve.
+    POST payload: {"command": "OPEN"} or {"command": "CLOSE"}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            sensor = GasSensor.objects.get(pk=pk, house__user=request.user)
+            command = request.data.get("command", "").upper()
+            if command not in ["OPEN", "CLOSE"]:
+                return Response(
+                    {"error": "Invalid command. Must be 'OPEN' or 'CLOSE'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            sensor.desired_valve_state = command
+            sensor.save(update_fields=["desired_valve_state"])
+
+            # Broadcast update via Channels
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{request.user.id}",
+                    {"type": "send_gas_reading"}
+                )
+
+            return Response({
+                "status": "success",
+                "message": f"Gas valve command set to {command}",
+                "desired_valve_state": sensor.desired_valve_state,
+                "current_valve_state": sensor.current_valve_state,
+            }, status=status.HTTP_200_OK)
+
+        except GasSensor.DoesNotExist:
+            return Response({"error": "Sensor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SensorAlarmControlView(APIView):
+    """
+    API endpoint to remotely silence or arm the alarm buzzer.
+    POST payload: {"command": "SILENCE"} or {"command": "ARM"}
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            sensor = GasSensor.objects.get(pk=pk, house__user=request.user)
+            command = request.data.get("command", "").upper()
+            if command not in ["SILENCE", "ARM"]:
+                return Response(
+                    {"error": "Invalid command. Must be 'SILENCE' or 'ARM'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            sensor.desired_alarm_state = command
+            sensor.is_alarm_silenced = (command == "SILENCE")
+            sensor.save(update_fields=["desired_alarm_state", "is_alarm_silenced"])
+
+            # Broadcast update via Channels
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{request.user.id}",
+                    {"type": "send_gas_reading"}
+                )
+
+            return Response({
+                "status": "success",
+                "message": f"Alarm command set to {command}",
+                "desired_alarm_state": sensor.desired_alarm_state,
+                "is_alarm_silenced": sensor.is_alarm_silenced,
+            }, status=status.HTTP_200_OK)
+
+        except GasSensor.DoesNotExist:
+            return Response({"error": "Sensor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SensorDeviceCommandView(APIView):
+    """
+    API endpoint for ESP32 microcontroller to poll current desired commands.
+    GET /api/sensors/<pk>/device-command/
+    Returns: {"valve_command": "OPEN"|"CLOSE", "alarm_command": "SILENCE"|"ARM"}
+    """
+    permission_classes = [permissions.AllowAny]  # Or authenticated
+
+    def get(self, request, pk):
+        try:
+            sensor = GasSensor.objects.get(pk=pk)
+            # Update current state if reported by query params
+            reported_valve = request.query_params.get("current_valve")
+            if reported_valve and reported_valve.upper() in ["OPEN", "CLOSE"]:
+                sensor.current_valve_state = reported_valve.upper()
+                sensor.save(update_fields=["current_valve_state"])
+
+            return Response({
+                "sensor_id": sensor.id,
+                "valve_command": sensor.desired_valve_state,
+                "alarm_command": sensor.desired_alarm_state,
+                "is_alarm_silenced": sensor.is_alarm_silenced,
+            }, status=status.HTTP_200_OK)
+        except GasSensor.DoesNotExist:
+            return Response({"error": "Sensor not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GasLeakAlertCreateView(APIView):

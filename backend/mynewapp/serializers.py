@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
@@ -148,6 +149,9 @@ class HouseSerializer(serializers.ModelSerializer):
 
 class GasSensorSerializer(serializers.ModelSerializer):
     current_gas_level = serializers.SerializerMethodField()
+    current_gas_percentage = serializers.SerializerMethodField()
+    tare_weight = serializers.SerializerMethodField()
+    gas_capacity = serializers.SerializerMethodField()
     needs_maintenance = serializers.SerializerMethodField()
     house_address = serializers.CharField(source="house.address_line_1", read_only=True)
     remaining_days_for_calibration = serializers.SerializerMethodField()
@@ -166,6 +170,14 @@ class GasSensorSerializer(serializers.ModelSerializer):
             "battery_level_percentage",
             "is_active",
             "current_gas_level",
+            "current_gas_percentage",
+            "raw_weight",
+            "tare_weight",
+            "gas_capacity",
+            "desired_valve_state",
+            "current_valve_state",
+            "desired_alarm_state",
+            "is_alarm_silenced",
             "needs_maintenance",
             "remaining_days_for_calibration",
             "created_at",
@@ -175,6 +187,9 @@ class GasSensorSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "current_gas_level",
+            "current_gas_percentage",
+            "tare_weight",
+            "gas_capacity",
             "needs_maintenance",
             "remaining_days_for_calibration",
         ]
@@ -182,6 +197,32 @@ class GasSensorSerializer(serializers.ModelSerializer):
     def get_current_gas_level(self, obj):
         latest = obj.gas_readings.order_by("-reading_timestamp").first()
         return float(latest.remaining_gas) if latest else 0.0
+
+    def get_current_gas_percentage(self, obj):
+        latest = obj.gas_readings.order_by("-reading_timestamp").first()
+        if not latest:
+            return 0.0
+        try:
+            capacity = float(obj.house.user.gas_capacity)
+            if capacity <= 0:
+                capacity = 12.5
+        except (AttributeError, TypeError, ValueError):
+            capacity = 12.5
+        remaining = float(latest.remaining_gas)
+        pct = (remaining / capacity) * 100.0
+        return round(max(0.0, min(100.0, pct)), 1)
+
+    def get_tare_weight(self, obj):
+        try:
+            return float(obj.house.user.tare_weight)
+        except (AttributeError, TypeError, ValueError):
+            return 12.50
+
+    def get_gas_capacity(self, obj):
+        try:
+            return float(obj.house.user.gas_capacity)
+        except (AttributeError, TypeError, ValueError):
+            return 12.50
 
     def get_needs_maintenance(self, obj):
         return obj.needs_calibration
@@ -548,7 +589,7 @@ class GasReadingSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     is_weekend = serializers.SerializerMethodField()
     raw_weight = serializers.DecimalField(
-        max_digits=10, decimal_places=2, required=False, write_only=True
+        max_digits=10, decimal_places=2, required=False
     )
 
     class Meta:

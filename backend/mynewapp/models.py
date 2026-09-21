@@ -232,6 +232,28 @@ class GasSensor(models.Model):
     )
     is_active = models.BooleanField(_("active"), default=True)
     ai_enabled = models.BooleanField(default=True)
+    raw_weight = models.DecimalField(
+        _("raw weight"), max_digits=10, decimal_places=2, default=0.0
+    )
+    desired_valve_state = models.CharField(
+        _("desired valve state"),
+        max_length=10,
+        choices=[("OPEN", "Open"), ("CLOSE", "Close")],
+        default="OPEN",
+    )
+    current_valve_state = models.CharField(
+        _("current valve state"),
+        max_length=10,
+        choices=[("OPEN", "Open"), ("CLOSE", "Close")],
+        default="OPEN",
+    )
+    desired_alarm_state = models.CharField(
+        _("desired alarm state"),
+        max_length=10,
+        choices=[("ARM", "Arm"), ("SILENCE", "Silence")],
+        default="ARM",
+    )
+    is_alarm_silenced = models.BooleanField(_("alarm silenced"), default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -266,6 +288,11 @@ class GasSensor(models.Model):
             "type": self.get_sensor_type_display(),
             "battery": self.battery_level_percentage,
             "current_gas": float(self.current_gas_level),
+            "raw_weight": float(self.raw_weight),
+            "desired_valve_state": self.desired_valve_state,
+            "current_valve_state": self.current_valve_state,
+            "desired_alarm_state": self.desired_alarm_state,
+            "is_alarm_silenced": self.is_alarm_silenced,
             "house_id": self.house.id,
             "status": "active" if self.is_active else "inactive",
             "needs_maintenance": self.needs_calibration,
@@ -281,6 +308,14 @@ class GasReading(models.Model):
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(0)],
+    )
+    raw_weight = models.DecimalField(
+        _("raw weight"),
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=None,
     )
     reading_timestamp = models.DateTimeField(
         _("reading timestamp"), default=timezone.now

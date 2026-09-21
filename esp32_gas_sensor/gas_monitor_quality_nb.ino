@@ -42,7 +42,7 @@ const char* API_TOKEN = "972e4539789c26414553c450b2994111b7ebccae";
 const int SENSOR_ID = 13;
 const char* DEVICE_ID = "ESP32_GAS_001";
 const char* LOCATION = "Home Gas Monitor";
-const char* api_base_url = "https://gas-monitor-sfk3.onrender.com/api";
+const char* api_base_url = "https://web-production-c23ce.up.railway.app/api";
 
 // Thresholds (requested)
 const int GAS_NORMAL_THRESHOLD = 200;
@@ -93,6 +93,8 @@ struct AlarmState {
   bool buzzerOn = false;              // current buzzer state
 } alarmState;
 
+const unsigned long LCD_REFRESH_INTERVAL = 500; // 500ms non-blocking refresh rate
+
 // State Variables
 struct {
   unsigned long lastReadingTime = 0;
@@ -101,6 +103,7 @@ struct {
   unsigned long lastAlarmSilencePress = 0;
   unsigned long lastValveButtonPress = 0;
   unsigned long lastWiFiCheck = 0;
+  unsigned long lastLCDUpdate = 0;
   bool wifiConnected = false;
   bool scaleCalibrated = false;
   bool valveClosed = false;
@@ -137,8 +140,9 @@ void setup() {
   pinMode(ALARM_SILENCE_PIN, INPUT_PULLUP);
   pinMode(VALVE_CONTROL_BUTTON_PIN, INPUT_PULLUP);
 
-  valveServo.attach(SERVO_PIN);
-  openValve();
+  // Restore saved valve state from flash storage (do NOT move motor on boot!)
+  state.valveClosed = preferences.getBool("valve_closed", false);
+  Serial.printf("ℹ️ Valve boot state loaded: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
 
   testLEDs();
   // Quick buzzer self-test
@@ -165,9 +169,17 @@ void loop() {
   monitorGas();
   monitorWeight();
   updateAlarm();           // non-blocking buzzer handling
+  handleLCDRefresh();      // non-blocking LCD refresh rate
   sendRegularReadings();
   handleSerialCommands();
   delay(5);
+}
+
+void handleLCDRefresh() {
+  if (millis() - state.lastLCDUpdate >= LCD_REFRESH_INTERVAL) {
+    state.lastLCDUpdate = millis();
+    updateLCDDisplay();
+  }
 }
 
 // Core Functions
@@ -360,6 +372,33 @@ void readWeightSensor() {
   }
 }
 
+// Helper to process remote device commands from JSON doc
+void processDeviceCommands(JsonObject doc) {
+  if (doc.containsKey("valve_command")) {
+    String valveCmd = doc["valve_command"].as<String>();
+    valveCmd.toUpperCase();
+    if (valveCmd == "CLOSE" && !state.valveClosed) {
+      closeValve();
+      Serial.println("🔒 Remote command: Valve CLOSED");
+    } else if (valveCmd == "OPEN" && state.valveClosed) {
+      openValve();
+      Serial.println("🔓 Remote command: Valve OPENED");
+    }
+  }
+
+  if (doc.containsKey("alarm_command")) {
+    String alarmCmd = doc["alarm_command"].as<String>();
+    alarmCmd.toUpperCase();
+    if (alarmCmd == "SILENCE" && !alarmState.silenced) {
+      silenceAlarmImmediate();
+      Serial.println("🔇 Remote command: Alarm SILENCED");
+    } else if (alarmCmd == "ARM" && alarmState.silenced) {
+      alarmState.silenced = false;
+      Serial.println("🔊 Remote command: Alarm ARMED");
+    }
+  }
+}
+
 // API Communication Functions
 void sendGasReading() {
   if (!state.wifiConnected) return;
@@ -368,25 +407,23 @@ void sendGasReading() {
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + String(API_TOKEN));
 
-  float remainingGas;
-  if (state.scaleCalibrated && state.currentWeight > 0) {
-    remainingGas = max(0.0f, state.currentWeight - TANK_EMPTY_WEIGHT);
-  } else {
-    remainingGas = map(state.currentGasLevel, 0, 1000, 0, 20);
-    remainingGas = max(0.0f, remainingGas);
-  }
-  // Round to 2 decimals to satisfy backend
-  float remainingRounded = roundf(remainingGas * 100.0f) / 100.0f;
+  float rawWeight = (state.scaleCalibrated && state.currentWeight > 0) ? state.currentWeight : 0.0f;
+  float rawRounded = roundf(rawWeight * 100.0f) / 100.0f;
 
   StaticJsonDocument<512> doc;
   doc["sensor"] = SENSOR_ID;
-  doc["remaining_gas"] = remainingRounded;
+  doc["raw_weight"] = rawRounded;
 
   String payload; serializeJson(doc, payload);
   int code = http.POST(payload);
 
-  if (code == 201) {
-    Serial.printf("✅ Gas reading sent: %.2f kg\n", remainingRounded);
+  if (code == 201 || code == 200) {
+    String responseStr = http.getString();
+    Serial.printf("✅ Gas raw weight reading sent: %.2f kg\n", rawRounded);
+    StaticJsonDocument<512> resDoc;
+    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      processDeviceCommands(resDoc.as<JsonObject>());
+    }
   } else {
     Serial.printf("❌ Gas reading failed: %d\n", code);
     if (code > 0) Serial.println("Response: " + http.getString());
@@ -402,21 +439,42 @@ void sendWeightReading() {
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + String(API_TOKEN));
 
-  float gasWeight = max(0.0f, state.currentWeight - TANK_EMPTY_WEIGHT);
-  float gasRounded = roundf(gasWeight * 100.0f) / 100.0f;
+  float rawRounded = roundf(state.currentWeight * 100.0f) / 100.0f;
 
   StaticJsonDocument<512> doc;
   doc["sensor"] = SENSOR_ID;
-  doc["remaining_gas"] = gasRounded;
+  doc["raw_weight"] = rawRounded;
 
   String payload; serializeJson(doc, payload);
   int code = http.POST(payload);
 
-  if (code == 201) {
-    Serial.printf("✅ Weight reading sent: %.2f kg\n", gasRounded);
+  if (code == 201 || code == 200) {
+    String responseStr = http.getString();
+    Serial.printf("✅ Raw weight reading sent: %.2f kg\n", rawRounded);
+    StaticJsonDocument<512> resDoc;
+    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      processDeviceCommands(resDoc.as<JsonObject>());
+    }
   } else {
     Serial.printf("❌ Weight reading failed: %d\n", code);
     if (code > 0) Serial.println("Response: " + http.getString());
+  }
+  http.end();
+}
+
+void pollDeviceCommands() {
+  if (!state.wifiConnected) return;
+
+  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) + "/device-command/");
+  http.addHeader("Authorization", "Token " + String(API_TOKEN));
+
+  int code = http.GET();
+  if (code == 200) {
+    String responseStr = http.getString();
+    StaticJsonDocument<512> resDoc;
+    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      processDeviceCommands(resDoc.as<JsonObject>());
+    }
   }
   http.end();
 }
@@ -477,17 +535,25 @@ void sendGasLeakAlert(int gasLevel, String severity) {
 void toggleValve() { if (state.valveClosed) openValve(); else closeValve(); }
 
 void openValve() {
+  Serial.println("🔄 Actuating servo to OPEN...");
+  valveServo.attach(SERVO_PIN);
   valveServo.write(SERVO_OPEN_POSITION);
   delay(SERVO_DELAY_MS);
+  valveServo.detach(); // Detach signal to stop continuous 360-degree rotation / motor jitter
   state.valveClosed = false;
-  Serial.println("🔓 Valve opened");
+  preferences.putBool("valve_closed", false);
+  Serial.println("🔓 Valve opened & servo detached");
 }
 
 void closeValve() {
+  Serial.println("🔄 Actuating servo to CLOSE...");
+  valveServo.attach(SERVO_PIN);
   valveServo.write(SERVO_CLOSED_POSITION);
   delay(SERVO_DELAY_MS);
+  valveServo.detach(); // Detach signal to stop continuous 360-degree rotation / motor jitter
   state.valveClosed = true;
-  Serial.println("🔒 Valve closed");
+  preferences.putBool("valve_closed", true);
+  Serial.println("🔒 Valve closed & servo detached");
 }
 
 // Non-blocking alarm handling

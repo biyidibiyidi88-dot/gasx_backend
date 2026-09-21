@@ -35,6 +35,9 @@ from .views import (
     AdminVendorValidationListView,
     AdminVendorValidationUpdateView,
     PublicVendorListView,
+    SensorValveControlView,
+    SensorAlarmControlView,
+    SensorDeviceCommandView,
 )
 
 urlpatterns = [
@@ -93,6 +96,21 @@ urlpatterns = [
         name="bulk-delete-gas-readings",
     ),
     # ESP32 endpoints
+    path(
+        "sensors/<int:pk>/control-valve/",
+        SensorValveControlView.as_view(),
+        name="sensor-control-valve",
+    ),
+    path(
+        "sensors/<int:pk>/control-alarm/",
+        SensorAlarmControlView.as_view(),
+        name="sensor-control-alarm",
+    ),
+    path(
+        "sensors/<int:pk>/device-command/",
+        SensorDeviceCommandView.as_view(),
+        name="sensor-device-command",
+    ),
     path(
         "alerts/gas-leak/",
         GasLeakAlertCreateView.as_view(),
