@@ -38,28 +38,27 @@ const char* API_TOKEN = "84eae07987192e82a910087ba4112cc7f29055fd";
 const int SENSOR_ID = 13;
 const char* DEVICE_ID = "ESP32_GAS_001";
 const char* LOCATION = "Home Gas Monitor";
-const char* api_base_url = "https://web-production-c23ce.up.railway.app/api";
+const char* api_base_url = "https://gasx-backend-production.up.railway.app/api";
 
 // Thresholds
 const int GAS_NORMAL_THRESHOLD = 200;
 const int GAS_WARNING_THRESHOLD = 400;
 const int GAS_CRITICAL_THRESHOLD = 600;
-const float TANK_EMPTY_WEIGHT = 6.0;
-const float TANK_FULL_WEIGHT = 26.0;
-const float MIN_WEIGHT_CHANGE = 0.2;  // Changed to 0.2kg as requested
 
 // Timing
 const unsigned long READING_INTERVAL = 30000;
 const unsigned long WEIGHT_READING_INTERVAL = 10000;
+const unsigned long DEVICE_COMMAND_POLL_INTERVAL = 3000;
 const unsigned long ALERT_COOLDOWN = 10000;
 const unsigned long BUTTON_DEBOUNCE = 500;
 const unsigned long WIFI_CHECK_INTERVAL = 10000;
 const unsigned long LCD_REFRESH_INTERVAL = 500; // 500ms non-blocking refresh rate
 
-// Servo positions
-const int SERVO_OPEN_POSITION = 0;
-const int SERVO_CLOSED_POSITION = 180;
-const int SERVO_DELAY_MS = 1000;
+// Continuous-rotation servo: 60 RPM is about 1000 ms per turn; calibrate for this unit.
+const int SERVO_OPEN_SPEED_US = 1000;
+const int SERVO_CLOSE_SPEED_US = 2000;
+const int SERVO_STOP_US = 1500;
+const unsigned long SERVO_FULL_TURN_MS = 1000;
 
 // Gas severity levels
 enum GasSeverity {
@@ -80,6 +79,7 @@ HTTPClient http;
 struct {
   unsigned long lastReadingTime = 0;
   unsigned long lastWeightReadingTime = 0;
+  unsigned long lastDeviceCommandPollTime = 0;
   unsigned long lastAlertTime = 0;
   unsigned long lastAlarmSilencePress = 0;
   unsigned long lastValveButtonPress = 0;
@@ -87,10 +87,11 @@ struct {
   unsigned long lastLCDUpdate = 0;
   bool wifiConnected = false;
   bool scaleCalibrated = false;
+  bool scaleReadingValid = false;
   bool valveClosed = false;
+  bool gasSafetyLockout = false;
   bool alarmActive = false;
   float currentWeight = 0.0;
-  float lastSentWeight = 0.0;  // Track last weight sent to backend
   float lastStableWeight = 0.0;
   float calibration_factor = 1.0;
   int currentGasLevel = 0;
@@ -126,6 +127,7 @@ void setup() {
 
   // Restore saved valve state from flash storage (do NOT move motor on boot!)
   state.valveClosed = preferences.getBool("valve_closed", false);
+  state.gasSafetyLockout = preferences.getBool("gas_lockout", false);
   Serial.printf("ℹ️ Valve boot state loaded: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
 
   testLEDs();
@@ -154,6 +156,10 @@ void loop() {
   monitorGas();
   monitorWeight();
   handleLCDRefresh();
+  if (millis() - state.lastDeviceCommandPollTime >= DEVICE_COMMAND_POLL_INTERVAL) {
+    state.lastDeviceCommandPollTime = millis();
+    pollDeviceCommands();
+  }
   sendRegularReadings();
   handleSerialCommands();
   delay(10);
@@ -247,15 +253,6 @@ void monitorWeight() {
   if (millis() - state.lastWeightReadingTime >= WEIGHT_READING_INTERVAL) {
     state.lastWeightReadingTime = millis();
     readWeightSensor();
-    
-    // Quality check: Only send weight if significant change (0.2kg or more)
-    float weightDifference = abs(state.currentWeight - state.lastSentWeight);
-    if (weightDifference >= MIN_WEIGHT_CHANGE) {
-      Serial.printf("📊 Significant weight change detected: %.2f kg (diff: %.2f kg)\n", 
-                    state.currentWeight, weightDifference);
-      sendWeightReading();
-      state.lastSentWeight = state.currentWeight;
-    }
   }
 }
 
@@ -263,12 +260,13 @@ void sendRegularReadings() {
   if (millis() - state.lastReadingTime >= READING_INTERVAL) {
     state.lastReadingTime = millis();
     
-    if (state.wifiConnected) {
-      sendGasReading();
-      Serial.printf("📡 Regular reading sent - Gas: %d, Weight: %.2f kg\n", 
-                    state.currentGasLevel, state.currentWeight);
+    if (!state.wifiConnected) {
+      Serial.println("⚠️  Skipping weight upload - WiFi not connected");
+    } else if (state.scaleCalibrated && state.scaleReadingValid) {
+      sendWeightReading();
+      Serial.printf("📡 Gross bottle weight sent: %.2f kg\n", state.currentWeight);
     } else {
-      Serial.println("⚠️  Skipping reading - WiFi not connected");
+      Serial.println("⚠️  Skipping weight upload: scale is uncalibrated or reading is invalid");
     }
   }
 }
@@ -346,6 +344,7 @@ GasSeverity determineGasSeverity(int gasLevel) {
 }
 
 void readWeightSensor() {
+  state.scaleReadingValid = false;
   if (!state.scaleCalibrated) {
     state.currentWeight = 0.0;
     return;
@@ -355,9 +354,9 @@ void readWeightSensor() {
     float weight = scale.get_units(3);
     
     // Quality validation: Ensure no negative weights
-    if (weight < 0) {
-      weight = 0.0;
-      Serial.println("⚠️  Negative weight reading corrected to 0");
+    if (weight <= 0) {
+      Serial.println("⚠️  Non-positive gross weight; upload skipped");
+      return;
     }
     
     // Reasonable upper limit check
@@ -367,6 +366,7 @@ void readWeightSensor() {
     }
     
     state.currentWeight = weight;
+    state.scaleReadingValid = true;
     
     // Update stable weight for trend analysis
     if (abs(weight - state.lastStableWeight) < 0.05) {
@@ -380,12 +380,20 @@ void processDeviceCommands(JsonObject doc) {
   if (doc.containsKey("valve_command")) {
     String valveCmd = doc["valve_command"].as<String>();
     valveCmd.toUpperCase();
-    if (valveCmd == "CLOSE" && !state.valveClosed) {
-      closeValve();
-      Serial.println("🔒 Remote command: Valve CLOSED");
+    if (valveCmd == "CLOSE") {
+      if (!state.valveClosed) closeValve();
+      if (state.currentSeverity < GAS_MEDIUM && state.gasSafetyLockout) {
+        state.gasSafetyLockout = false;
+        preferences.putBool("gas_lockout", false);
+      }
+      Serial.println("🔒 Remote command: Valve CLOSE acknowledged");
     } else if (valveCmd == "OPEN" && state.valveClosed) {
-      openValve();
-      Serial.println("🔓 Remote command: Valve OPENED");
+      if (state.currentSeverity >= GAS_MEDIUM || state.gasSafetyLockout) {
+        Serial.println("⛔ Valve OPEN rejected by gas safety lockout");
+      } else {
+        openValve();
+        Serial.println("🔓 Remote command: Valve OPENED");
+      }
     }
   }
 
@@ -405,7 +413,8 @@ void processDeviceCommands(JsonObject doc) {
 void pollDeviceCommands() {
   if (!state.wifiConnected) return;
 
-  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) + "/device-command/");
+  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) +
+             "/device-command/?current_valve=" + (state.valveClosed ? "CLOSE" : "OPEN"));
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Authorization", "Token " + String(API_TOKEN));
 
@@ -420,49 +429,10 @@ void pollDeviceCommands() {
   http.end();
 }
 
-// API Communication Functions
-void sendGasReading() {
-  if (!state.wifiConnected) return;
-  
-  http.begin(String(api_base_url) + "/gas-readings/create/");
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Token " + String(API_TOKEN));
-  
-  float rawWeight = (state.scaleCalibrated && state.currentWeight > 0) ? state.currentWeight : 0.0f;
-  float rawRounded = roundf(rawWeight * 100.0f) / 100.0f;
-  
-  StaticJsonDocument<512> doc;
-  doc["sensor"] = SENSOR_ID;
-  doc["raw_weight"] = rawRounded;
-  
-  String payload;
-  serializeJson(doc, payload);
-  
-  int httpResponseCode = http.POST(payload);
-  
-  if (httpResponseCode == 201 || httpResponseCode == 200) {
-    String responseStr = http.getString();
-    Serial.printf("✅ Gas raw weight reading sent: %.2f kg\n", rawRounded);
-    StaticJsonDocument<512> resDoc;
-    if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
-      processDeviceCommands(resDoc.as<JsonObject>());
-    }
-  } else {
-    Serial.printf("❌ Gas reading failed: %d\n", httpResponseCode);
-    if (httpResponseCode > 0) {
-      Serial.println("Response: " + http.getString());
-    }
-  }
-  
-  http.end();
-}
-
+// Send gross bottle weight only; the backend subtracts the configured tare.
 void sendWeightReading() {
-  if (!state.wifiConnected || !state.scaleCalibrated) return;
-  
-  if (state.currentWeight < 0) {
-    Serial.println("⚠️  Skipping weight transmission - invalid reading");
+  if (!state.wifiConnected || !state.scaleCalibrated || !state.scaleReadingValid) {
+    Serial.println("⚠️  Skipping weight transmission - no calibrated valid weight");
     return;
   }
   
@@ -514,13 +484,17 @@ void handleGasAlert(int gasLevel, GasSeverity severity) {
   Serial.printf("🚨 Gas Alert: %s (Level: %d)\n", severityStr.c_str(), gasLevel);
   
   if (severity >= GAS_MEDIUM) {
-    // Always activate alarm and close valve immediately for safety
-    activateAlarm(severity);
-    
-    // Close valve on MEDIUM, HIGH or CRITICAL levels for immediate safety
+    // Close the valve before the blocking alarm pattern runs.
+    if (!state.gasSafetyLockout) {
+      state.gasSafetyLockout = true;
+      preferences.putBool("gas_lockout", true);
+    }
     if (!state.valveClosed) {
       closeValve();
       Serial.printf("🔒 Valve automatically closed due to %s gas level\n", severityStr.c_str());
+    }
+    if (!state.alarmActive) {
+      activateAlarm(severity);
     }
     
     // Only send API alert if cooldown period has passed
@@ -544,9 +518,8 @@ void sendGasLeakAlert(int gasLevel, String severity) {
   StaticJsonDocument<1024> doc;
   doc["sensor_id"] = SENSOR_ID;  // This endpoint uses sensor_id (different from gas-readings)
   doc["severity_level"] = severity;
-  doc["gas_concentration"] = max(0, gasLevel);  // Ensure non-negative
   doc["location_details"] = LOCATION;
-  doc["alert_message"] = "Gas leak detected - Level: " + String(gasLevel);
+  doc["alert_message"] = "Gas threshold detected - normalized sensor level: " + String(gasLevel) + "/1000";
   
   String payload;
   serializeJson(doc, payload);
@@ -575,11 +548,17 @@ void toggleValve() {
 }
 
 void openValve() {
+  if (state.currentSeverity >= GAS_MEDIUM || state.gasSafetyLockout) {
+    Serial.println("⛔ Valve OPEN blocked by gas safety lockout");
+    return;
+  }
   Serial.println("🔄 Actuating servo to OPEN...");
   valveServo.attach(SERVO_PIN);
-  valveServo.write(SERVO_OPEN_POSITION);
-  delay(SERVO_DELAY_MS);
-  valveServo.detach(); // Detach signal to stop continuous 360-degree rotation
+  valveServo.writeMicroseconds(SERVO_OPEN_SPEED_US);
+  delay(SERVO_FULL_TURN_MS);
+  valveServo.writeMicroseconds(SERVO_STOP_US);
+  delay(100);
+  valveServo.detach();
   state.valveClosed = false;
   preferences.putBool("valve_closed", false);
   Serial.println("🔓 Valve opened & servo detached");
@@ -588,9 +567,11 @@ void openValve() {
 void closeValve() {
   Serial.println("🔄 Actuating servo to CLOSE...");
   valveServo.attach(SERVO_PIN);
-  valveServo.write(SERVO_CLOSED_POSITION);
-  delay(SERVO_DELAY_MS);
-  valveServo.detach(); // Detach signal to stop continuous 360-degree rotation
+  valveServo.writeMicroseconds(SERVO_CLOSE_SPEED_US);
+  delay(SERVO_FULL_TURN_MS);
+  valveServo.writeMicroseconds(SERVO_STOP_US);
+  delay(100);
+  valveServo.detach();
   state.valveClosed = true;
   preferences.putBool("valve_closed", true);
   Serial.println("🔒 Valve closed & servo detached");
@@ -699,34 +680,20 @@ void updateLCDDisplay() {
   lcd.clear();
   lcd.setCursor(0, 0);
   
-  if (state.currentSeverity >= GAS_HIGH) {
+  if (state.currentSeverity >= GAS_MEDIUM) {
     lcd.print("GAS ALERT!");
     lcd.setCursor(0, 1);
-    lcd.printf("Level: %d", state.currentGasLevel);
-  } else {
-    // Calculate gas percentage
-    float gasPercentage = 0.0;
-    if (state.scaleCalibrated && state.currentWeight > 0) {
-      // Calculate based on actual weight
-      float gasWeight = max(0.0f, state.currentWeight - TANK_EMPTY_WEIGHT);
-      float tankCapacity = TANK_FULL_WEIGHT - TANK_EMPTY_WEIGHT;
-      gasPercentage = (gasWeight / tankCapacity) * 100.0;
-      gasPercentage = constrain(gasPercentage, 0.0, 100.0);
-    } else {
-      // Estimate from gas sensor reading
-      gasPercentage = map(state.currentGasLevel, 0, 1000, 0, 100);
-      gasPercentage = constrain(gasPercentage, 0.0, 100.0);
-    }
-    
-    // Display gas percentage and status
-    lcd.printf("Gas: %.1f%%", gasPercentage);
+    lcd.printf("Level:%d %s", state.currentGasLevel,
+               state.valveClosed ? "CLOSED" : "OPEN");
+  } else if (!state.scaleCalibrated || !state.scaleReadingValid) {
+    lcd.print("Scale not ready");
     lcd.setCursor(0, 1);
-    
-    if (state.scaleCalibrated) {
-      lcd.printf("%.1fkg %s", state.currentWeight, state.valveClosed ? "CLOSED" : "OPEN");
-    } else {
-      lcd.printf("Est %s", state.valveClosed ? "CLOSED" : "OPEN");
-    }
+    lcd.print(state.valveClosed ? "Valve: CLOSED" : "Valve: OPEN");
+  } else {
+    // The device reports only gross weight. Backend/app calculate LPG remaining.
+    lcd.printf("Weight %.1fkg", state.currentWeight);
+    lcd.setCursor(0, 1);
+    lcd.print(state.valveClosed ? "Valve: CLOSED" : "Valve: OPEN");
   }
 }
 
@@ -873,9 +840,8 @@ void printDeviceInfo() {
   Serial.printf("Valve: %s\n", state.valveClosed ? "Closed" : "Open");
   Serial.printf("Alarm: %s\n", state.alarmActive ? "Active" : "Inactive");
   Serial.printf("Current Weight: %.2f kg\n", state.currentWeight);
-  Serial.printf("Last Sent Weight: %.2f kg\n", state.lastSentWeight);
   Serial.printf("Gas Level: %d\n", state.currentGasLevel);
-  Serial.printf("Min Weight Change: %.1f kg\n", MIN_WEIGHT_CHANGE);
+  Serial.printf("Gas Safety Lockout: %s\n", state.gasSafetyLockout ? "Active" : "Inactive");
   Serial.println("=====================================");
 }
 

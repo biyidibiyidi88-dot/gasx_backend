@@ -117,7 +117,7 @@
     <div class="p-8 bg-gray-950/40 border-t border-white/5 relative overflow-hidden group/session" v-if="isOpen || !isMobile">
       <div class="absolute inset-0 bg-teal-500/5 translate-y-full group-hover/session:translate-y-0 transition-transform duration-700"></div>
       
-      <router-link to="/admin/profile" class="flex items-center space-x-4 mb-8 relative group/profile">
+      <div v-if="['admin', 'superadmin', 'super_admin'].includes(String(userStore.userProfile?.role || '').toLowerCase()) || userStore.userProfile?.is_admin" class="flex items-center space-x-4 mb-8 relative group/profile">
         <div class="relative">
           <div class="absolute inset-0 bg-teal-400/20 blur opacity-0 group-hover/profile:opacity-100 transition-opacity duration-500"></div>
           <div class="w-14 h-14 rounded-[1.2rem] overflow-hidden border-2 border-white/10 relative z-10 p-0.5">
@@ -144,6 +144,9 @@
             {{ userStore.userProfile?.role || 'Operator' }}
           </p>
         </div>
+      </div>
+      <router-link v-else to="/admin/profile" class="flex items-center space-x-4 mb-8 relative group/profile">
+        <div class="flex flex-col min-w-0 text-left"><p class="text-sm font-black text-white truncate">{{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}</p><p class="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{{ userStore.userProfile?.role || 'Client' }}</p></div>
       </router-link>
 
       <button @click="logout"
@@ -180,106 +183,36 @@ const route = useRoute();
 const userStore = useUserStore();
 const activeLink = ref('');
 
-// Organized links by section
+// Keep navigation limited to the tasks that belong to the signed-in account type.
 const links = computed(() => {
-  const role = userStore.userProfile?.role;
-  const isAdmin = userStore.userProfile?.is_admin || role === 'Super Admin' || role === 'Admin';
-  
-  if (role === 'Vendor') {
-    return {
-      "Supplier Dashboard": [
-        { 
-          name: "My Inventory", 
-          path: "/admin/vendor-inventory",
-          icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" 
-        },
-        { 
-          name: "Profile & Documents", 
-          path: "/admin/vendor-profile",
-          icon: "M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" 
-        }
-      ]
-    };
-  }
-
-  if (role === 'Delivery Person') {
-    return {
-      "Delivery Control": [
-        {
-          name: "Deliveries",
-          path: "/admin/delivery-dashboard",
-          icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-        },
-        {
-          name: "Find Gas",
-          path: "/admin/gas-map",
-          icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-        },
-        {
-          name: "Identity",
-          path: "/admin/profile",
-          icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        }
-      ]
-    };
-  }
-
-  const nav = {
-    Analytics: [
-      { 
-        name: "Intelligence", 
-        path: "/admin",
-        icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
-      },
-      { 
-        name: "Network", 
-        path: "/admin/pricing",
-        icon: "M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3z" 
-      }
-    ],
-    Monitoring: [
-      { 
-        name: "Alerts", 
-        path: "/admin/alerts",
-        icon: "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9",
-        alertCount: userStore.notifications.filter(n => !n.read).length 
-      },
-      { 
-        name: "AI Hub", 
-        path: "/admin/ai-chat",
-        icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" 
-      },
-      { 
-        name: "Find Gas", 
-        path: "/admin/gas-map",
-        icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" 
-      }
-    ],
-    System: [
-      {   
-        name: "Identity", 
-        path: "/admin/profile",
-        icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
-      }
-    ]
+  const rawRole = String(userStore.userProfile?.role || '').toLowerCase().replaceAll(' ', '_');
+  const isAdmin = userStore.userProfile?.is_admin || userStore.userProfile?.is_staff || ['admin', 'super_admin'].includes(rawRole);
+  const icon = {
+    home: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    users: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    review: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622z',
+    boxes: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+    sensor: 'M3 3h18v18H3zM8 8h8v8H8z',
+    alert: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1',
+    profile: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    gas: 'M3 12h18M12 3v18M5 5l14 14M19 5L5 19',
+    map: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
+    chat: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
   };
-
-  if (isAdmin) {
-    nav.System.push(
-      { 
-        name: "Controls", 
-        path: "/admin/users",
-        icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" 
-      },
-      { 
-        name: "Vendor Validation", 
-        path: "/admin/vendor-validation",
-        icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" 
-      }
-    );
-  }
-
-  return nav;
+  const item = (name, path, glyph) => ({ name, path, icon: glyph });
+  if (isAdmin) return {
+    'System overview': [item('Overview', '/admin', icon.home), item('Sensors', '/admin/admin-sensors', icon.sensor), item('Alerts', '/admin/system-alerts', icon.alert)],
+    'Administration': [item('Manage users', '/admin/users', icon.users), item('Validate applications', '/admin/vendor-validation', icon.review), item('Orders & deliveries', '/admin/delivery-dashboard', icon.boxes)],
+  };
+  if (['vendor', 'gas_supplier', 'supplier'].includes(rawRole)) return {
+    'Supplier workspace': [item('Inventory', '/admin/vendor-inventory', icon.boxes), item('Orders', '/admin/delivery-dashboard', icon.review), item('Business profile', '/admin/vendor-profile', icon.profile)],
+  };
+  if (['delivery_person', 'driver'].includes(rawRole)) return {
+    'Delivery workspace': [item('Delivery jobs', '/admin/delivery-dashboard', icon.boxes), item('Find gas', '/admin/gas-map', icon.map), item('Profile', '/admin/profile', icon.profile)],
+  };
+  return {
+    'Customer': [item('My dashboard', '/admin/client-dashboard', icon.home), item('Buy gas', '/admin/buy-gas', icon.gas), item('My orders', '/admin/client-orders', icon.boxes), item('Find suppliers', '/admin/gas-map', icon.map), item('Alerts', '/admin/alerts', icon.alert), item('AI assistant', '/admin/ai-chat', icon.chat), item('Profile', '/admin/profile', icon.profile)],
+  };
 });
 
 watch(() => route.path, (newPath) => { activeLink.value = newPath; }, { immediate: true });
@@ -297,7 +230,10 @@ onMounted(async () => {
 
 const closeSidebar = () => { if (props.isMobile) emit('close-sidebar'); };
 const handleImageError = () => { if (userStore.userProfile) userStore.userProfile.profile_image_url = ''; };
-const logout = () => { userStore.clearAuth(); router.push('/login'); };
+const logout = async () => {
+  await userStore.logout();
+  await router.replace('/login');
+};
 </script>
 
 <style scoped>

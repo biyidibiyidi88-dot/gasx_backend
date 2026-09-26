@@ -209,18 +209,6 @@ const analyticsDetails = [
 .features-page {
   scroll-behavior: smooth;
 }
-@keyframes pulse-slow {
-  0%, 100% { opacity: 0.1; transform: scale(1); }
-  50% { opacity: 0.15; transform: scale(1.05); }
-}
-.animate-pulse-slow { 
-  animation: pulse-slow 8s ease-in-out infinite; 
-}
-
-<style scoped>
-.features-page {
-  scroll-behavior: smooth;
-}
 
 /* New Animations */
 @keyframes fade-in { 

@@ -29,7 +29,7 @@ const getApiBaseUrl = () => {
   // Only use local backend if we're both in dev mode AND on localhost
   if (isDevelopment && isLocalhost) {
     // Local development - use local Django server
-    return 'http://127.0.0.1:8000/';
+    return 'http://127.0.0.1:8000/api/';
   } else {
     // Production or deployed frontend - use Railway backend
     return 'https://gasx-backend-production.up.railway.app/api';

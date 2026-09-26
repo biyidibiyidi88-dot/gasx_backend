@@ -70,6 +70,7 @@
             </svg>
             Launch Navigation
           </button>
+          <p v-if="routeError" class="text-xs text-red-200">{{ routeError }}</p>
         </div>
 
         <div v-else-if="loading" class="flex-1 flex items-center justify-center">
@@ -105,6 +106,7 @@ const delivery = ref(null);
 const loading = ref(true);
 const mapLoaded = ref(false);
 const mapContainer = ref(null);
+const routeError = ref('');
 let map = null;
 
 const JAWG_TOKEN = 'QWSZT4r4RnGLINur1NGRr2YTcTCLVbIPPbijitdYg4K5imZqo0dqSzPajpWqMPWB';
@@ -177,11 +179,50 @@ const plotMarkers = () => {
   }
 };
 
-const openNav = () => {
+const openNav = async () => {
   if (!delivery.value) return;
   const { latitude, longitude } = delivery.value;
-  if (!latitude || !longitude) return;
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`, '_blank');
+  const address = String(delivery.value.delivery_address || '').trim();
+  if ((latitude == null || longitude == null) && !address) {
+    routeError.value = 'This order has no GPS coordinates or delivery address.';
+    return;
+  }
+  routeError.value = '';
+  const routeTab = window.open('about:blank', '_blank');
+  if (!routeTab) {
+    routeError.value = 'Allow pop-ups to open navigation.';
+    return;
+  }
+  if (!navigator.geolocation) {
+    routeTab.close();
+    routeError.value = 'This browser cannot access your current location.';
+    return;
+  }
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      });
+    });
+    const origin = `${position.coords.latitude},${position.coords.longitude}`;
+    const directions = new URL('https://www.google.com/maps/dir/');
+    directions.search = new URLSearchParams({
+      api: '1',
+      origin,
+      destination: latitude != null && longitude != null
+        ? `${latitude},${longitude}`
+        : address,
+      travelmode: 'driving',
+    }).toString();
+    routeTab.location.href = directions.toString();
+  } catch (error) {
+    routeTab.close();
+    routeError.value = error.code === 1
+      ? 'Allow location access to create a route from your current position.'
+      : 'Could not get your location. Check device location and try again.';
+  }
 };
 
 onMounted(async () => {

@@ -17,4 +17,5 @@ whitenoise==6.6.0
 python-dotenv==1.0.0
 Pillow==10.4.0
 requests==2.31.0
+digipay-python==1.0.0
 resend==0.6.0

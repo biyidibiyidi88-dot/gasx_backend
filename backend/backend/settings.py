@@ -10,6 +10,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # e.g., /home/tchoua/Desktop/backup/Gas_Monitor/backend/.env
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
+# DigiPay credentials stay on the backend. Development defaults to its sandbox.
+DIGIPAY_API_KEY = os.getenv("DIGIPAY_API_KEY", "")
+DIGIPAY_ENVIRONMENT = os.getenv("DIGIPAY_ENVIRONMENT", "sandbox").strip().lower()
+ALLOW_MOCK_PAYMENTS = os.getenv("ALLOW_MOCK_PAYMENTS", "false").strip().lower() in {
+    "1", "true", "yes", "on"
+}
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/

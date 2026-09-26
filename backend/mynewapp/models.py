@@ -593,6 +593,12 @@ class CookableFood(models.Model):
 
 
 class VendorProfile(models.Model):
+    APPLICATION_STATUSES = (
+        ("PENDING", "Pending review"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+    )
+
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="vendor_profile"
     )
@@ -601,6 +607,9 @@ class VendorProfile(models.Model):
     longitude = models.FloatField(_("longitude"), blank=True, null=True)
     address = models.CharField(_("address"), max_length=255, blank=True, default="")
     is_approved = models.BooleanField(_("approved"), default=False)
+    application_status = models.CharField(
+        max_length=12, choices=APPLICATION_STATUSES, default="PENDING"
+    )
     birth_certificate = models.FileField(
         _("birth certificate"), upload_to="vendor_docs/birth_certs/", blank=True, null=True
     )
@@ -609,6 +618,18 @@ class VendorProfile(models.Model):
     )
     institution_document = models.FileField(
         _("institution document"), upload_to="vendor_docs/institution_docs/", blank=True, null=True
+    )
+    tax_payment_document = models.FileField(
+        _("tax payment proof"), upload_to="vendor_docs/tax_proofs/", blank=True, null=True
+    )
+    additional_document = models.FileField(
+        _("supporting document"), upload_to="vendor_docs/supporting_docs/", blank=True, null=True
+    )
+    rejection_reason = models.TextField(blank=True, default="")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="reviewed_vendor_applications",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -620,6 +641,34 @@ class VendorProfile(models.Model):
 
     def __str__(self):
         return f"{self.store_name} ({self.user.get_full_name()})"
+
+
+class DeliveryPersonProfile(models.Model):
+    APPLICATION_STATUSES = VendorProfile.APPLICATION_STATUSES
+
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="delivery_profile"
+    )
+    identity_card = models.FileField(
+        upload_to="delivery_docs/id_cards/", blank=True, null=True
+    )
+    supporting_document = models.FileField(
+        upload_to="delivery_docs/supporting_docs/", blank=True, null=True
+    )
+    application_status = models.CharField(
+        max_length=12, choices=APPLICATION_STATUSES, default="PENDING"
+    )
+    rejection_reason = models.TextField(blank=True, default="")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="reviewed_delivery_applications",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Delivery application: {self.user.get_full_name()} ({self.application_status})"
 
 
 class GasBottle(models.Model):
@@ -674,8 +723,26 @@ class Delivery(models.Model):
         ("PENDING", "Pending"),
         ("ASSIGNED", "Assigned"),
         ("OUT_FOR_DELIVERY", "Out for Delivery"),
+        ("READY_FOR_PICKUP", "Ready for Pickup"),
         ("DELIVERED", "Delivered"),
+        ("PICKED_UP", "Picked Up"),
         ("CANCELLED", "Cancelled"),
+    )
+    FULFILLMENT_CHOICES = (
+        ("DELIVERY", "Delivery"),
+        ("PICKUP", "Customer pickup"),
+    )
+    PAYMENT_STATUS_CHOICES = (
+        ("INITIATING", "Starting payment"),
+        ("PENDING", "Waiting for payment"),
+        ("PAID", "Paid"),
+        ("REFUNDED", "Refunded"),
+        ("FAILED", "Payment failed"),
+        ("UNKNOWN", "Payment status unknown"),
+    )
+    PAYMENT_OPERATOR_CHOICES = (
+        ("ORANGE_MONEY", "Orange Money"),
+        ("MTN_MOMO", "MTN MoMo"),
     )
 
     client = models.ForeignKey(
@@ -698,9 +765,25 @@ class Delivery(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default="PENDING"
     )
+    fulfillment_method = models.CharField(
+        max_length=12, choices=FULFILLMENT_CHOICES, default="DELIVERY"
+    )
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_status = models.CharField(
+        max_length=12, choices=PAYMENT_STATUS_CHOICES, default="PAID", db_index=True
+    )
+    payment_operator = models.CharField(
+        max_length=20, choices=PAYMENT_OPERATOR_CHOICES, blank=True, default=""
+    )
+    payment_transaction_id = models.CharField(max_length=120, blank=True, default="")
+    stock_deducted = models.BooleanField(default=False)
     delivery_address = models.CharField(max_length=255)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    driver_confirmed_delivery = models.BooleanField(default=False)
+    client_confirmed_delivery = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -176,6 +176,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "cross_file",
+      "rootUri": "file:///home/tchoua/.pub-cache/hosted/pub.dev/cross_file-0.3.5+5",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
       "name": "crypto",
       "rootUri": "file:///home/tchoua/.pub-cache/hosted/pub.dev/crypto-3.0.7",
       "packageUri": "lib/",
@@ -248,6 +254,12 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "file_picker",
+      "rootUri": "file:///home/tchoua/.pub-cache/hosted/pub.dev/file_picker-10.3.10",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "fixnum",
       "rootUri": "file:///home/tchoua/.pub-cache/hosted/pub.dev/fixnum-1.1.1",
       "packageUri": "lib/",
@@ -306,6 +318,12 @@
       "rootUri": "file:///home/tchoua/.pub-cache/hosted/pub.dev/flutter_map-8.2.2",
       "packageUri": "lib/",
       "languageVersion": "3.6"
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "rootUri": "file:///home/tchoua/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.35",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
     },
     {
       "name": "flutter_riverpod",

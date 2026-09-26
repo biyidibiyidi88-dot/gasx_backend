@@ -61,6 +61,7 @@ dependencies:
   url_launcher: ^6.3.2
   geolocator: ^14.0.2
   geolocator_web: ^4.1.1
+  file_picker: ^10.3.10
   web_socket_channel: ^3.0.3
   flutter_local_notifications: ^17.0.0
   audioplayers: ^6.0.0

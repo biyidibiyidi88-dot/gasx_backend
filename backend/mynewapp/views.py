@@ -1,22 +1,29 @@
 import json
 import logging
+import csv
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model, login, logout
 from django.core.files.storage import default_storage
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Count, F, Q
+from django.http import FileResponse, HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.authtoken.models import Token
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Alert, CustomUser, Delivery, GasReading, GasSensor, House, Notification, CookableFood, VendorProfile, GasBottle
+from .models import Alert, CustomUser, Delivery, DeliveryPersonProfile, GasReading, GasSensor, House, Notification, CookableFood, VendorProfile, GasBottle
+from .bottle_config import user_bottle_capacity_kg
 from .serializers import (
     AlertSerializer,
     DeliverySerializer,
+    DeliveryPersonProfileSerializer,
     GasLeakAlertSerializer,
     GasReadingSerializer,
     GasSensorSerializer,
@@ -34,11 +41,14 @@ from .serializers import (
 )
 from .services.ai_service import AIPredictionService
 from .services.email_service import email_service
+from .permissions import IsSystemAdmin
 
 User = get_user_model()
 
 
 class RegisterView(APIView):
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -142,6 +152,8 @@ class GasSensorListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        if self.request.user.is_admin or self.request.user.is_superuser or self.request.user.is_staff:
+            return GasSensor.objects.select_related("house", "house__user").all()
         return GasSensor.objects.filter(house__user=self.request.user)
 
 
@@ -150,6 +162,8 @@ class AlertListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        if self.request.user.is_admin or self.request.user.is_superuser or self.request.user.is_staff:
+            return Alert.objects.select_related("user", "sensor", "sensor__house").order_by("-triggered_at")
         return Alert.objects.filter(user=self.request.user).order_by("-triggered_at")
 
 
@@ -192,7 +206,7 @@ class ProfileImageView(APIView):
 # user managment
 class UserListView(generics.ListAPIView):
     serializer_class = UserManagementSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSystemAdmin]
 
     def get_queryset(self):
         return User.objects.all().order_by("-created_at")
@@ -200,14 +214,14 @@ class UserListView(generics.ListAPIView):
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserManagementSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSystemAdmin]
     queryset = User.objects.all()
     lookup_field = "id"
 
 
 class UserInviteView(generics.CreateAPIView):
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSystemAdmin]
 
     def perform_create(self, serializer):
         user = serializer.save(is_active=False)  # Create inactive user
@@ -217,7 +231,7 @@ class UserInviteView(generics.CreateAPIView):
 
 
 class UserStatusUpdateView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSystemAdmin]
 
     def patch(self, request, id):
         try:
@@ -241,6 +255,149 @@ class UserStatusUpdateView(APIView):
             return Response(
                 {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class AdminOverviewView(APIView):
+    permission_classes = [IsSystemAdmin]
+
+    def get(self, request):
+        users = User.objects.all()
+        vendors = VendorProfile.objects.all()
+        delivery_profiles = DeliveryPersonProfile.objects.all()
+        sensors = GasSensor.objects.all()
+        deliveries = Delivery.objects.all()
+        today = timezone.localdate()
+        return Response({
+            "generated_at": timezone.now(),
+            "users": {
+                "total": users.count(),
+                "clients": users.filter(is_admin=False, is_superuser=False, is_delivery_person=False)
+                    .exclude(id__in=vendors.values("user_id")).count(),
+                "delivery_people": delivery_profiles.count(),
+                "suppliers": vendors.count(),
+                "active": users.filter(is_active=True).count(),
+            },
+            "applications": {
+                "delivery_pending": delivery_profiles.filter(application_status="PENDING").count(),
+                "supplier_pending": vendors.filter(application_status="PENDING").count(),
+                "rejected": delivery_profiles.filter(application_status="REJECTED").count()
+                    + vendors.filter(application_status="REJECTED").count(),
+            },
+            "sensors": {
+                "total": sensors.count(),
+                "active": sensors.filter(is_active=True).count(),
+                "inactive": sensors.filter(is_active=False).count(),
+                "readings": GasReading.objects.count(),
+            },
+            "alerts": {
+                "total": Alert.objects.count(),
+                "unresolved": Alert.objects.filter(is_resolved=False).count(),
+                "critical": Alert.objects.filter(is_resolved=False, severity_level="CRITICAL").count(),
+            },
+            "orders": {
+                "total": deliveries.count(),
+                "today": deliveries.filter(created_at__date=today).count(),
+                "pending": deliveries.filter(status="PENDING").count(),
+                "in_progress": deliveries.filter(status__in=("ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_PICKUP")).count(),
+                "completed": deliveries.filter(status__in=("DELIVERED", "PICKED_UP")).count(),
+                "pickup": deliveries.filter(fulfillment_method="PICKUP").count(),
+                "delivery": deliveries.filter(fulfillment_method="DELIVERY").count(),
+            },
+            "recent_alerts": AlertSerializer(
+                Alert.objects.select_related("user", "sensor", "sensor__house")[:8],
+                many=True,
+                context={"request": request},
+            ).data,
+        })
+
+
+class AdminReportView(APIView):
+    permission_classes = [IsSystemAdmin]
+
+    def get(self, request):
+        report_type = request.query_params.get("type", "orders")
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="gasx-{report_type}-report.csv"'
+        writer = csv.writer(response)
+
+        if report_type == "users":
+            writer.writerow(["id", "email", "first_name", "last_name", "role", "active", "created_at"])
+            for user in User.objects.order_by("-created_at").iterator():
+                role = "admin" if user.is_admin or user.is_superuser else (
+                    "delivery_person" if user.is_delivery_person else (
+                        "gas_supplier" if hasattr(user, "vendor_profile") else "client"
+                    )
+                )
+                writer.writerow([user.id, user.email, user.first_name, user.last_name, role, user.is_active, user.created_at.isoformat()])
+        elif report_type == "sensors":
+            writer.writerow(["id", "serial_number", "sensor_name", "owner_email", "active", "raw_weight_kg", "created_at"])
+            for sensor in GasSensor.objects.select_related("house", "house__user").order_by("id").iterator():
+                writer.writerow([sensor.id, sensor.serial_number, sensor.sensor_name, sensor.house.user.email, sensor.is_active, sensor.raw_weight, sensor.created_at.isoformat()])
+        elif report_type == "suppliers":
+            writer.writerow(["id", "store_name", "owner_email", "address", "status", "approved", "created_at"])
+            for vendor in VendorProfile.objects.select_related("user").order_by("-created_at").iterator():
+                writer.writerow([vendor.id, vendor.store_name, vendor.user.email, vendor.address, vendor.application_status, vendor.is_approved, vendor.created_at.isoformat()])
+        else:
+            writer.writerow(["id", "client_email", "supplier", "bottle", "fulfillment", "status", "unit_price", "created_at"])
+            for order in Delivery.objects.select_related("client", "vendor", "gas_bottle").order_by("-created_at").iterator():
+                writer.writerow([order.id, order.client.email, order.vendor.store_name, order.gas_bottle, order.fulfillment_method, order.status, order.unit_price, order.created_at.isoformat()])
+        return response
+
+
+class AdminDeliveryApplicationListView(generics.ListAPIView):
+    permission_classes = [IsSystemAdmin]
+    serializer_class = DeliveryPersonProfileSerializer
+
+    def get_queryset(self):
+        queryset = DeliveryPersonProfile.objects.select_related("user", "reviewed_by")
+        status_filter = self.request.query_params.get("status")
+        if status_filter and status_filter.upper() in {"PENDING", "APPROVED", "REJECTED"}:
+            queryset = queryset.filter(application_status=status_filter.upper())
+        return queryset.order_by("-created_at")
+
+
+class AdminDeliveryApplicationUpdateView(APIView):
+    permission_classes = [IsSystemAdmin]
+
+    def patch(self, request, pk):
+        try:
+            profile = DeliveryPersonProfile.objects.select_related("user").get(pk=pk)
+        except DeliveryPersonProfile.DoesNotExist:
+            return Response({"error": "Delivery application not found."}, status=status.HTTP_404_NOT_FOUND)
+        decision = str(request.data.get("decision", "")).upper()
+        if decision not in {"APPROVED", "REJECTED"}:
+            return Response({"error": "decision must be APPROVED or REJECTED."}, status=status.HTTP_400_BAD_REQUEST)
+        reason = str(request.data.get("rejection_reason", "")).strip()
+        if decision == "REJECTED" and not reason:
+            return Response({"error": "Provide a reason when rejecting an application."}, status=status.HTTP_400_BAD_REQUEST)
+        profile.application_status = decision
+        profile.rejection_reason = reason if decision == "REJECTED" else ""
+        profile.reviewed_by = request.user
+        profile.reviewed_at = timezone.now()
+        profile.save(update_fields=["application_status", "rejection_reason", "reviewed_by", "reviewed_at", "updated_at"])
+        return Response(DeliveryPersonProfileSerializer(profile).data)
+
+
+class VerificationDocumentView(APIView):
+    permission_classes = [IsSystemAdmin]
+    VENDOR_DOCUMENTS = {"identity_card", "birth_certificate", "institution_document", "tax_payment_document", "additional_document"}
+    DELIVERY_DOCUMENTS = {"identity_card", "supporting_document"}
+
+    def get(self, request, applicant_type, pk, document_name):
+        if applicant_type == "supplier" and document_name in self.VENDOR_DOCUMENTS:
+            profile = VendorProfile.objects.filter(pk=pk).first()
+        elif applicant_type == "delivery" and document_name in self.DELIVERY_DOCUMENTS:
+            profile = DeliveryPersonProfile.objects.filter(pk=pk).first()
+        else:
+            return Response({"error": "Unknown verification document."}, status=status.HTTP_404_NOT_FOUND)
+        document = getattr(profile, document_name, None) if profile else None
+        if not document:
+            return Response({"error": "Document not found."}, status=status.HTTP_404_NOT_FOUND)
+        stream = default_storage.open(document.name, "rb")
+        response = FileResponse(stream, as_attachment=True, filename=document.name.rsplit("/", 1)[-1])
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 class NotificationListView(generics.ListAPIView):
@@ -424,7 +581,7 @@ class GasPredictionView(APIView):
             prediction = AIPredictionService.predict_days_remaining(
                 history_data, 
                 current_remaining_kg,
-                bottle_capacity=sensor.house.user.gas_capacity
+                bottle_capacity=user_bottle_capacity_kg(sensor.house.user)
             )
 
             # Format response
@@ -455,9 +612,9 @@ class GasReadingListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = GasReading.objects.filter(
-            sensor__house__user=self.request.user
-        ).select_related("sensor", "sensor__house")
+        queryset = GasReading.objects.select_related("sensor", "sensor__house", "sensor__house__user")
+        if not (self.request.user.is_admin or self.request.user.is_superuser or self.request.user.is_staff):
+            queryset = queryset.filter(sensor__house__user=self.request.user)
 
         # Handle date filtering if provided
         start_date = self.request.query_params.get("start_date")
@@ -582,7 +739,10 @@ class DailyGasConsumptionView(APIView):
                     'min_remaining_kg': round(day_data['min_remaining'] if day_data['min_remaining'] != float('inf') else 0, 2),
                     'max_remaining_kg': round(day_data['max_remaining'], 2),
                     'reading_count': day_data['reading_count'],
-                    'gas_percentage': round((avg_remaining / max(float(request.user.gas_capacity), 0.1)) * 100, 1)  # Use dynamic tank capacity
+                    'gas_percentage': round(
+                        min(100.0, max(0.0, (avg_remaining / max(float(user_bottle_capacity_kg(request.user)), 0.1)) * 100)),
+                        1,
+                    )
                 })
 
             return Response({
@@ -608,18 +768,14 @@ class GasReadingCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        user = self.request.user
+        sensor = serializer.validated_data["sensor"]
+        user = sensor.house.user
         raw_weight = serializer.validated_data.get('raw_weight')
-        remaining_gas = serializer.validated_data.get('remaining_gas')
+        capacity = user_bottle_capacity_kg(user)
+        calculated_gas = max(Decimal("0.00"), raw_weight - user.tare_weight)
+        remaining_gas = min(capacity, calculated_gas)
 
-        # If raw_weight is provided, calculate remaining_gas: raw_weight - tare_weight
-        if raw_weight is not None:
-            tare_weight = float(user.tare_weight)
-            calculated_gas = float(raw_weight) - tare_weight
-            # Ensure it's not negative
-            remaining_gas = max(0.0, calculated_gas)
-            
-        # Save with calculated (or provided) remaining_gas and raw_weight
+        # The device submits gross bottle weight only. Net LPG is derived here.
         gas_reading = serializer.save(remaining_gas=remaining_gas, raw_weight=raw_weight)
 
         # Also update sensor's raw_weight
@@ -632,10 +788,7 @@ class GasReadingCreateView(generics.CreateAPIView):
         remaining_gas_val = float(gas_reading.remaining_gas)
 
         # Calculate percentage based on user's dynamic tank capacity
-        try:
-            TANK_CAPACITY = max(float(user.gas_capacity), 0.1)
-        except (AttributeError, TypeError, ValueError):
-            TANK_CAPACITY = 12.5  # default fallback
+        TANK_CAPACITY = max(float(capacity), 0.1)
         
         gas_percentage = (remaining_gas_val / TANK_CAPACITY) * 100
 
@@ -732,6 +885,14 @@ class SensorValveControlView(APIView):
                     {"error": "Invalid command. Must be 'OPEN' or 'CLOSE'."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
+            if command == "OPEN" and Alert.objects.filter(
+                sensor=sensor, alert_type="GAS_LEAK", is_resolved=False
+            ).exists():
+                return Response(
+                    {"error": "Resolve the active gas leak alert before opening the valve."},
+                    status=status.HTTP_409_CONFLICT,
+                )
             
             sensor.desired_valve_state = command
             sensor.save(update_fields=["desired_valve_state"])
@@ -805,20 +966,41 @@ class SensorDeviceCommandView(APIView):
     GET /api/sensors/<pk>/device-command/
     Returns: {"valve_command": "OPEN"|"CLOSE", "alarm_command": "SILENCE"|"ARM"}
     """
-    permission_classes = [permissions.AllowAny]  # Or authenticated
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         try:
-            sensor = GasSensor.objects.get(pk=pk)
+            sensor = GasSensor.objects.get(pk=pk, house__user=request.user)
             # Update current state if reported by query params
             reported_valve = request.query_params.get("current_valve")
             if reported_valve and reported_valve.upper() in ["OPEN", "CLOSE"]:
-                sensor.current_valve_state = reported_valve.upper()
-                sensor.save(update_fields=["current_valve_state"])
+                reported_valve = reported_valve.upper()
+                if sensor.current_valve_state != reported_valve:
+                    sensor.current_valve_state = reported_valve
+                    sensor.save(update_fields=["current_valve_state"])
+                    from channels.layers import get_channel_layer
+                    from asgiref.sync import async_to_sync
+
+                    channel_layer = get_channel_layer()
+                    if channel_layer:
+                        async_to_sync(channel_layer.group_send)(
+                            f"user_{request.user.id}",
+                            {"type": "send_gas_reading"},
+                        )
+
+            # Keep stale OPEN commands from overriding an unresolved leak.
+            active_leak = Alert.objects.filter(
+                sensor=sensor, alert_type="GAS_LEAK", is_resolved=False
+            ).exists()
+            if active_leak and sensor.desired_valve_state != "CLOSE":
+                sensor.desired_valve_state = "CLOSE"
+                sensor.save(update_fields=["desired_valve_state"])
 
             return Response({
                 "sensor_id": sensor.id,
                 "valve_command": sensor.desired_valve_state,
+                "desired_valve_state": sensor.desired_valve_state,
+                "current_valve_state": sensor.current_valve_state,
                 "alarm_command": sensor.desired_alarm_state,
                 "is_alarm_silenced": sensor.is_alarm_silenced,
             }, status=status.HTTP_200_OK)
@@ -851,6 +1033,16 @@ class GasLeakAlertCreateView(APIView):
 
         if serializer.is_valid():
             try:
+                sensor = GasSensor.objects.get(
+                    id=serializer.validated_data["sensor_id"],
+                    is_active=True,
+                    house__user=request.user,
+                )
+                # A detected leak always becomes a pending close command too.
+                if sensor.desired_valve_state != "CLOSE":
+                    sensor.desired_valve_state = "CLOSE"
+                    sensor.save(update_fields=["desired_valve_state"])
+
                 # Create the alert using the serializer's method
                 alert = serializer.create_alert(serializer.validated_data)
 
@@ -897,6 +1089,10 @@ class GasLeakAlertCreateView(APIView):
                 if channel_layer:
                     async_to_sync(channel_layer.group_send)(
                         f"user_{alert.user.id}",
+                        {"type": "send_gas_reading"},
+                    )
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{alert.user.id}",
                         {
                             "type": "send_alert",
                         }
@@ -924,6 +1120,11 @@ class GasLeakAlertCreateView(APIView):
 
                 return Response(response_data, status=status.HTTP_201_CREATED)
 
+            except GasSensor.DoesNotExist:
+                return Response(
+                    {"error": "Active sensor does not belong to this account."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             except Exception as e:
                 return Response(
                     {
@@ -1029,6 +1230,15 @@ class CookableFoodListView(generics.ListAPIView):
             return CookableFood.objects.none()
 
 
+class DeliveryPersonProfileView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = DeliveryPersonProfileSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self):
+        return DeliveryPersonProfile.objects.get(user=self.request.user)
+
+
 class VendorRegistrationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -1036,6 +1246,11 @@ class VendorRegistrationView(APIView):
     def post(self, request):
         if hasattr(request.user, "vendor_profile"):
             return Response({"error": "User already has a vendor profile"}, status=status.HTTP_400_BAD_REQUEST)
+
+        required_documents = ("identity_card", "tax_payment_document", "additional_document")
+        missing = [name for name in required_documents if not request.FILES.get(name)]
+        if missing:
+            return Response({name: "This document is required." for name in missing}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = VendorProfileSerializer(data=request.data)
         if serializer.is_valid():
@@ -1068,13 +1283,22 @@ class VendorGasBottleListCreateView(generics.ListCreateAPIView):
     serializer_class = GasBottleSerializer
 
     def get_queryset(self):
-        if hasattr(self.request.user, "vendor_profile"):
+        if self._approved_vendor():
             return GasBottle.objects.filter(vendor=self.request.user.vendor_profile)
         return GasBottle.objects.none()
 
+    def _approved_vendor(self):
+        return (
+            hasattr(self.request.user, "vendor_profile")
+            and self.request.user.vendor_profile.application_status == "APPROVED"
+            and self.request.user.vendor_profile.is_approved
+        )
+
     def perform_create(self, serializer):
-        if hasattr(self.request.user, "vendor_profile"):
+        if self._approved_vendor():
             serializer.save(vendor=self.request.user.vendor_profile)
+            return
+        raise PermissionDenied("Supplier inventory is available after administrator approval.")
 
 
 class VendorGasBottleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -1083,37 +1307,48 @@ class VendorGasBottleDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pk"
 
     def get_queryset(self):
-        if hasattr(self.request.user, "vendor_profile"):
+        if (
+            hasattr(self.request.user, "vendor_profile")
+            and self.request.user.vendor_profile.application_status == "APPROVED"
+            and self.request.user.vendor_profile.is_approved
+        ):
             return GasBottle.objects.filter(vendor=self.request.user.vendor_profile)
         return GasBottle.objects.none()
 
 
 class AdminVendorValidationListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSystemAdmin]
     serializer_class = VendorProfileSerializer
 
     def get_queryset(self):
         status_filter = self.request.query_params.get("status")
         if status_filter == "pending":
-            return VendorProfile.objects.filter(is_approved=False).order_by("-created_at")
-        return VendorProfile.objects.all().order_by("-created_at")
+            return VendorProfile.objects.filter(application_status="PENDING").select_related("user").order_by("-created_at")
+        return VendorProfile.objects.select_related("user").order_by("-created_at")
 
 
 class AdminVendorValidationUpdateView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSystemAdmin]
 
     def patch(self, request, pk):
         try:
             vendor = VendorProfile.objects.get(pk=pk)
-            is_approved = request.data.get("is_approved")
-            if is_approved is not None:
-                vendor.is_approved = is_approved
-                vendor.save()
-                return Response(
-                    {"message": f"Vendor {'approved' if is_approved else 'rejected'} successfully"}, 
-                    status=status.HTTP_200_OK
-                )
-            return Response({"error": "is_approved field required"}, status=status.HTTP_400_BAD_REQUEST)
+            decision = request.data.get("decision")
+            if decision is None and "is_approved" in request.data:
+                decision = "APPROVED" if request.data["is_approved"] else "REJECTED"
+            decision = str(decision or "").upper()
+            if decision not in {"APPROVED", "REJECTED"}:
+                return Response({"error": "decision must be APPROVED or REJECTED."}, status=status.HTTP_400_BAD_REQUEST)
+            reason = str(request.data.get("rejection_reason", "")).strip()
+            if decision == "REJECTED" and not reason:
+                return Response({"error": "Provide a reason when rejecting an application."}, status=status.HTTP_400_BAD_REQUEST)
+            vendor.application_status = decision
+            vendor.is_approved = decision == "APPROVED"
+            vendor.rejection_reason = reason if decision == "REJECTED" else ""
+            vendor.reviewed_by = request.user
+            vendor.reviewed_at = timezone.now()
+            vendor.save(update_fields=["application_status", "is_approved", "rejection_reason", "reviewed_by", "reviewed_at", "updated_at"])
+            return Response(VendorProfileSerializer(vendor).data, status=status.HTTP_200_OK)
         except VendorProfile.DoesNotExist:
             return Response({"error": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1123,7 +1358,7 @@ class PublicVendorListView(generics.ListAPIView):
     serializer_class = PublicVendorProfileSerializer
 
     def get_queryset(self):
-        return VendorProfile.objects.filter(is_approved=True)
+        return VendorProfile.objects.filter(is_approved=True, application_status="APPROVED").prefetch_related("gas_bottles")
 
 
 class DeliveryListCreateView(generics.ListCreateAPIView):
@@ -1138,63 +1373,206 @@ class DeliveryListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin or user.is_superuser:
+        if user.is_admin or user.is_superuser or user.is_staff:
             return Delivery.objects.all().select_related(
                 "client", "vendor", "gas_bottle", "delivery_person"
             )
-        if user.is_delivery_person:
+        if user.is_delivery_person and hasattr(user, "delivery_profile") and user.delivery_profile.application_status == "APPROVED":
             return Delivery.objects.filter(
-                models.Q(status="PENDING", delivery_person__isnull=True) |
-                models.Q(delivery_person=user)
+                models.Q(status="PENDING", fulfillment_method="DELIVERY", delivery_person__isnull=True, payment_status="PAID") |
+                models.Q(delivery_person=user, payment_status="PAID")
             ).select_related("client", "vendor", "gas_bottle", "delivery_person")
-        if hasattr(user, "vendor_profile"):
+        if hasattr(user, "vendor_profile") and user.vendor_profile.is_approved:
             return Delivery.objects.filter(
-                vendor=user.vendor_profile
+                vendor=user.vendor_profile, payment_status="PAID"
             ).select_related("client", "vendor", "gas_bottle", "delivery_person")
         # Regular client
         return Delivery.objects.filter(client=user).select_related(
             "client", "vendor", "gas_bottle", "delivery_person"
         )
 
-    def perform_create(self, serializer):
-        serializer.save(client=self.request.user)
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_delivery_person or hasattr(user, "vendor_profile") or user.is_admin or user.is_superuser:
+            return Response({"error": "Only customer accounts can place gas orders."}, status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"detail": "Payment is required before a gas order is created. Use /api/payments/initiate/."},
+            status=status.HTTP_402_PAYMENT_REQUIRED,
+        )
 
 
 class DeliveryDetailUpdateView(generics.RetrieveUpdateAPIView):
     """
     GET:    Retrieve a single delivery (accessible by client, assigned driver, vendor, admin)
-    PATCH:  Delivery person can self-assign and update status
-            When status changes to DELIVERED, decrement gas_bottle stock
+    PATCH:  Delivery person can self-assign and update status; driver and client
+            must both confirm before a delivery can be marked complete.
     """
     serializer_class = DeliverySerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin or user.is_superuser:
+        if user.is_admin or user.is_superuser or user.is_staff:
             return Delivery.objects.all()
-        if user.is_delivery_person:
+        if user.is_delivery_person and hasattr(user, "delivery_profile") and user.delivery_profile.application_status == "APPROVED":
             return Delivery.objects.filter(
-                models.Q(status="PENDING", delivery_person__isnull=True) |
-                models.Q(delivery_person=user)
+                models.Q(status="PENDING", fulfillment_method="DELIVERY", delivery_person__isnull=True, payment_status="PAID") |
+                models.Q(delivery_person=user, payment_status="PAID")
             )
-        if hasattr(user, "vendor_profile"):
-            return Delivery.objects.filter(vendor=user.vendor_profile)
+        if hasattr(user, "vendor_profile") and user.vendor_profile.is_approved:
+            return Delivery.objects.filter(vendor=user.vendor_profile, payment_status="PAID")
         return Delivery.objects.filter(client=user)
 
-    def perform_update(self, serializer):
-        old_status = self.get_object().status
-        instance = serializer.save()
+    def patch(self, request, *args, **kwargs):
+        order = self.get_object()
+        next_status = str(request.data.get("status", "")).upper()
+        user = request.user
+        is_admin = user.is_admin or user.is_superuser or user.is_staff
 
-        # Auto-assign delivery person on ASSIGNED status
-        if instance.status == "ASSIGNED" and instance.delivery_person is None:
-            if self.request.user.is_delivery_person:
-                instance.delivery_person = self.request.user
-                instance.save(update_fields=["delivery_person"])
+        completion_confirmation = request.data.get("completion_confirmation")
+        if completion_confirmation is not None:
+            confirmation = str(completion_confirmation).upper()
+            if confirmation not in {"DRIVER", "CLIENT"}:
+                return Response(
+                    {"error": "completion_confirmation must be DRIVER or CLIENT."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if order.fulfillment_method != "DELIVERY":
+                return Response(
+                    {"error": "Only delivery orders require delivery confirmations."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if order.payment_status != "PAID":
+                return Response(
+                    {"error": "This order is unavailable until its payment is confirmed."},
+                    status=status.HTTP_409_CONFLICT,
+                )
 
-        # Decrement stock when delivered
-        if old_status != "DELIVERED" and instance.status == "DELIVERED":
-            bottle = instance.gas_bottle
-            if bottle.stock_quantity > 0:
-                bottle.stock_quantity -= 1
-                bottle.save(update_fields=["stock_quantity"])
+            with transaction.atomic():
+                order = Delivery.objects.select_for_update().get(pk=order.pk)
+                if confirmation == "DRIVER":
+                    if not user.is_delivery_person or order.delivery_person_id != user.id:
+                        return Response(
+                            {"error": "Only the assigned delivery person can confirm delivery."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                    if (
+                        not hasattr(user, "delivery_profile")
+                        or user.delivery_profile.application_status != "APPROVED"
+                    ):
+                        return Response(
+                            {"error": "Delivery-person verification is not approved."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                    if order.status not in {"OUT_FOR_DELIVERY", "DELIVERED"}:
+                        return Response(
+                            {"error": "Start the delivery before marking it complete."},
+                            status=status.HTTP_409_CONFLICT,
+                        )
+                    order.driver_confirmed_delivery = True
+                else:
+                    if order.client_id != user.id:
+                        return Response(
+                            {"error": "Only the customer who placed the order can confirm receipt."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                    # Let a retry succeed after the final confirmation was saved.
+                    if not order.client_confirmed_delivery:
+                        if order.status != "OUT_FOR_DELIVERY" or not order.driver_confirmed_delivery:
+                            return Response(
+                                {"error": "Confirm receipt after the delivery person marks the order delivered."},
+                                status=status.HTTP_409_CONFLICT,
+                            )
+                        order.client_confirmed_delivery = True
+
+                if order.driver_confirmed_delivery and order.client_confirmed_delivery:
+                    order.status = "DELIVERED"
+                order.save(
+                    update_fields=[
+                        "driver_confirmed_delivery",
+                        "client_confirmed_delivery",
+                        "status",
+                        "updated_at",
+                    ]
+                )
+            return Response(DeliverySerializer(order, context={"request": request}).data)
+
+        if not next_status:
+            return Response({"error": "status is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not is_admin and order.payment_status != "PAID":
+            return Response(
+                {"error": "This order is unavailable until its payment is confirmed."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if (
+            next_status == "CANCELLED"
+            and order.payment_status == "PAID"
+            and order.payment_transaction_id
+            and not (is_admin and request.data.get("refund_confirmed") is True)
+        ):
+            return Response(
+                {"error": "Process the refund in DigiPay first; an administrator must then confirm refund_confirmed=true."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if (
+            next_status == "DELIVERED"
+            and not (order.driver_confirmed_delivery and order.client_confirmed_delivery)
+        ):
+            return Response(
+                {"error": "Both the assigned delivery person and customer must confirm completion."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if is_admin:
+            allowed = set(dict(Delivery.STATUS_CHOICES))
+        elif user.is_delivery_person and order.fulfillment_method == "DELIVERY":
+            if not hasattr(user, "delivery_profile") or user.delivery_profile.application_status != "APPROVED":
+                return Response({"error": "Delivery-person verification is not approved."}, status=status.HTTP_403_FORBIDDEN)
+            if order.delivery_person_id is None and order.status == "PENDING":
+                allowed = {"ASSIGNED"}
+            elif order.delivery_person_id == user.id and order.status == "ASSIGNED":
+                allowed = {"OUT_FOR_DELIVERY"}
+            else:
+                allowed = set()
+        elif hasattr(user, "vendor_profile") and order.vendor_id == user.vendor_profile.id:
+            if not user.vendor_profile.is_approved:
+                return Response({"error": "Supplier verification is not approved."}, status=status.HTTP_403_FORBIDDEN)
+            if order.fulfillment_method == "PICKUP" and order.status == "PENDING":
+                allowed = {"READY_FOR_PICKUP"}
+            elif order.fulfillment_method == "PICKUP" and order.status == "READY_FOR_PICKUP":
+                allowed = {"PICKED_UP"}
+            else:
+                allowed = set()
+        else:
+            can_cancel_without_refund = not order.payment_transaction_id
+            allowed = (
+                {"CANCELLED"}
+                if order.client_id == user.id
+                and order.status == "PENDING"
+                and can_cancel_without_refund
+                else set()
+            )
+
+        if next_status not in allowed:
+            return Response({"error": "This account cannot make that order status change."}, status=status.HTTP_403_FORBIDDEN)
+        if order.fulfillment_method == "PICKUP" and next_status in {"ASSIGNED", "OUT_FOR_DELIVERY", "DELIVERED"}:
+            return Response({"error": "Pickup orders cannot be assigned to a delivery person."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            if next_status == "CANCELLED" and order.stock_deducted:
+                GasBottle.objects.filter(pk=order.gas_bottle_id).update(stock_quantity=F("stock_quantity") + 1)
+                order.stock_deducted = False
+            order.status = next_status
+            if (
+                next_status == "CANCELLED"
+                and order.payment_status == "PAID"
+                and order.payment_transaction_id
+            ):
+                order.payment_status = "REFUNDED"
+            if next_status == "ASSIGNED" and user.is_delivery_person and order.delivery_person_id is None:
+                order.delivery_person = user
+            order.save(update_fields=["status", "delivery_person", "stock_deducted", "payment_status", "updated_at"])
+        return Response(DeliverySerializer(order, context={"request": request}).data)
+
+    def put(self, request, *args, **kwargs):
+        return self.patch(request, *args, **kwargs)

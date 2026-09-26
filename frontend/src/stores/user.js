@@ -152,6 +152,17 @@ export const useUserStore = defineStore('user', () => {
     delete api.defaults.headers.common['Authorization'];
   };
 
+  // Revoke the server token when possible, and always clear the local session.
+  const logout = async () => {
+    try {
+      await api.post('auth/logout/');
+    } catch {
+      // A network failure should not keep the user signed in on this device.
+    } finally {
+      clearAuth();
+    }
+  };
+
   return {
     userProfile,
     authToken,
@@ -167,6 +178,7 @@ export const useUserStore = defineStore('user', () => {
     fetchNotifications,
     markNotificationAsRead,
     clearNotifications,
+    logout,
     clearAuth
   };
 });

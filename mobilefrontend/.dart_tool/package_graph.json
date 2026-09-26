@@ -10,6 +10,7 @@
         "audioplayers",
         "cupertino_icons",
         "dio",
+        "file_picker",
         "fl_chart",
         "flutter",
         "flutter_animate",
@@ -152,6 +153,25 @@
       ]
     },
     {
+      "name": "audioplayers",
+      "version": "6.7.1",
+      "dependencies": [
+        "audioplayers_android",
+        "audioplayers_darwin",
+        "audioplayers_linux",
+        "audioplayers_platform_interface",
+        "audioplayers_web",
+        "audioplayers_windows",
+        "file",
+        "flutter",
+        "http",
+        "meta",
+        "path_provider",
+        "synchronized",
+        "uuid"
+      ]
+    },
+    {
       "name": "flutter_local_notifications",
       "version": "17.2.4",
       "dependencies": [
@@ -171,6 +191,22 @@
         "stream_channel",
         "web",
         "web_socket"
+      ]
+    },
+    {
+      "name": "file_picker",
+      "version": "10.3.10",
+      "dependencies": [
+        "cross_file",
+        "dbus",
+        "ffi",
+        "flutter",
+        "flutter_plugin_android_lifecycle",
+        "flutter_web_plugins",
+        "path",
+        "plugin_platform_interface",
+        "web",
+        "win32"
       ]
     },
     {
@@ -808,6 +844,91 @@
       ]
     },
     {
+      "name": "uuid",
+      "version": "4.5.3",
+      "dependencies": [
+        "crypto",
+        "fixnum"
+      ]
+    },
+    {
+      "name": "synchronized",
+      "version": "3.4.0+1",
+      "dependencies": []
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.5",
+      "dependencies": [
+        "flutter",
+        "path_provider_android",
+        "path_provider_foundation",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "path_provider_windows"
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "audioplayers_windows",
+      "version": "4.3.1",
+      "dependencies": [
+        "audioplayers_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "audioplayers_web",
+      "version": "5.2.1",
+      "dependencies": [
+        "audioplayers_platform_interface",
+        "flutter",
+        "flutter_web_plugins",
+        "web"
+      ]
+    },
+    {
+      "name": "audioplayers_platform_interface",
+      "version": "7.1.1",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "audioplayers_linux",
+      "version": "4.2.1",
+      "dependencies": [
+        "audioplayers_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "audioplayers_darwin",
+      "version": "6.4.0",
+      "dependencies": [
+        "audioplayers_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "audioplayers_android",
+      "version": "5.2.1",
+      "dependencies": [
+        "audioplayers_platform_interface",
+        "flutter"
+      ]
+    },
+    {
       "name": "timezone",
       "version": "0.9.4",
       "dependencies": [
@@ -842,13 +963,17 @@
       ]
     },
     {
-      "name": "geolocator_platform_interface",
-      "version": "4.2.6",
+      "name": "win32",
+      "version": "5.15.0",
       "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface",
-        "vector_math"
+        "ffi"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
       ]
     },
     {
@@ -856,6 +981,31 @@
       "version": "0.0.0",
       "dependencies": [
         "flutter"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "dbus",
+      "version": "0.7.12",
+      "dependencies": [
+        "args",
+        "ffi",
+        "meta",
+        "xml"
+      ]
+    },
+    {
+      "name": "geolocator_platform_interface",
+      "version": "4.2.6",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface",
+        "vector_math"
       ]
     },
     {
@@ -955,32 +1105,12 @@
       ]
     },
     {
-      "name": "uuid",
-      "version": "4.5.3",
-      "dependencies": [
-        "crypto",
-        "fixnum"
-      ]
-    },
-    {
       "name": "proj4dart",
       "version": "2.1.0",
       "dependencies": [
         "meta",
         "mgrs_dart",
         "wkt_parser"
-      ]
-    },
-    {
-      "name": "path_provider",
-      "version": "2.1.5",
-      "dependencies": [
-        "flutter",
-        "path_provider_android",
-        "path_provider_foundation",
-        "path_provider_linux",
-        "path_provider_platform_interface",
-        "path_provider_windows"
       ]
     },
     {
@@ -1183,14 +1313,6 @@
       ]
     },
     {
-      "name": "file",
-      "version": "7.0.1",
-      "dependencies": [
-        "meta",
-        "path"
-      ]
-    },
-    {
       "name": "typed_data",
       "version": "1.4.0",
       "dependencies": [
@@ -1231,83 +1353,9 @@
       ]
     },
     {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
-      ]
-    },
-    {
-      "name": "xdg_directories",
-      "version": "1.1.0",
-      "dependencies": [
-        "meta",
-        "path"
-      ]
-    },
-    {
-      "name": "ffi",
-      "version": "2.2.0",
-      "dependencies": []
-    },
-    {
-      "name": "dbus",
-      "version": "0.7.12",
-      "dependencies": [
-        "args",
-        "ffi",
-        "meta",
-        "xml"
-      ]
-    },
-    {
-      "name": "package_info_plus",
-      "version": "9.0.1",
-      "dependencies": [
-        "clock",
-        "ffi",
-        "flutter",
-        "flutter_web_plugins",
-        "http",
-        "meta",
-        "package_info_plus_platform_interface",
-        "path",
-        "web",
-        "win32"
-      ]
-    },
-    {
-      "name": "gsettings",
-      "version": "0.2.8",
-      "dependencies": [
-        "dbus",
-        "xdg_directories"
-      ]
-    },
-    {
-      "name": "geoclue",
-      "version": "0.1.1",
-      "dependencies": [
-        "dbus",
-        "meta"
-      ]
-    },
-    {
       "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
-    },
-    {
-      "name": "wkt_parser",
-      "version": "2.0.0",
-      "dependencies": []
-    },
-    {
-      "name": "mgrs_dart",
-      "version": "2.0.0",
-      "dependencies": [
-        "unicode"
-      ]
     },
     {
       "name": "path_provider_windows",
@@ -1358,10 +1406,55 @@
       ]
     },
     {
-      "name": "win32",
-      "version": "5.15.0",
+      "name": "xdg_directories",
+      "version": "1.1.0",
       "dependencies": [
-        "ffi"
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "package_info_plus",
+      "version": "9.0.1",
+      "dependencies": [
+        "clock",
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "package_info_plus_platform_interface",
+        "path",
+        "web",
+        "win32"
+      ]
+    },
+    {
+      "name": "gsettings",
+      "version": "0.2.8",
+      "dependencies": [
+        "dbus",
+        "xdg_directories"
+      ]
+    },
+    {
+      "name": "geoclue",
+      "version": "0.1.1",
+      "dependencies": [
+        "dbus",
+        "meta"
+      ]
+    },
+    {
+      "name": "wkt_parser",
+      "version": "2.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "mgrs_dart",
+      "version": "2.0.0",
+      "dependencies": [
+        "unicode"
       ]
     },
     {
@@ -1387,22 +1480,6 @@
       "dependencies": []
     },
     {
-      "name": "package_info_plus_platform_interface",
-      "version": "3.2.1",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "unicode",
-      "version": "0.3.1",
-      "dependencies": [
-        "lists"
-      ]
-    },
-    {
       "name": "platform",
       "version": "3.1.6",
       "dependencies": []
@@ -1421,10 +1498,19 @@
       ]
     },
     {
-      "name": "lists",
-      "version": "1.0.1",
+      "name": "package_info_plus_platform_interface",
+      "version": "3.2.1",
       "dependencies": [
-        "meta"
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "unicode",
+      "version": "0.3.1",
+      "dependencies": [
+        "lists"
       ]
     },
     {
@@ -1460,80 +1546,26 @@
       ]
     },
     {
-      "name": "audioplayers",
-      "version": "6.7.1",
+      "name": "lists",
+      "version": "1.0.1",
       "dependencies": [
-        "audioplayers_android",
-        "audioplayers_darwin",
-        "audioplayers_linux",
-        "audioplayers_platform_interface",
-        "audioplayers_web",
-        "audioplayers_windows",
-        "file",
-        "flutter",
-        "http",
-        "meta",
-        "path_provider",
-        "synchronized",
-        "uuid"
+        "meta"
       ]
     },
     {
-      "name": "audioplayers_web",
-      "version": "5.2.1",
+      "name": "cross_file",
+      "version": "0.3.5+5",
       "dependencies": [
-        "audioplayers_platform_interface",
-        "flutter",
-        "flutter_web_plugins",
+        "meta",
         "web"
       ]
     },
     {
-      "name": "audioplayers_platform_interface",
-      "version": "7.1.1",
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.35",
       "dependencies": [
-        "collection",
-        "flutter",
-        "meta",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "audioplayers_linux",
-      "version": "4.2.1",
-      "dependencies": [
-        "audioplayers_platform_interface",
         "flutter"
       ]
-    },
-    {
-      "name": "audioplayers_darwin",
-      "version": "6.4.0",
-      "dependencies": [
-        "audioplayers_platform_interface",
-        "flutter"
-      ]
-    },
-    {
-      "name": "audioplayers_android",
-      "version": "5.2.1",
-      "dependencies": [
-        "audioplayers_platform_interface",
-        "flutter"
-      ]
-    },
-    {
-      "name": "audioplayers_windows",
-      "version": "4.3.1",
-      "dependencies": [
-        "audioplayers_platform_interface",
-        "flutter"
-      ]
-    },
-    {
-      "name": "synchronized",
-      "version": "3.4.0+1",
-      "dependencies": []
     }
   ],
   "configVersion": 1

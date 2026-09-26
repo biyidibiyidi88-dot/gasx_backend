@@ -5,6 +5,7 @@ from .views import (
     BulkDeleteGasReadingsView,
     DailyGasConsumptionView,
     DeliveryDetailUpdateView,
+    DeliveryPersonProfileView,
     DeliveryListCreateView,
     GasLeakAlertCreateView,
     GasPredictionView,
@@ -34,13 +35,24 @@ from .views import (
     VendorGasBottleDetailView,
     AdminVendorValidationListView,
     AdminVendorValidationUpdateView,
+    AdminDeliveryApplicationListView,
+    AdminDeliveryApplicationUpdateView,
+    AdminOverviewView,
+    AdminReportView,
+    VerificationDocumentView,
     PublicVendorListView,
     SensorValveControlView,
     SensorAlarmControlView,
     SensorDeviceCommandView,
 )
+from .payment_views import PaymentInitiateView, PaymentStatusView
 
 urlpatterns = [
+    path("admin/overview/", AdminOverviewView.as_view(), name="admin-overview"),
+    path("admin/reports/", AdminReportView.as_view(), name="admin-report"),
+    path("admin/delivery-applications/", AdminDeliveryApplicationListView.as_view(), name="admin-delivery-applications"),
+    path("admin/delivery-applications/<int:pk>/", AdminDeliveryApplicationUpdateView.as_view(), name="admin-delivery-application-update"),
+    path("admin/verification-documents/<str:applicant_type>/<int:pk>/<str:document_name>/", VerificationDocumentView.as_view(), name="admin-verification-document"),
     # Authentication endpoints
     path("auth/register/", RegisterView.as_view(), name="register"),
     path("auth/login/", LoginView.as_view(), name="login"),
@@ -48,6 +60,7 @@ urlpatterns = [
     # User endpoints
     path("auth/password-change/", PasswordChangeView.as_view(), name="password-change"),
     path("users/profile/", UserProfileView.as_view(), name="user-profile"),
+    path("delivery/profile/", DeliveryPersonProfileView.as_view(), name="delivery-profile"),
     path("users/profile/delete/", ProfileDeleteView.as_view(), name="profile-delete"),
     path(
         "users/profile/image/", ProfileImageView.as_view(), name="profile-image"
@@ -133,6 +146,8 @@ urlpatterns = [
     path("public/vendors/", PublicVendorListView.as_view(), name="public-vendor-list"),
 
     # Delivery endpoints
+    path("payments/initiate/", PaymentInitiateView.as_view(), name="payment-initiate"),
+    path("payments/<int:order_id>/status/", PaymentStatusView.as_view(), name="payment-status"),
     path("deliveries/", DeliveryListCreateView.as_view(), name="delivery-list"),
     path("deliveries/<int:pk>/", DeliveryDetailUpdateView.as_view(), name="delivery-detail"),
 ]

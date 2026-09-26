@@ -52,24 +52,24 @@
           </div>
 
           <div class="space-y-4 pt-4 border-t border-white/5">
-            <h4 class="text-[9px] font-black uppercase tracking-widest text-blue-400 italic">Required Intelligence Docs</h4>
-            
+            <h4 class="text-[9px] font-black uppercase tracking-widest text-blue-400 italic">Verification Documents</h4>
             <div class="space-y-2">
-              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Birth Certificate (.pdf, .jpg)</label>
-              <input type="file" accept="image/*,.pdf" @change="handleFileUpload('birth_certificate', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 hover:file:bg-teal-400/20 text-white/40 text-[11px]">
-              <div v-if="profile.birth_certificate" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Current: {{ getFileName(profile.birth_certificate) }}</div>
+              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Identity card (.pdf, .jpg, .png)</label>
+              <input type="file" accept="image/*,.pdf" @change="handleFileUpload('identity_card', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 text-white/40 text-[11px]">
+              <div v-if="files.identity_card" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Selected: {{ files.identity_card.name }}</div>
+              <div v-else-if="profile.has_identity_card" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Identity document already submitted</div>
             </div>
-
             <div class="space-y-2">
-              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">National Identity Card (.pdf, .jpg)</label>
-              <input type="file" accept="image/*,.pdf" @change="handleFileUpload('identity_card', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 hover:file:bg-teal-400/20 text-white/40 text-[11px]">
-              <div v-if="profile.identity_card" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Current: {{ getFileName(profile.identity_card) }}</div>
+              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Tax payment receipt</label>
+              <input type="file" accept="image/*,.pdf" @change="handleFileUpload('tax_payment_document', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 text-white/40 text-[11px]">
+              <div v-if="files.tax_payment_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Selected: {{ files.tax_payment_document.name }}</div>
+              <div v-else-if="profile.has_tax_payment_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Tax document already submitted</div>
             </div>
-
             <div class="space-y-2">
-              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Trade Registration / Authorization (.pdf, .jpg)</label>
-              <input type="file" accept="image/*,.pdf" @change="handleFileUpload('institution_document', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 hover:file:bg-teal-400/20 text-white/40 text-[11px]">
-              <div v-if="profile.institution_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Current: {{ getFileName(profile.institution_document) }}</div>
+              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Business authenticity document</label>
+              <input type="file" accept="image/*,.pdf" @change="handleFileUpload('additional_document', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 text-white/40 text-[11px]">
+              <div v-if="files.additional_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Selected: {{ files.additional_document.name }}</div>
+              <div v-else-if="profile.has_additional_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Supporting document already submitted</div>
             </div>
           </div>
         </div>
@@ -150,15 +150,15 @@ const profile = ref({
   latitude: null,
   longitude: null,
   is_approved: false,
-  birth_certificate: null,
-  identity_card: null,
-  institution_document: null
+  has_identity_card: false,
+  has_tax_payment_document: false,
+  has_additional_document: false
 });
 
 const files = ref({
-  birth_certificate: null,
   identity_card: null,
-  institution_document: null
+  tax_payment_document: null,
+  additional_document: null
 });
 
 const loading = ref(false);
@@ -305,9 +305,9 @@ const saveProfile = async () => {
   if (profile.value.latitude !== null) formData.append('latitude', profile.value.latitude);
   if (profile.value.longitude !== null) formData.append('longitude', profile.value.longitude);
 
-  if (files.value.birth_certificate) formData.append('birth_certificate', files.value.birth_certificate);
   if (files.value.identity_card) formData.append('identity_card', files.value.identity_card);
-  if (files.value.institution_document) formData.append('institution_document', files.value.institution_document);
+  if (files.value.tax_payment_document) formData.append('tax_payment_document', files.value.tax_payment_document);
+  if (files.value.additional_document) formData.append('additional_document', files.value.additional_document);
 
   try {
     let response;

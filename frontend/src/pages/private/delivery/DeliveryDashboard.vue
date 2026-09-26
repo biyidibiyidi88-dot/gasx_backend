@@ -16,7 +16,7 @@
             {{ pendingCount }} PENDING
           </div>
           <div class="px-4 py-1.5 rounded-full bg-teal-400/5 border border-teal-400/20 text-[9px] font-black text-teal-400 uppercase tracking-widest italic">
-            {{ myDeliveries.length }} MY ROUTES
+            {{ myDeliveries.length }} {{ isSupplier ? 'SUPPLIER ORDERS' : isAdmin ? 'TOTAL ORDERS' : 'MY ROUTES' }}
           </div>
         </div>
       </div>
@@ -63,11 +63,9 @@
           class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-orange-400/30 transition-all duration-500 group"
         >
           <!-- Status badge -->
-          <div class="flex justify-between items-center">
-            <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
-              :class="statusStyle(delivery.status)">
-              {{ delivery.status_display }}
-            </span>
+          <div class="flex justify-between items-center gap-2">
+            <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border" :class="statusStyle(delivery.status)">{{ delivery.status_display }}</span>
+            <span class="rounded-full bg-white/5 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-white/45">{{ delivery.fulfillment_display }}</span>
             <span class="text-[10px] font-bold text-white/30 italic">#{{ delivery.id }}</span>
           </div>
 
@@ -89,50 +87,59 @@
             <div class="flex items-start gap-2">
               <div class="w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5 shrink-0"></div>
               <div>
-                <p class="text-[8px] text-white/20 uppercase tracking-widest">To (Client)</p>
+                <p class="text-[8px] text-white/20 uppercase tracking-widest">{{ delivery.fulfillment_method === 'PICKUP' ? 'Pickup location' : 'Delivery address' }}</p>
                 <p class="text-xs font-bold text-white/70">{{ delivery.delivery_address }}</p>
               </div>
             </div>
           </div>
 
           <!-- Driver -->
+          <div v-if="isSupplier || isAdmin" class="text-[9px] font-bold text-white/30 uppercase tracking-widest">Customer: <span class="text-white/60">{{ delivery.client_name }}</span></div>
           <div v-if="delivery.delivery_person_name" class="text-[9px] font-bold text-white/30 uppercase tracking-widest">
             Driver: <span class="text-white/60">{{ delivery.delivery_person_name }}</span>
+          </div>
+          <div v-if="delivery.fulfillment_method === 'DELIVERY' && delivery.status === 'OUT_FOR_DELIVERY'" class="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <p class="text-[9px] font-black uppercase tracking-wider text-white/45">Delivery completion</p>
+            <p class="mt-2 text-xs" :class="delivery.driver_confirmed_delivery ? 'text-teal-200' : 'text-white/50'">{{ delivery.driver_confirmed_delivery ? 'You marked the delivery complete.' : 'Waiting for the delivery person to mark complete.' }}</p>
+            <p class="mt-1 text-xs" :class="delivery.client_confirmed_delivery ? 'text-teal-200' : 'text-white/50'">{{ delivery.client_confirmed_delivery ? 'Customer confirmed receipt.' : 'Waiting for customer confirmation.' }}</p>
           </div>
 
           <!-- Actions -->
           <div class="flex flex-wrap gap-2 pt-2 border-t border-white/5">
             <!-- Claim -->
             <button
-              v-if="delivery.status === 'PENDING' && !delivery.delivery_person"
+              v-if="isDriver && delivery.fulfillment_method === 'DELIVERY' && delivery.status === 'PENDING' && !delivery.delivery_person"
               @click="updateStatus(delivery.id, 'ASSIGNED')"
               class="flex-1 py-2.5 px-3 rounded-xl bg-orange-400/10 border border-orange-400/30 text-[9px] font-black uppercase tracking-widest text-orange-400 hover:bg-orange-400 hover:text-gray-950 transition-all"
             >Claim</button>
 
             <!-- Out for Delivery -->
             <button
-              v-if="delivery.status === 'ASSIGNED' && delivery.delivery_person === myUserId"
+              v-if="isDriver && delivery.fulfillment_method === 'DELIVERY' && delivery.status === 'ASSIGNED' && delivery.delivery_person === myUserId"
               @click="updateStatus(delivery.id, 'OUT_FOR_DELIVERY')"
               class="flex-1 py-2.5 px-3 rounded-xl bg-blue-400/10 border border-blue-400/30 text-[9px] font-black uppercase tracking-widest text-blue-400 hover:bg-blue-400 hover:text-gray-950 transition-all"
             >Out for Delivery</button>
 
-            <!-- Mark Delivered -->
+            <!-- Driver confirmation; customer must also confirm receipt. -->
             <button
-              v-if="delivery.status === 'OUT_FOR_DELIVERY' && delivery.delivery_person === myUserId"
-              @click="updateStatus(delivery.id, 'DELIVERED')"
+              v-if="isDriver && delivery.status === 'OUT_FOR_DELIVERY' && delivery.delivery_person === myUserId && !delivery.driver_confirmed_delivery"
+              @click="confirmDelivery(delivery.id, 'DRIVER')"
               class="flex-1 py-2.5 px-3 rounded-xl bg-teal-400/10 border border-teal-400/30 text-[9px] font-black uppercase tracking-widest text-teal-400 hover:bg-teal-400 hover:text-gray-950 transition-all"
-            >Mark Delivered</button>
+            >Mark My Delivery Complete</button>
+
+            <button v-if="isSupplier && delivery.fulfillment_method === 'PICKUP' && delivery.status === 'PENDING'" @click="updateStatus(delivery.id, 'READY_FOR_PICKUP')" class="flex-1 rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2.5 text-[9px] font-black uppercase tracking-widest text-amber-200">Mark ready for pickup</button>
+            <button v-if="isSupplier && delivery.fulfillment_method === 'PICKUP' && delivery.status === 'READY_FOR_PICKUP'" @click="updateStatus(delivery.id, 'PICKED_UP')" class="flex-1 rounded-xl border border-teal-300/30 bg-teal-300/10 px-3 py-2.5 text-[9px] font-black uppercase tracking-widest text-teal-200">Confirm customer pickup</button>
 
             <!-- View Route -->
             <router-link
-              v-if="delivery.status !== 'DELIVERED' && delivery.status !== 'CANCELLED' && delivery.vendor_latitude"
+              v-if="delivery.fulfillment_method === 'DELIVERY' && delivery.status !== 'DELIVERED' && delivery.status !== 'CANCELLED' && delivery.delivery_address && (isAdmin || (isDriver && delivery.delivery_person === myUserId))"
               :to="{ name: 'delivery-route', params: { id: delivery.id } }"
               class="flex-1 py-2.5 px-3 rounded-xl bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-white/40 hover:border-white/20 hover:text-white transition-all text-center"
             >View Route</router-link>
 
             <!-- Cancel -->
             <button
-              v-if="delivery.status === 'PENDING' || delivery.status === 'ASSIGNED'"
+              v-if="isAdmin && (delivery.status === 'PENDING' || delivery.status === 'ASSIGNED')"
               @click="updateStatus(delivery.id, 'CANCELLED')"
               class="py-2.5 px-3 rounded-xl bg-red-400/5 border border-red-400/20 text-[9px] font-black uppercase tracking-widest text-red-400/60 hover:bg-red-500 hover:text-white transition-all"
             >Cancel</button>
@@ -153,26 +160,23 @@ const { themeClasses } = useTheme();
 const userStore = useUserStore();
 const deliveries = ref([]);
 const loading = ref(true);
+const role = computed(() => String(userStore.userProfile?.role || '').toLowerCase());
+const isSupplier = computed(() => ['gas_supplier', 'vendor'].includes(role.value));
+const isAdmin = computed(() => ['admin', 'superadmin', 'super_admin'].includes(role.value) || userStore.userProfile?.is_admin);
+const isDriver = computed(() => ['delivery_person', 'driver'].includes(role.value));
 const activeTab = ref('pending');
-
 const myUserId = computed(() => userStore.userProfile?.id);
+const tabs = computed(() => isSupplier.value
+  ? [{ key: 'pending', label: 'Awaiting supplier' }, { key: 'ready', label: 'Ready for pickup' }, { key: 'all', label: 'All supplier orders' }]
+  : isAdmin.value
+    ? [{ key: 'pending', label: 'Pending orders' }, { key: 'all', label: 'All orders' }]
+    : [{ key: 'pending', label: 'Available delivery jobs' }, { key: 'mine', label: 'My route assignments' }, { key: 'all', label: 'All' }]);
 
-const tabs = [
-  { key: 'pending', label: 'Available Jobs (Pending)' },
-  { key: 'mine', label: 'My Route Assignments' },
-  { key: 'all', label: 'All' },
-];
-
-const pendingCount = computed(() =>
-  deliveries.value.filter(d => d.status === 'PENDING' && !d.delivery_person).length
-);
-
-const myDeliveries = computed(() =>
-  deliveries.value.filter(d => d.delivery_person === myUserId.value)
-);
-
+const pendingCount = computed(() => deliveries.value.filter(d => d.status === 'PENDING' && (isSupplier.value ? d.fulfillment_method === 'PICKUP' : isAdmin.value || (d.fulfillment_method === 'DELIVERY' && !d.delivery_person))).length);
+const myDeliveries = computed(() => isSupplier.value ? deliveries.value : deliveries.value.filter(d => d.delivery_person === myUserId.value));
 const displayedDeliveries = computed(() => {
-  if (activeTab.value === 'pending') return deliveries.value.filter(d => d.status === 'PENDING' && !d.delivery_person);
+  if (activeTab.value === 'pending') return deliveries.value.filter(d => d.status === 'PENDING' && (isSupplier.value ? d.fulfillment_method === 'PICKUP' : isAdmin.value || (d.fulfillment_method === 'DELIVERY' && !d.delivery_person)));
+  if (activeTab.value === 'ready') return deliveries.value.filter(d => d.fulfillment_method === 'PICKUP' && d.status === 'READY_FOR_PICKUP');
   if (activeTab.value === 'mine') return myDeliveries.value;
   return deliveries.value;
 });
@@ -180,6 +184,8 @@ const displayedDeliveries = computed(() => {
 const statusStyle = (status) => {
   const map = {
     PENDING: 'text-orange-400 border-orange-400/30 bg-orange-400/10',
+    READY_FOR_PICKUP: 'text-amber-300 border-amber-300/30 bg-amber-300/10',
+    PICKED_UP: 'text-teal-300 border-teal-300/30 bg-teal-300/10',
     ASSIGNED: 'text-blue-400 border-blue-400/30 bg-blue-400/10',
     OUT_FOR_DELIVERY: 'text-purple-400 border-purple-400/30 bg-purple-400/10',
     DELIVERED: 'text-teal-400 border-teal-400/30 bg-teal-400/10',
@@ -210,7 +216,17 @@ const updateStatus = async (id, status) => {
   }
 };
 
-onMounted(loadDeliveries);
+const confirmDelivery = async (id, role) => {
+  try {
+    const res = await api.patch(`deliveries/${id}/`, { completion_confirmation: role });
+    const idx = deliveries.value.findIndex(d => d.id === id);
+    if (idx !== -1) deliveries.value[idx] = res.data;
+  } catch (e) {
+    console.error('Failed to confirm delivery', e);
+  }
+};
+
+onMounted(() => { if (isAdmin.value) activeTab.value = 'all'; loadDeliveries(); });
 </script>
 
 <style scoped>

@@ -296,8 +296,8 @@ const checkMobile = () => {
 // Logout
 const logout = async () => {
   try {
-    await userStore.clearAuth();
-    router.push('/login');
+    await userStore.logout();
+    await router.replace('/login');
   } catch (error) {
     console.error('Logout failed:', error);
   }

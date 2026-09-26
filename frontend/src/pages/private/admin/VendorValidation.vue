@@ -1,145 +1,128 @@
 <template>
-  <div :class="[themeClasses.bg.primary, 'flex-1 flex flex-col overflow-y-auto relative font-[\'Inter\',-apple-system,BlinkMacSystemFont,sans-serif] min-h-screen']">
-    <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-red-600/5 blur-[150px] -z-0 pointer-events-none animate-pulse"></div>
-    <div class="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-teal-500/5 blur-[180px] -z-0 pointer-events-none animate-pulse" style="animation-delay: 2s"></div>
-
-    <header class="z-10 bg-white/[0.01] backdrop-blur-xl border-b border-white/5 relative">
-      <div class="flex items-center justify-between px-6 py-4">
-        <div class="flex items-center space-x-4">
-           <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">System Command / <span class="text-white/80">Vendor Validation</span></h1>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button @click="loadVendors" class="p-2 text-white/40 hover:text-teal-400 transition-colors">
-            <svg class="w-5 h-5" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 relative z-10 custom-scrollbar max-w-7xl mx-auto w-full">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+  <div :class="[themeClasses.bg.primary, 'min-h-full flex-1 p-5 text-white sm:p-8']">
+    <div class="mx-auto max-w-7xl space-y-7">
+      <header class="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Vendor Applications</h2>
-          <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mt-1 italic">Review intelligence documents and authorize nodes.</p>
+          <p class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400">System administration</p>
+          <h1 class="mt-2 text-3xl font-black tracking-tight">Application review</h1>
+          <p class="mt-2 text-sm text-white/45">Validate gas suppliers and delivery people before they can use their workspaces.</p>
         </div>
-        
-        <div class="flex space-x-2 bg-white/5 p-1 rounded-xl border border-white/10">
-          <button @click="filter = 'pending'" :class="[filter === 'pending' ? 'bg-teal-400 text-gray-900 border-teal-400/50 shadow-[0_0_15px_rgba(45,212,191,0.3)]' : 'text-white/40 hover:text-white', 'px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent']">
-            Pending
-          </button>
-          <button @click="filter = 'all'" :class="[filter === 'all' ? 'bg-blue-500 text-white border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'text-white/40 hover:text-white', 'px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all border border-transparent']">
-            All Records
-          </button>
-        </div>
+        <button @click="loadApplications" :disabled="loading" class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-wider disabled:opacity-50">{{ loading ? 'Refreshing…' : 'Refresh queue' }}</button>
+      </header>
+
+      <div v-if="error" class="rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-200">{{ error }}</div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button v-for="option in applicantTypes" :key="option.key" @click="activeType = option.key" :class="activeType === option.key ? 'bg-teal-400 text-gray-950' : 'border border-white/10 bg-white/5 text-white/60'" class="rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider">{{ option.label }} <span class="ml-2 opacity-70">{{ countFor(option.key) }}</span></button>
+        <select v-model="filter" class="rounded-xl border border-white/10 bg-gray-900 px-4 py-3 text-xs font-bold text-white">
+          <option value="PENDING">Pending review</option><option value="ALL">All applications</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option>
+        </select>
       </div>
 
-      <div v-if="filteredVendors.length === 0" class="flex flex-col items-center justify-center p-12 bg-white/[0.02] border border-white/5 rounded-[2rem]">
-        <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10 mb-6">
-          <svg class="w-8 h-8 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic mb-2">No Applications Found</p>
-        <p class="text-[10px] text-white/20 uppercase tracking-[0.2em] max-w-sm text-center">There are currently no vendor nodes matching the selected filter criteria.</p>
+      <div v-if="loading && !activeApplications.length" class="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-sm text-white/50">Loading application records…</div>
+      <div v-else-if="!filteredApplications.length" class="rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
+        <h2 class="text-lg font-bold">No matching applications</h2><p class="mt-2 text-sm text-white/40">There are no {{ filter === 'PENDING' ? 'pending ' : '' }}{{ activeType === 'suppliers' ? 'supplier' : 'delivery-person' }} applications in this queue.</p>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Vendor Cards -->
-        <div v-for="vendor in filteredVendors" :key="vendor.id" class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-6 sm:p-8 flex flex-col group hover:border-white/10 transition-all duration-500 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          
-          <div class="relative z-10 flex justify-between items-start mb-6">
-            <div>
-              <div class="flex items-center space-x-3 mb-2">
-                <div :class="vendor.is_approved ? 'bg-teal-400' : 'bg-yellow-400'" class="w-2.5 h-2.5 rounded-full animate-pulse shadow-lg"></div>
-                <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">{{ vendor.store_name || 'UNNAMED NODE' }}</h3>
-              </div>
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center">
-                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                {{ vendor.address || 'Address not provided' }}
-              </p>
-            </div>
-            <div class="px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest" :class="vendor.is_approved ? 'border-teal-400/30 text-teal-400 bg-teal-400/10' : 'border-yellow-400/30 text-yellow-500 bg-yellow-400/10'">
-              {{ vendor.is_approved ? 'Authorized' : 'Pending Review' }}
-            </div>
+      <div v-else class="grid gap-5 xl:grid-cols-2">
+        <article v-for="application in filteredApplications" :key="application.id" class="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div><p class="text-lg font-black">{{ applicantName(application) }}</p><p class="mt-1 text-sm text-white/50">{{ application.user_email }}<span v-if="application.user_phone"> · {{ application.user_phone }}</span></p><p v-if="activeType === 'suppliers'" class="mt-2 text-sm text-white/65">{{ application.address }}<span v-if="application.latitude != null"> · {{ application.latitude }}, {{ application.longitude }}</span></p></div>
+            <span :class="statusClass(application.application_status)" class="shrink-0 rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-wider">{{ application.application_status }}</span>
           </div>
-
-          <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <DocumentLink label="Birth Certificate" :url="vendor.birth_certificate" />
-            <DocumentLink label="Identity Card" :url="vendor.identity_card" />
-            <DocumentLink label="Trade Registration" :url="vendor.institution_document" />
-          </div>
-
-          <div class="relative z-10 flex space-x-4 mt-auto border-t border-white/5 pt-6">
-            <button v-if="!vendor.is_approved" @click="updateStatus(vendor.id, true)" class="flex-1 py-3.5 bg-teal-400/10 border border-teal-400/30 text-teal-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-teal-400/20 hover:border-teal-400/50 hover:shadow-[0_0_30px_rgba(45,212,191,0.2)] transition-all flex items-center justify-center">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-              Authorize Node
-            </button>
-            <button v-if="vendor.is_approved" @click="updateStatus(vendor.id, false)" class="flex-1 py-3.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500/20 hover:border-yellow-500/50 transition-all flex items-center justify-center">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Suspend Node
+          <p v-if="application.rejection_reason" class="rounded-xl bg-red-400/10 p-3 text-sm text-red-200">Previous rejection: {{ application.rejection_reason }}</p>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <button v-for="document in documentsFor(application)" :key="document.key" @click="downloadDocument(application, document)" :disabled="!application[document.present] || downloading === document.key + application.id" class="flex items-center justify-between rounded-xl border border-white/10 bg-black/10 px-4 py-3 text-left text-xs font-bold text-white/75 disabled:cursor-not-allowed disabled:opacity-30">
+              <span>{{ document.label }}</span><span>{{ application[document.present] ? 'View / download ↗' : 'Not provided' }}</span>
             </button>
           </div>
-        </div>
+          <div v-if="application.application_status === 'PENDING'" class="flex flex-wrap gap-3 border-t border-white/10 pt-4">
+            <button @click="review(application, 'APPROVED')" :disabled="saving === activeType + application.id" class="flex-1 rounded-xl bg-teal-400 px-4 py-3 text-xs font-black uppercase tracking-wider text-gray-950 disabled:opacity-50">Approve</button>
+            <button @click="review(application, 'REJECTED')" :disabled="saving === activeType + application.id" class="flex-1 rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-xs font-black uppercase tracking-wider text-red-200 disabled:opacity-50">Reject with reason</button>
+          </div>
+        </article>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import api from '../../../config/api';
-import { useTheme } from '../../../composables/useTheme';
-import DocumentLink from './components/DocumentLink.vue';
+import { computed, onMounted, ref } from 'vue'
+import api from '../../../config/api'
+import { useTheme } from '../../../composables/useTheme'
 
-const { themeClasses } = useTheme();
-const vendors = ref([]);
-const loading = ref(false);
-const filter = ref('pending');
+const { themeClasses } = useTheme()
+const applicantTypes = [{ key: 'suppliers', label: 'Gas suppliers' }, { key: 'delivery', label: 'Delivery people' }]
+const activeType = ref('suppliers')
+const filter = ref('PENDING')
+const suppliers = ref([])
+const deliveryPeople = ref([])
+const loading = ref(false)
+const error = ref('')
+const saving = ref('')
+const downloading = ref('')
+const activeApplications = computed(() => activeType.value === 'suppliers' ? suppliers.value : deliveryPeople.value)
+const filteredApplications = computed(() => filter.value === 'ALL' ? activeApplications.value : activeApplications.value.filter(item => item.application_status === filter.value))
+const countFor = (type) => (type === 'suppliers' ? suppliers.value : deliveryPeople.value).filter(item => item.application_status === 'PENDING').length
 
-const filteredVendors = computed(() => {
-  if (filter.value === 'pending') {
-    return vendors.value.filter(v => !v.is_approved);
-  }
-  return vendors.value;
-});
-
-const loadVendors = async () => {
-  loading.value = true;
+function documentsFor(application) {
+  return activeType.value === 'suppliers'
+    ? [
+        { key: 'identity_card', label: 'Identity card', present: 'has_identity_card' },
+        { key: 'tax_payment_document', label: 'Tax payment proof', present: 'has_tax_payment_document' },
+        { key: 'additional_document', label: 'Business authenticity document', present: 'has_additional_document' },
+      ]
+    : [
+        { key: 'identity_card', label: 'Identity card', present: 'has_identity_card' },
+        { key: 'supporting_document', label: 'Supporting document', present: 'has_supporting_document' },
+      ]
+}
+function applicantName(application) { return activeType.value === 'suppliers' ? application.store_name || application.user_name : application.user_name }
+function statusClass(status) {
+  return ({ PENDING: 'border-amber-300/30 bg-amber-300/10 text-amber-200', APPROVED: 'border-teal-300/30 bg-teal-300/10 text-teal-200', REJECTED: 'border-red-300/30 bg-red-300/10 text-red-200' })[status] || 'border-white/10 text-white/50'
+}
+async function loadApplications() {
+  loading.value = true; error.value = ''
   try {
-    const response = await api.get('admin/vendors/validation/');
-    vendors.value = response.data;
-  } catch (err) {
-    console.error('Failed to load validation queue', err);
-    alert('Network fetch anomaly.');
-  } finally {
-    loading.value = false;
-  }
-};
-
-const updateStatus = async (id, is_approved) => {
+    const [supplierResponse, deliveryResponse] = await Promise.all([
+      api.get('admin/vendors/validation/'),
+      api.get('admin/delivery-applications/'),
+    ])
+    suppliers.value = supplierResponse.data
+    deliveryPeople.value = deliveryResponse.data
+  } catch (e) {
+    error.value = e.response?.data?.detail || 'Could not load the application queue. Check administrator access.'
+  } finally { loading.value = false }
+}
+async function downloadDocument(application, document) {
+  const key = document.key + application.id
+  downloading.value = key
   try {
-    const msg = is_approved ? 'Authorize public broadcast for this node?' : 'Suspend network access for this node?';
-    if (!confirm(msg)) return;
-    
-    await api.patch(`admin/vendors/validation/${id}/`, { is_approved });
-    
-    // update locally
-    const vendorIndex = vendors.value.findIndex(v => v.id === id);
-    if (vendorIndex !== -1) {
-      vendors.value[vendorIndex].is_approved = is_approved;
-    }
-  } catch (err) {
-    console.error('Validation update failed', err);
-    alert('System command aborted due to an error.');
+    const type = activeType.value === 'suppliers' ? 'supplier' : 'delivery'
+    const response = await api.get(`admin/verification-documents/${type}/${application.id}/${document.key}/`, { responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `${type}-${application.id}-${document.key}`
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch (e) { error.value = 'This document could not be downloaded.' }
+  finally { downloading.value = '' }
+}
+async function review(application, decision) {
+  let rejectionReason = ''
+  if (decision === 'REJECTED') {
+    rejectionReason = window.prompt('Enter a reason for rejecting this application:')?.trim() || ''
+    if (!rejectionReason) return
   }
-};
-
-onMounted(loadVendors);
+  const key = activeType.value + application.id
+  saving.value = key; error.value = ''
+  try {
+    const endpoint = activeType.value === 'suppliers' ? `admin/vendors/validation/${application.id}/` : `admin/delivery-applications/${application.id}/`
+    await api.patch(endpoint, { decision, rejection_reason: rejectionReason })
+    application.application_status = decision
+    if (activeType.value === 'suppliers') application.is_approved = decision === 'APPROVED'
+    application.rejection_reason = rejectionReason
+  } catch (e) { error.value = e.response?.data?.error || 'The application decision could not be saved.' }
+  finally { saving.value = '' }
+}
+onMounted(loadApplications)
 </script>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
-</style>

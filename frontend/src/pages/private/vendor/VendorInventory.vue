@@ -16,19 +16,26 @@
        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
          <div>
            <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Gas Bottle Stock</h2>
-           <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mt-1 italic">Manage your available inventory and pricing.</p>
+           <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mt-1 italic">Manage your available inventory and pricing. Add a separate entry for every brand and bottle size you sell.</p>
          </div>
-         <button @click="showAddModal = true" class="px-6 py-3 bg-gradient-to-r from-teal-400 to-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">
+         <button v-if="applicationStatus === 'APPROVED'" @click="showAddModal = true" class="px-6 py-3 bg-gradient-to-r from-teal-400 to-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">
            + Add New Stock
          </button>
+       </div>
+
+       <div v-if="applicationStatus !== 'APPROVED'" class="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-5 text-sm text-amber-100">
+         <strong class="block uppercase tracking-wider">Supplier approval {{ applicationStatus.toLowerCase() }}</strong>
+         <span class="mt-2 block text-white/65">An administrator must approve your submitted identity and business documents before you can list stock.</span>
+         <span v-if="rejectionReason" class="mt-2 block">Review note: {{ rejectionReason }}</span>
+         <router-link to="/admin/vendor-profile" class="mt-3 inline-block text-xs font-black uppercase tracking-wider text-teal-300">Review business profile and resubmit documents →</router-link>
        </div>
 
        <div v-if="inventory.length === 0" class="flex flex-col items-center justify-center p-12 bg-white/[0.02] border border-white/5 rounded-[2rem]">
          <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10 mb-6">
            <svg class="w-8 h-8 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
          </div>
-         <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic mb-2">No Gas Bottles In Stock</p>
-         <p class="text-[10px] text-white/20 uppercase tracking-[0.2em] max-w-sm text-center">Add new gas bottles to your inventory to start selling to users.</p>
+         <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic mb-2">{{ applicationStatus === 'APPROVED' ? 'No Gas Bottles In Stock' : 'Inventory unavailable while verification is pending' }}</p>
+         <p class="text-[10px] text-white/20 uppercase tracking-[0.2em] max-w-sm text-center">Approved suppliers can add gas bottles to their inventory here.</p>
        </div>
 
        <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -134,6 +141,8 @@ import { useTheme } from '../../../composables/useTheme';
 
 const { themeClasses } = useTheme();
 const inventory = ref([]);
+const applicationStatus = ref('PENDING');
+const rejectionReason = ref('');
 const showAddModal = ref(false);
 const loading = ref(false);
 
@@ -157,10 +166,19 @@ const sizes = [
 
 const loadInventory = async () => {
   try {
+    const profile = await api.get('vendor/profile/');
+    applicationStatus.value = profile.data.application_status || (profile.data.is_approved ? 'APPROVED' : 'PENDING');
+    rejectionReason.value = profile.data.rejection_reason || '';
+    if (applicationStatus.value !== 'APPROVED' || !profile.data.is_approved) {
+      inventory.value = [];
+      return;
+    }
     const response = await api.get('vendor/gas-bottles/');
     inventory.value = response.data;
   } catch (err) {
     console.error('Failed to load inventory', err);
+    applicationStatus.value = 'PENDING';
+    inventory.value = [];
   }
 };
 

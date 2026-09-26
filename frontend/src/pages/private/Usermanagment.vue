@@ -216,10 +216,9 @@
                 <input v-model="inviteEmail" type="email" placeholder="node@protocol.ai" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic placeholder:text-white/10">
               </div>
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Privilege Profile</label>
-                <select v-model="inviteRole" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic appearance-none cursor-pointer">
-                  <option v-for="role in availableRoles" :key="role.value" :value="role.value">{{ role.label }}</option>
-                </select>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Account type</label>
+                <div class="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-bold text-white">Client account</div>
+                <p class="ml-4 text-xs text-white/35">Supplier and delivery accounts apply in the mobile app and require document review.</p>
               </div>
               <div class="pt-6 flex gap-4">
                 <button @click="showInviteModal = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Abort</button>
@@ -244,20 +243,8 @@
                 <input v-model="editingUser.email" type="email" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white font-bold italic">
               </div>
               <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Privilege Profile</label>
-                  <select v-model="editingUser.role" class="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white text-[10px] font-black uppercase appearance-none cursor-pointer italic">
-                    <option v-for="role in availableRoles" :key="role.value" :value="role.value">{{ role.label }}</option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Operational Status</label>
-                  <select v-model="editingUser.status" class="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white text-[10px] font-black uppercase appearance-none cursor-pointer italic">
-                    <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
-                </div>
+                <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><p class="text-[9px] uppercase tracking-widest text-white/30">Role</p><p class="mt-2 text-xs font-bold text-white">{{ formatRole(editingUser.role) }}</p></div>
+                <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><p class="text-[9px] uppercase tracking-widest text-white/30">Status</p><p class="mt-2 text-xs font-bold text-white">{{ formatStatus(editingUser.status) }}</p></div>
               </div>
               <div class="pt-6 flex gap-4">
                 <button @click="showEditModal = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Abort</button>
@@ -333,7 +320,7 @@ const showImageModal = ref(false)
 
 // Interaction State
 const inviteEmail = ref('')
-const inviteRole = ref('user')
+const inviteRole = ref('client')
 const selectedUserImage = ref('')
 const editingUser = ref({ id: null, name: '', email: '', role: '', status: '' })
 const confirmUser = ref(null)
@@ -348,9 +335,11 @@ const notificationMessage = ref('')
 const notificationType = ref('success')
 
 const availableRoles = [
+  { value: 'superadmin', label: 'Super administrator' },
   { value: 'admin', label: 'Administrator' },
-  { value: 'user', label: 'Standard Node' },
-  { value: 'manager', label: 'Controller' }
+  { value: 'user', label: 'Client' },
+  { value: 'gas_supplier', label: 'Gas supplier' },
+  { value: 'delivery_person', label: 'Delivery person' },
 ]
 
 // Logic Functions
@@ -441,8 +430,8 @@ const fetchUsers = async () => {
 
 const sendInvite = async () => {
   try {
-    const res = await api.post('/users/invite/', { email: inviteEmail.value, first_name: inviteEmail.value.split('@')[0], is_admin: inviteRole.value === 'admin' })
-    users.value.push({ id: res.data.id, name: inviteEmail.value.split('@')[0], email: inviteEmail.value, avatar: handleImageError({ name: inviteEmail.value }), role: inviteRole.value, status: 'pending', lastActive: null })
+    const res = await api.post('/users/invite/', { email: inviteEmail.value, first_name: inviteEmail.value.split('@')[0], account_type: 'client' })
+    users.value.push({ id: res.data.id, name: inviteEmail.value.split('@')[0], email: inviteEmail.value, avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inviteEmail.value)}&background=random`, role: 'user', status: 'pending', lastActive: null })
     showNotificationMessage('Transmission binary sent')
     showInviteModal.value = false
     inviteEmail.value = ''

@@ -88,9 +88,40 @@
               </div>
 
               <transition name="fade">
-                <div v-if="form.accountType === 'vendor'" class="space-y-2 pb-4">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-white/30 ml-4">Commercial Store Name (Required)</label>
-                  <input v-model="form.storeName" type="text" placeholder="e.g. TotalEnergies Bonamoussadi" class="w-full px-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.05] focus:outline-none transition-all duration-500 text-white placeholder:text-white/10 font-bold" :class="{ 'border-red-500/50': errors.storeName }">
+                <div v-if="form.accountType === 'vendor' || form.accountType === 'delivery'" class="space-y-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                  <p class="text-[10px] font-black uppercase tracking-widest text-teal-300">Verification documents · required before approval</p>
+                  <label class="block text-xs font-bold text-white/70">Identity card photo or PDF <span class="text-red-300">*</span>
+                    <input type="file" accept="image/*,.pdf" @change="setDocument('identityCard', $event)" class="mt-2 block w-full text-xs text-white/60 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-400/10 file:px-3 file:py-2 file:font-bold file:text-teal-200">
+                    <span v-if="form.identityCard" class="mt-1 block text-[10px] text-teal-300">{{ form.identityCard.name }}</span>
+                  </label>
+                  <template v-if="form.accountType === 'vendor'">
+                    <label class="block text-xs font-bold text-white/70">Commercial store name <span class="text-red-300">*</span>
+                      <input v-model="form.storeName" type="text" placeholder="e.g. TotalEnergies Bonamoussadi" class="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder:text-white/25" :class="{ 'border-red-500/50': errors.storeName }">
+                    </label>
+                    <label class="block text-xs font-bold text-white/70">Supplier location / address <span class="text-red-300">*</span>
+                      <input v-model="form.supplierAddress" type="text" placeholder="Street, neighbourhood, city" class="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder:text-white/25">
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                      <label class="text-xs font-bold text-white/70">Latitude <input v-model="form.supplierLatitude" type="number" step="any" min="-90" max="90" class="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white"></label>
+                      <label class="text-xs font-bold text-white/70">Longitude <input v-model="form.supplierLongitude" type="number" step="any" min="-180" max="180" class="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white"></label>
+                    </div>
+                    <p class="text-[10px] text-white/40">A business address is enough to apply. Add both coordinates if you want the shop pinned on the map.</p>
+                    <label class="block text-xs font-bold text-white/70">Tax payment receipt <span class="text-red-300">*</span>
+                      <input type="file" accept="image/*,.pdf" @change="setDocument('taxPaymentDocument', $event)" class="mt-2 block w-full text-xs text-white/60 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-400/10 file:px-3 file:py-2 file:font-bold file:text-teal-200">
+                      <span v-if="form.taxPaymentDocument" class="mt-1 block text-[10px] text-teal-300">{{ form.taxPaymentDocument.name }}</span>
+                    </label>
+                    <label class="block text-xs font-bold text-white/70">Business authenticity document <span class="text-red-300">*</span>
+                      <input type="file" accept="image/*,.pdf" @change="setDocument('supportingDocument', $event)" class="mt-2 block w-full text-xs text-white/60 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-400/10 file:px-3 file:py-2 file:font-bold file:text-teal-200">
+                      <span v-if="form.supportingDocument" class="mt-1 block text-[10px] text-teal-300">{{ form.supportingDocument.name }}</span>
+                    </label>
+                  </template>
+                  <template v-else>
+                    <label class="block text-xs font-bold text-white/70">Additional supporting document (optional)
+                      <input type="file" accept="image/*,.pdf" @change="setDocument('supportingDocument', $event)" class="mt-2 block w-full text-xs text-white/60 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-400/10 file:px-3 file:py-2 file:font-bold file:text-teal-200">
+                      <span v-if="form.supportingDocument" class="mt-1 block text-[10px] text-teal-300">{{ form.supportingDocument.name }}</span>
+                    </label>
+                  </template>
+                  <p class="text-[10px] text-white/40">An administrator must approve the application before supplier or delivery tools are enabled.</p>
                 </div>
               </transition>
 
@@ -204,6 +235,12 @@ const router = useRouter();
 const form = ref({
   accountType: 'user',
   storeName: '',
+  supplierAddress: '',
+  supplierLatitude: '',
+  supplierLongitude: '',
+  identityCard: null,
+  taxPaymentDocument: null,
+  supportingDocument: null,
   firstName: '',
   lastName: '',
   email: '',
@@ -243,10 +280,35 @@ watch(() => form.value.email, (val) => { if (val && !validateEmail(val)) errors.
 watch(() => form.value.password, (val) => { if (val && !validatePassword(val)) errors.value.password = 'Insecure password'; else delete errors.value.password; });
 watch(() => form.value.confirmPassword, (val) => { if (val && val !== form.value.password) errors.value.confirmPassword = 'Passwords do not match'; else delete errors.value.confirmPassword; });
 
+const setDocument = (field, event) => {
+  form.value[field] = event.target.files?.[0] || null;
+};
+
 const handleSubmit = async () => {
   errors.value = {};
-  if (form.value.accountType === 'vendor' && !form.value.storeName.trim()) {
-    errors.value.storeName = 'Required for Suppliers';
+  if (form.value.accountType === 'vendor') {
+    if (!form.value.storeName.trim()) errors.value.storeName = 'Required for suppliers';
+    const address = form.value.supplierAddress.trim();
+    const latitudeText = String(form.value.supplierLatitude ?? '').trim();
+    const longitudeText = String(form.value.supplierLongitude ?? '').trim();
+    const hasLatitude = latitudeText.length > 0;
+    const hasLongitude = longitudeText.length > 0;
+    const hasCoordinates = hasLatitude && hasLongitude;
+    if (!address && !hasCoordinates) errors.value.general = 'Enter the business address or both map coordinates.';
+    if (hasLatitude !== hasLongitude) errors.value.general = 'Enter both map coordinates or clear both coordinate fields.';
+    if (hasCoordinates) {
+      const latitude = Number(latitudeText);
+      const longitude = Number(longitudeText);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        errors.value.general = 'Map coordinates must be valid latitude and longitude values.';
+      }
+    }
+    if (!form.value.identityCard || !form.value.taxPaymentDocument || !form.value.supportingDocument) {
+      errors.value.general = 'Suppliers must upload their ID, tax receipt, and authenticity document.';
+    }
+  }
+  if (form.value.accountType === 'delivery' && !form.value.identityCard) {
+    errors.value.general = 'Delivery applicants must upload an identity card.';
   }
   if (!form.value.firstName.trim()) errors.value.firstName = 'Required';
   if (!form.value.lastName.trim()) errors.value.lastName = 'Required';
@@ -259,58 +321,57 @@ const handleSubmit = async () => {
 
   if (Object.keys(errors.value).length > 0) return;
   isSubmitting.value = true;
-  
   try {
     const payload = {
       first_name: form.value.firstName,
       last_name: form.value.lastName,
       email: form.value.email,
-      phone_number: form.value.phone, 
+      phone_number: form.value.phone,
       password: form.value.password,
-      address: form.value.address || '',
+      address: form.value.accountType === 'vendor' ? form.value.supplierAddress : form.value.address,
       city: form.value.city || '',
       state_province: form.value.state_province || '',
       country: form.value.country,
       accept_terms: form.value.acceptTerms,
       newsletter_subscription: form.value.newsletter,
-      is_delivery_person: form.value.accountType === 'delivery',
+      account_type: form.value.accountType === 'vendor' ? 'gas_supplier' : form.value.accountType === 'delivery' ? 'delivery_person' : 'client',
     };
-    
-    const response = await api.post("auth/register/", payload);
-    
-    // Auto-login after registration
+    let response;
+    if (form.value.accountType === 'user') {
+      response = await api.post('auth/register/', payload);
+    } else {
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => formData.append(key, String(value)));
+      formData.append('identity_card', form.value.identityCard);
+      if (form.value.supportingDocument) formData.append('supporting_document', form.value.supportingDocument);
+      if (form.value.accountType === 'vendor') {
+        formData.append('supplier_name', form.value.storeName.trim());
+        formData.append('supplier_address', form.value.supplierAddress.trim());
+        if (String(form.value.supplierLatitude ?? '').trim() && String(form.value.supplierLongitude ?? '').trim()) {
+          formData.append('supplier_latitude', String(form.value.supplierLatitude).trim());
+          formData.append('supplier_longitude', String(form.value.supplierLongitude).trim());
+        }
+        formData.append('tax_payment_document', form.value.taxPaymentDocument);
+      }
+      response = await api.post('auth/register/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+
     if (response.data.token) {
       localStorage.setItem('authToken', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      api.defaults.headers.common['Authorization'] = `Token ${response.data.token}`;
-      
-      if (form.value.accountType === 'vendor') {
-         const fullAddress = [form.value.address, form.value.city, form.value.state_province, form.value.country].filter(Boolean).join(', ');
-         const formData = new FormData();
-         formData.append('store_name', form.value.storeName);
-         formData.append('address', fullAddress);
-         try {
-           await api.post("vendor/register/", formData, {
-             headers: { 'Content-Type': 'multipart/form-data' }
-           });
-         } catch(vendorErr) {
-           console.error('Failed creating vendor profile', vendorErr);
-         }
-      }
-      
+      api.defaults.headers.common.Authorization = `Token ${response.data.token}`;
       await router.push('/admin');
     } else {
       await router.push('/login');
     }
   } catch (error) {
     console.error('Registration failed:', error);
-    if (error.response?.data?.errors) {
-       const backendErrors = error.response.data.errors;
-       if (backendErrors.email) errors.value.general = 'Account with this email already exists.';
-       else errors.value.general = 'Registration failed. Please check your details.';
-    } else {
-       errors.value.general = 'Connection error. Please try again.';
-    }
+    const details = error.response?.data?.errors || error.response?.data;
+    if (details?.email) errors.value.general = 'Account with this email already exists.';
+    else if (details && typeof details === 'object') {
+      const first = Object.values(details).flat()[0];
+      errors.value.general = first?.toString() || 'Registration failed. Please check your details.';
+    } else errors.value.general = 'Connection error. Please try again.';
   } finally {
     isSubmitting.value = false;
   }

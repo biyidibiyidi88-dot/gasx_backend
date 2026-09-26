@@ -11,6 +11,7 @@ from .models import (
     CookableFood,
     CustomUser,
     Delivery,
+    DeliveryPersonProfile,
     EmergencyAction,
     EmergencyContact,
     GasReading,
@@ -22,14 +23,55 @@ from .models import (
     VendorProfile,
     GasBottle,
 )
+from .bottle_config import (
+    BOTTLE_CAPACITIES_KG,
+    bottle_capacity_kg,
+    estimated_tare_kg,
+    user_bottle_capacity_kg,
+)
 
 User = get_user_model()
+
+
+class DecimalAsFloatField(serializers.DecimalField):
+    """Keep Decimal validation while exposing JSON numbers to Flutter clients."""
+
+    def to_representation(self, value):
+        return float(value) if value is not None else None
+
+
+class OptionalCoordinateField(serializers.FloatField):
+    """Accept blank multipart coordinate fields as omitted values."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str) and not data.strip():
+            return None
+        return super().to_internal_value(data)
 
 
 class UserSerializer(serializers.ModelSerializer):
     auth_token = serializers.SerializerMethodField()
     is_administrator = serializers.BooleanField(read_only=True)
     profile_image_url = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    application_status = serializers.SerializerMethodField()
+    account_type = serializers.ChoiceField(
+        choices=("client", "delivery_person", "gas_supplier"),
+        write_only=True,
+        required=False,
+        default="client",
+    )
+    supplier_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    supplier_address = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    supplier_latitude = OptionalCoordinateField(
+        write_only=True, required=False, allow_null=True
+    )
+    supplier_longitude = OptionalCoordinateField(
+        write_only=True, required=False, allow_null=True
+    )
+    identity_card = serializers.FileField(write_only=True, required=False)
+    tax_payment_document = serializers.FileField(write_only=True, required=False)
+    supporting_document = serializers.FileField(write_only=True, required=False)
 
     class Meta:
         model = CustomUser
@@ -52,6 +94,16 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "auth_token",
             "is_administrator",
+            "role",
+            "application_status",
+            "account_type",
+            "supplier_name",
+            "supplier_address",
+            "supplier_latitude",
+            "supplier_longitude",
+            "identity_card",
+            "tax_payment_document",
+            "supporting_document",
             "profile_image",
             "profile_image_url",
             "is_active",
@@ -63,6 +115,11 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "password": {"write_only": True},
             "profile_image": {"write_only": True},
+            "is_admin": {"read_only": True},
+            "is_delivery_person": {"read_only": True},
+            "is_active": {"read_only": True},
+            "is_verified": {"read_only": True},
+            "created_at": {"read_only": True},
         }
 
     def get_auth_token(self, obj):
@@ -74,12 +131,77 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.profile_image.url
         return None
 
+    def get_role(self, obj):
+        if obj.is_superuser or obj.is_admin:
+            return "admin"
+        if obj.is_delivery_person:
+            return "delivery_person"
+        if hasattr(obj, "vendor_profile"):
+            return "gas_supplier"
+        return "client"
+
+    def get_application_status(self, obj):
+        if hasattr(obj, "vendor_profile"):
+            return obj.vendor_profile.application_status.lower()
+        if hasattr(obj, "delivery_profile"):
+            return obj.delivery_profile.application_status.lower()
+        return "approved"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["gas_capacity"] = str(user_bottle_capacity_kg(instance))
+        return data
+
     def validate(self, data):
         if "password" in data:
             try:
                 validate_password(data["password"])
             except ValidationError as e:
                 raise serializers.ValidationError({"password": list(e.messages)})
+
+        bottle_size = data.get("preferred_bottle_size", "MEDIUM_12_5KG")
+        bottle_brand = data.get("preferred_bottle_brand", "TOTAL_ENERGIES")
+        if bottle_size not in BOTTLE_CAPACITIES_KG:
+            raise serializers.ValidationError(
+                {"preferred_bottle_size": "Select a supported bottle size."}
+            )
+        data["gas_capacity"] = bottle_capacity_kg(bottle_size)
+        if "tare_weight" not in self.initial_data:
+            data["tare_weight"] = estimated_tare_kg(bottle_size, bottle_brand)
+
+        account_type = data.get("account_type", "client")
+        if account_type in ("delivery_person", "gas_supplier") and not data.get("identity_card"):
+            raise serializers.ValidationError({"identity_card": "Upload a clear identity card image."})
+        if account_type == "gas_supplier":
+            required_supplier_fields = {
+                "supplier_name": "Enter the gas supplier or store name.",
+                "tax_payment_document": "Upload the tax payment receipt.",
+                "supporting_document": "Upload a document that proves the supplier's authenticity.",
+            }
+            errors = {
+                field: message
+                for field, message in required_supplier_fields.items()
+                if data.get(field) in (None, "")
+            }
+            latitude = data.get("supplier_latitude")
+            longitude = data.get("supplier_longitude")
+            has_latitude = latitude is not None
+            has_longitude = longitude is not None
+            address = (data.get("supplier_address") or "").strip()
+            if has_latitude != has_longitude:
+                errors["supplier_latitude"] = (
+                    "Provide both map coordinates, or leave both blank."
+                )
+            elif not address and not (has_latitude and has_longitude):
+                errors["supplier_address"] = (
+                    "Provide a business address or both map coordinates."
+                )
+            if errors:
+                raise serializers.ValidationError(errors)
+            if has_latitude and not -90 <= latitude <= 90:
+                raise serializers.ValidationError({"supplier_latitude": "Latitude must be between -90 and 90."})
+            if has_longitude and not -180 <= longitude <= 180:
+                raise serializers.ValidationError({"supplier_longitude": "Longitude must be between -180 and 180."})
         return data
 
     def validate_email(self, value):
@@ -90,7 +212,35 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        account_type = validated_data.pop("account_type", "client")
+        supplier_name = validated_data.pop("supplier_name", "")
+        supplier_address = validated_data.pop("supplier_address", "")
+        supplier_latitude = validated_data.pop("supplier_latitude", None)
+        supplier_longitude = validated_data.pop("supplier_longitude", None)
+        identity_card = validated_data.pop("identity_card", None)
+        tax_payment_document = validated_data.pop("tax_payment_document", None)
+        supporting_document = validated_data.pop("supporting_document", None)
+
+        if account_type == "delivery_person":
+            validated_data["is_delivery_person"] = True
         user = User.objects.create_user(**validated_data)
+        if account_type == "delivery_person":
+            DeliveryPersonProfile.objects.create(
+                user=user,
+                identity_card=identity_card,
+                supporting_document=supporting_document,
+            )
+        elif account_type == "gas_supplier":
+            VendorProfile.objects.create(
+                user=user,
+                store_name=supplier_name,
+                address=supplier_address,
+                latitude=supplier_latitude,
+                longitude=supplier_longitude,
+                identity_card=identity_card,
+                tax_payment_document=tax_payment_document,
+                additional_document=supporting_document,
+            )
         return user
 
 
@@ -154,7 +304,12 @@ class GasSensorSerializer(serializers.ModelSerializer):
     gas_capacity = serializers.SerializerMethodField()
     needs_maintenance = serializers.SerializerMethodField()
     house_address = serializers.CharField(source="house.address_line_1", read_only=True)
+    owner_email = serializers.EmailField(source="house.user.email", read_only=True)
+    owner_name = serializers.CharField(source="house.user.get_full_name", read_only=True)
     remaining_days_for_calibration = serializers.SerializerMethodField()
+    raw_weight = DecimalAsFloatField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
 
     class Meta:
         model = GasSensor
@@ -162,6 +317,8 @@ class GasSensorSerializer(serializers.ModelSerializer):
             "id",
             "house",
             "house_address",
+            "owner_email",
+            "owner_name",
             "sensor_name",
             "sensor_type",
             "serial_number",
@@ -203,7 +360,7 @@ class GasSensorSerializer(serializers.ModelSerializer):
         if not latest:
             return 0.0
         try:
-            capacity = float(obj.house.user.gas_capacity)
+            capacity = float(user_bottle_capacity_kg(obj.house.user))
             if capacity <= 0:
                 capacity = 12.5
         except (AttributeError, TypeError, ValueError):
@@ -220,7 +377,7 @@ class GasSensorSerializer(serializers.ModelSerializer):
 
     def get_gas_capacity(self, obj):
         try:
-            return float(obj.house.user.gas_capacity)
+            return float(user_bottle_capacity_kg(obj.house.user))
         except (AttributeError, TypeError, ValueError):
             return 12.50
 
@@ -412,8 +569,47 @@ class UserProfileSerializer(serializers.ModelSerializer):
     )
     profile_image_url = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    application_status = serializers.SerializerMethodField()
     active_alerts_count = serializers.SerializerMethodField()
     sensors_count = serializers.SerializerMethodField()
+
+    def validate(self, attrs):
+        bottle_size = attrs.get(
+            "preferred_bottle_size",
+            self.instance.preferred_bottle_size if self.instance else "MEDIUM_12_5KG",
+        )
+        bottle_brand = attrs.get(
+            "preferred_bottle_brand",
+            self.instance.preferred_bottle_brand if self.instance else "TOTAL_ENERGIES",
+        )
+        if bottle_size not in BOTTLE_CAPACITIES_KG:
+            raise serializers.ValidationError(
+                {"preferred_bottle_size": "Select a supported bottle size."}
+            )
+
+        # The selected bottle's nominal gas capacity is authoritative.
+        attrs["gas_capacity"] = bottle_capacity_kg(bottle_size)
+        size_or_brand_changed = self.instance and (
+            bottle_size != self.instance.preferred_bottle_size
+            or bottle_brand != self.instance.preferred_bottle_brand
+        )
+        if size_or_brand_changed and "tare_weight" not in attrs:
+            attrs["tare_weight"] = estimated_tare_kg(bottle_size, bottle_brand)
+        return attrs
+
+    def update(self, instance, validated_data):
+        user = super().update(instance, validated_data)
+        capacity = user_bottle_capacity_kg(user)
+        if user.gas_capacity != capacity:
+            user.gas_capacity = capacity
+            user.save(update_fields=["gas_capacity"])
+        return user
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Decimal strings are retained here for compatibility with UserAccount.
+        data["gas_capacity"] = str(user_bottle_capacity_kg(instance))
+        return data
 
     class Meta:
         model = CustomUser
@@ -441,6 +637,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "profile_image_url",
             "role",
+            "application_status",
             "active_alerts_count",
             "sensors_count",
         ]
@@ -461,15 +658,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return None
 
     def get_role(self, obj):
-        if obj.is_superuser:
-            return "Super Admin"
-        elif obj.is_admin:
-            return "Admin"
+        if obj.is_superuser or obj.is_admin:
+            return "admin"
         elif obj.is_delivery_person:
-            return "Delivery Person"
+            return "delivery_person"
         if hasattr(obj, "vendor_profile"):
-            return "Vendor"
-        return "User"
+            return "gas_supplier"
+        return "client"
+
+    def get_application_status(self, obj):
+        if hasattr(obj, "vendor_profile"):
+            return obj.vendor_profile.application_status.lower()
+        if hasattr(obj, "delivery_profile"):
+            return obj.delivery_profile.application_status.lower()
+        return "approved"
 
     def get_active_alerts_count(self, obj):
         return obj.alerts.filter(is_resolved=False).count()
@@ -497,6 +699,7 @@ class UserManagementSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     profile_image_url = serializers.SerializerMethodField()
     last_active = serializers.SerializerMethodField()
+    application_status = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
@@ -507,6 +710,7 @@ class UserManagementSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "role",
+            "application_status",
             "status",
             "last_active",
             "profile_image_url",
@@ -522,13 +726,24 @@ class UserManagementSerializer(serializers.ModelSerializer):
         elif obj.is_delivery_person:
             return "delivery_person"
         elif hasattr(obj, "vendor_profile"):
-            return "vendor"
+            return "gas_supplier"
         return "user"
 
     def get_status(self, obj):
+        if hasattr(obj, "vendor_profile") and obj.vendor_profile.application_status != "APPROVED":
+            return "pending"
+        if hasattr(obj, "delivery_profile") and obj.delivery_profile.application_status != "APPROVED":
+            return "pending"
         if obj.is_active:
             return "active"
         return "suspended"
+
+    def get_application_status(self, obj):
+        if hasattr(obj, "vendor_profile"):
+            return obj.vendor_profile.application_status.lower()
+        if hasattr(obj, "delivery_profile"):
+            return obj.delivery_profile.application_status.lower()
+        return "approved"
 
     def get_profile_image_url(self, obj):
         if obj.profile_image and hasattr(obj.profile_image, "url"):
@@ -588,8 +803,11 @@ class GasReadingSerializer(serializers.ModelSerializer):
     sensor_type = serializers.CharField(source="sensor.sensor_type", read_only=True)
     date = serializers.SerializerMethodField()
     is_weekend = serializers.SerializerMethodField()
-    raw_weight = serializers.DecimalField(
-        max_digits=10, decimal_places=2, required=False
+    raw_weight = DecimalAsFloatField(
+        max_digits=10, decimal_places=2, min_value=0, required=True
+    )
+    remaining_gas = DecimalAsFloatField(
+        max_digits=10, decimal_places=2, read_only=True
     )
 
     class Meta:
@@ -608,19 +826,22 @@ class GasReadingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["date", "is_weekend"]
         extra_kwargs = {
-            "remaining_gas": {"required": False}
+            "remaining_gas": {"read_only": True}
         }
+
+    def validate_sensor(self, sensor):
+        request = self.context.get("request")
+        if not sensor.is_active:
+            raise serializers.ValidationError("Sensor is inactive.")
+        if request and sensor.house.user_id != request.user.id:
+            raise serializers.ValidationError("Sensor does not belong to this account.")
+        return sensor
 
     def get_date(self, obj):
         return obj.reading_timestamp.date().isoformat()
 
     def get_is_weekend(self, obj):
         return obj.reading_timestamp.weekday() >= 5  # Saturday or Sunday
-
-    def create(self, validated_data):
-        validated_data.pop('raw_weight', None)
-        return super().create(validated_data)
-
 
 class GasLeakAlertSerializer(serializers.Serializer):
     """Serializer for ESP32 gas leak alerts"""
@@ -759,6 +980,14 @@ class VendorProfileSerializer(serializers.ModelSerializer):
     gas_bottles = GasBottleSerializer(many=True, read_only=True)
     user_email = serializers.CharField(source="user.email", read_only=True)
     user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    identity_card = serializers.FileField(write_only=True, required=False)
+    birth_certificate = serializers.FileField(write_only=True, required=False)
+    institution_document = serializers.FileField(write_only=True, required=False)
+    tax_payment_document = serializers.FileField(write_only=True, required=False)
+    additional_document = serializers.FileField(write_only=True, required=False)
+    has_identity_card = serializers.SerializerMethodField()
+    has_tax_payment_document = serializers.SerializerMethodField()
+    has_additional_document = serializers.SerializerMethodField()
 
     class Meta:
         model = VendorProfile
@@ -772,13 +1001,88 @@ class VendorProfileSerializer(serializers.ModelSerializer):
             "longitude",
             "address",
             "is_approved",
+            "application_status",
+            "rejection_reason",
+            "reviewed_at",
             "birth_certificate",
             "identity_card",
             "institution_document",
+            "tax_payment_document",
+            "additional_document",
+            "has_identity_card",
+            "has_tax_payment_document",
+            "has_additional_document",
             "gas_bottles",
             "created_at",
         ]
-        read_only_fields = ["user", "created_at", "is_approved"]
+        read_only_fields = [
+            "user", "created_at", "is_approved", "application_status",
+            "rejection_reason", "reviewed_at", "has_identity_card",
+            "has_tax_payment_document", "has_additional_document",
+        ]
+
+    def get_has_identity_card(self, obj):
+        return bool(obj.identity_card)
+
+    def get_has_tax_payment_document(self, obj):
+        return bool(obj.tax_payment_document)
+
+    def get_has_additional_document(self, obj):
+        return bool(obj.additional_document or obj.institution_document or obj.birth_certificate)
+
+    def update(self, instance, validated_data):
+        application_changed = any(
+            key in validated_data
+            for key in (
+                "store_name", "address", "latitude", "longitude", "identity_card",
+                "tax_payment_document", "additional_document", "institution_document",
+                "birth_certificate",
+            )
+        )
+        if application_changed:
+            validated_data["application_status"] = "PENDING"
+            validated_data["is_approved"] = False
+            validated_data["rejection_reason"] = ""
+            validated_data["reviewed_at"] = None
+            validated_data["reviewed_by"] = None
+        return super().update(instance, validated_data)
+
+
+class DeliveryPersonProfileSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    user_phone = serializers.CharField(source="user.phone_number", read_only=True)
+    has_identity_card = serializers.SerializerMethodField()
+    has_supporting_document = serializers.SerializerMethodField()
+    identity_card = serializers.FileField(write_only=True, required=False)
+    supporting_document = serializers.FileField(write_only=True, required=False)
+
+    class Meta:
+        model = DeliveryPersonProfile
+        fields = [
+            "id", "user", "user_name", "user_email", "user_phone",
+            "application_status", "rejection_reason", "reviewed_at",
+            "has_identity_card", "has_supporting_document", "identity_card",
+            "supporting_document", "created_at",
+        ]
+        read_only_fields = [
+            "user", "application_status", "rejection_reason", "reviewed_at",
+            "has_identity_card", "has_supporting_document", "created_at",
+        ]
+
+    def get_has_identity_card(self, obj):
+        return bool(obj.identity_card)
+
+    def get_has_supporting_document(self, obj):
+        return bool(obj.supporting_document)
+
+    def update(self, instance, validated_data):
+        if "identity_card" in validated_data or "supporting_document" in validated_data:
+            validated_data["application_status"] = "PENDING"
+            validated_data["rejection_reason"] = ""
+            validated_data["reviewed_by"] = None
+            validated_data["reviewed_at"] = None
+        return super().update(instance, validated_data)
 
 
 class DeliverySerializer(serializers.ModelSerializer):
@@ -791,6 +1095,8 @@ class DeliverySerializer(serializers.ModelSerializer):
     delivery_person_name = serializers.SerializerMethodField()
     bottle_detail = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    fulfillment_display = serializers.CharField(source="get_fulfillment_method_display", read_only=True)
+    unit_price = DecimalAsFloatField(max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Delivery
@@ -810,13 +1116,32 @@ class DeliverySerializer(serializers.ModelSerializer):
             "delivery_person_name",
             "status",
             "status_display",
+            "fulfillment_method",
+            "fulfillment_display",
+            "unit_price",
+            "delivery_fee",
+            "payment_amount",
+            "payment_status",
+            "payment_operator",
+            "payment_transaction_id",
             "delivery_address",
             "latitude",
             "longitude",
+            "driver_confirmed_delivery",
+            "client_confirmed_delivery",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["client", "created_at", "updated_at", "status_display"]
+        read_only_fields = [
+            "client", "vendor", "gas_bottle", "delivery_person", "status",
+            "fulfillment_method", "unit_price", "created_at", "updated_at",
+            "delivery_fee", "payment_amount", "payment_status", "payment_operator",
+            "payment_transaction_id",
+            "driver_confirmed_delivery", "client_confirmed_delivery",
+            "status_display", "fulfillment_display", "client_name", "client_email",
+            "vendor_name", "vendor_address", "vendor_latitude", "vendor_longitude",
+            "delivery_person_name", "bottle_detail",
+        ]
 
     def get_delivery_person_name(self, obj):
         if obj.delivery_person:
@@ -825,7 +1150,61 @@ class DeliverySerializer(serializers.ModelSerializer):
 
     def get_bottle_detail(self, obj):
         b = obj.gas_bottle
-        return f"{b.get_brand_display()} {b.get_size_display()} — {b.price} FCFA"
+        return f"{b.get_brand_display()} {b.get_size_display()} — {obj.unit_price} FCFA"
+
+
+class DeliveryOrderCreateSerializer(serializers.Serializer):
+    gas_bottle = serializers.PrimaryKeyRelatedField(queryset=GasBottle.objects.all())
+    fulfillment_method = serializers.ChoiceField(choices=Delivery.FULFILLMENT_CHOICES)
+    delivery_address = serializers.CharField(required=False, allow_blank=True)
+    latitude = serializers.FloatField(required=False, allow_null=True)
+    longitude = serializers.FloatField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        bottle = attrs["gas_bottle"]
+        if not bottle.vendor.is_approved or bottle.vendor.application_status != "APPROVED":
+            raise serializers.ValidationError({"gas_bottle": "This supplier is not approved."})
+        if bottle.stock_quantity < 1:
+            raise serializers.ValidationError({"gas_bottle": "This bottle is out of stock."})
+        if attrs["fulfillment_method"] == "DELIVERY" and not attrs.get("delivery_address", "").strip():
+            raise serializers.ValidationError({"delivery_address": "Enter a delivery address."})
+        latitude = attrs.get("latitude")
+        longitude = attrs.get("longitude")
+        if (latitude is None) != (longitude is None):
+            raise serializers.ValidationError(
+                {"location": "Provide both GPS latitude and longitude, or leave both empty."}
+            )
+        if latitude is not None and not (-90 <= latitude <= 90):
+            raise serializers.ValidationError({"latitude": "Latitude must be between -90 and 90."})
+        if longitude is not None and not (-180 <= longitude <= 180):
+            raise serializers.ValidationError({"longitude": "Longitude must be between -180 and 180."})
+        if attrs["fulfillment_method"] == "PICKUP":
+            attrs["delivery_address"] = bottle.vendor.address
+            attrs["latitude"] = None
+            attrs["longitude"] = None
+        return attrs
+
+
+class PaymentInitiateSerializer(DeliveryOrderCreateSerializer):
+    payment_operator = serializers.ChoiceField(choices=Delivery.PAYMENT_OPERATOR_CHOICES)
+    payer_phone = serializers.CharField(max_length=16)
+
+    def validate_payer_phone(self, value):
+        if any(
+            not (character.isdigit() or character in "+-() ")
+            for character in value
+        ):
+            raise serializers.ValidationError(
+                "Enter a valid Cameroon mobile number."
+            )
+        digits = "".join(character for character in value if character.isdigit())
+        if digits.startswith("237"):
+            digits = digits[3:]
+        if len(digits) != 9:
+            raise serializers.ValidationError(
+                "Enter a Cameroon mobile number with 9 digits."
+            )
+        return f"237{digits}"
 
 
 class PublicVendorProfileSerializer(serializers.ModelSerializer):
