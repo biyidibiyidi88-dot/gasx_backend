@@ -17,12 +17,43 @@ class GeminiService:
 
     @classmethod
     def generate_json(cls, *, system_instruction, prompt, max_output_tokens=180):
+        return cls._generate(
+            system_instruction=system_instruction,
+            prompt=prompt,
+            max_output_tokens=max_output_tokens,
+            response_mime_type="application/json",
+        )
+
+    @classmethod
+    def generate_text(cls, *, system_instruction, prompt, max_output_tokens=320):
+        """Generate a short plain-text response, for example supplier suggestions."""
+        return cls._generate(
+            system_instruction=system_instruction,
+            prompt=prompt,
+            max_output_tokens=max_output_tokens,
+        )
+
+    @classmethod
+    def _generate(
+        cls,
+        *,
+        system_instruction,
+        prompt,
+        max_output_tokens,
+        response_mime_type=None,
+    ):
         api_key = getattr(settings, "GEMINI_API_KEY", "")
         if not api_key:
             raise GeminiAPIError("GEMINI_API_KEY is not configured")
 
         model = getattr(settings, "GEMINI_MODEL", "gemini-3.5-flash-lite")
         url = cls.API_URL.format(model=quote(model, safe="-_."))
+        generation_config = {
+            "temperature": 0.1,
+            "maxOutputTokens": max_output_tokens,
+        }
+        if response_mime_type:
+            generation_config["responseMimeType"] = response_mime_type
         try:
             response = requests.post(
                 url,
@@ -33,11 +64,7 @@ class GeminiService:
                 json={
                     "systemInstruction": {"parts": [{"text": system_instruction}]},
                     "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "temperature": 0.1,
-                        "maxOutputTokens": max_output_tokens,
-                        "responseMimeType": "application/json",
-                    },
+                    "generationConfig": generation_config,
                 },
                 timeout=(3, 10),
             )
