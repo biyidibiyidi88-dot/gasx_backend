@@ -1,249 +1,178 @@
+"""Forecast gas time left from measured use, with an optional AI rate estimate."""
+import hashlib
 import json
-import re
-import time
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 import logging
-from requests.exceptions import RequestException
-from datetime import datetime, timedelta
-from django.utils import timezone
-from .openrouter_service import OpenRouterService
+import math
+import re
+from datetime import timedelta
 
-# Configure logging
+from django.conf import settings
+from django.core.cache import cache
+from django.utils import timezone
+
+from .gemini_service import GeminiService
+
 logger = logging.getLogger(__name__)
 
+
 class AIPredictionService:
-    DEFAULT_BOTTLE_CAPACITY = 12.50
-
-    MODEL_PRIORITY = OpenRouterService.models()
-
-    @classmethod
-    def _debug_log(cls, message, level='debug'):
-        """Centralized debug logging with level support"""
-        try:
-            log_methods = {
-                'debug': logger.debug,
-                'info': logger.info,
-                'warning': logger.warning,
-                'error': logger.error
-            }
-            log_methods.get(level, logger.debug)(f"{time.strftime('%H:%M:%S')} - {message}")
-        except Exception as e:
-            print(f"[FALLBACK DEBUG] {time.strftime('%H:%M:%S')} - {message} (Logging error: {str(e)})")
+    DEFAULT_BOTTLE_CAPACITY = 12.5
+    MIN_HISTORY_DAYS = 1 / 24  # An hour supports an early, low-confidence estimate.
 
     @classmethod
-    def _calculate_metrics(cls, history_data):
-        """Calculate gas consumption metrics"""
-        try:
-            if not history_data:
-                raise ValueError("Empty history data provided")
+    def build_history(cls, hourly_readings, bottle_capacity):
+        """Use hourly averages so rapid uploads do not hide older consumption."""
+        history = {}
+        previous_time = None
+        anchor = None
+        refill_jump = max(0.25, float(bottle_capacity) * 0.05)
+        for row in hourly_readings:
+            at = row['first_at'] + (row['last_at'] - row['first_at']) / 2
+            remaining = float(row['remaining_kg'])
+            if not math.isfinite(remaining) or not 0 <= remaining <= bottle_capacity:
+                previous_time = anchor = None
+                continue
+            if previous_time is None:
+                previous_time, anchor = at, remaining
+                continue
+            elapsed = (at - previous_time).total_seconds() / 86400
+            previous_time = at
+            if elapsed <= 0:
+                continue
+            drop = anchor - remaining
+            # Skip refills, long offline gaps, and sudden scale/calibration jumps.
+            if elapsed > 2 or drop < -refill_jump or drop / elapsed > bottle_capacity * 2:
+                anchor = remaining
+                continue
+            # Keep the previous low point through small fluctuations. Counting
+            # every downward twitch would invent consumption on a steady scale.
+            consumed = drop if drop >= 0.02 - 1e-9 else 0.0
+            if consumed:
+                anchor = remaining
+            day = at.date().isoformat()
+            item = history.setdefault(day, {
+                'date': day, 'consumed_kg': 0.0, 'elapsed_days': 0.0,
+                'is_weekend': at.weekday() >= 5,
+            })
+            item['consumed_kg'] += consumed
+            item['elapsed_days'] += elapsed
+        return [dict(item, consumption_kg=item['consumed_kg'] / item['elapsed_days'])
+                for item in history.values()]
 
-            # consumption_kg is already daily consumption rate, not total consumption
-            daily_consumptions = [float(day['consumption_kg']) for day in history_data]
-            
-            # Calculate average daily consumption (not total)
-            avg_daily = sum(daily_consumptions) / len(daily_consumptions) if daily_consumptions else 0
-            
-            # Estimate remaining gas based on current consumption patterns
-            # We'll get the actual remaining from the latest reading in the calling function
-            weekend_days = [d for d in history_data if d['is_weekend']]
-            weekday_days = [d for d in history_data if not d['is_weekend']]
-            
-            weekend_avg = sum(d['consumption_kg'] for d in weekend_days)/len(weekend_days) if weekend_days else avg_daily
-            weekday_avg = sum(d['consumption_kg'] for d in weekday_days)/len(weekday_days) if weekday_days else avg_daily
-            
-            # Calculate recent trend (last 3 days)
-            recent_avg = sum(daily_consumptions[-3:])/3 if len(daily_consumptions) >= 3 else avg_daily
-            
-            return {
-                'avg_daily': max(0.1, avg_daily),  # Ensure minimum consumption to avoid division by zero
-                'weekend_avg': max(0.1, weekend_avg),
-                'weekday_avg': max(0.1, weekday_avg),
-                'recent_avg': max(0.1, recent_avg),
-                'total_days': len(daily_consumptions)
-            }
-        except Exception as e:
-            cls._debug_log(f"Metrics calculation error: {str(e)}", level='error')
-            raise
+    @staticmethod
+    def _calculate_metrics(history_data):
+        valid = []
+        for day in history_data:
+            rate = float(day['consumption_kg'])
+            duration = float(day.get('elapsed_days', 1))
+            if math.isfinite(rate) and math.isfinite(duration) and rate >= 0 and duration > 0:
+                valid.append((day, rate, duration))
 
-    @classmethod
-    def _validate_prediction(cls, prediction, metrics, bottle_capacity):
-        """Validate prediction accuracy with enhanced list handling"""
-        try:
-            # Handle cases where remaining_kg or projected_days are lists
-            remaining_kg = prediction.get('remaining_kg')
-            projected_days = prediction.get('projected_days')
+        def average(rows):
+            duration = sum(row[2] for row in rows)
+            return sum(rate * elapsed for _, rate, elapsed in rows) / duration if duration else 0.0
 
-            if isinstance(remaining_kg, list):
-                cls._debug_log(f"Received list for remaining_kg: {remaining_kg}", level='warning')
-                remaining_kg = float(remaining_kg[0]) if remaining_kg and isinstance(remaining_kg[0], (int, float, str)) else None
-            else:
-                remaining_kg = float(remaining_kg)
-
-            if isinstance(projected_days, list):
-                cls._debug_log(f"Received list for projected_days: {projected_days}", level='warning')
-                projected_days = float(projected_days[0]) if projected_days and isinstance(projected_days[0], (int, float, str)) else None
-            else:
-                projected_days = float(projected_days)
-
-            if remaining_kg is None or projected_days is None:
-                raise ValueError("Could not extract valid numbers from prediction")
-
-            # Basic validation - projected days should be reasonable
-            if not (0 <= projected_days <= 365):  # Max 1 year
-                raise ValueError(
-                    f"Projected days {projected_days} invalid. Should be between 0-365 days"
-                )
-            
-            # Remaining gas should be within tank capacity
-            if not (0 <= remaining_kg <= bottle_capacity):
-                raise ValueError(
-                    f"Reported remaining {remaining_kg}kg invalid. Should be between 0-{bottle_capacity}kg"
-                )
-            
-            if not (0.5 <= prediction.get('confidence', 0) <= 0.95):
-                raise ValueError(f"Invalid confidence score: {prediction.get('confidence')}")
-
-            # Update prediction with validated float values
-            prediction['remaining_kg'] = remaining_kg
-            prediction['projected_days'] = projected_days
-            return True
-        except (ValueError, KeyError, TypeError) as e:
-            cls._debug_log(f"Prediction validation failed: {str(e)}", level='warning')
-            return False
+        return {
+            'avg_daily': average(valid),
+            'recent_avg': average(valid[-3:]),
+            'weekday_avg': average([row for row in valid if not row[0]['is_weekend']]),
+            'weekend_avg': average([row for row in valid if row[0]['is_weekend']]),
+            'observed_days': sum(row[2] for row in valid),
+        }
 
     @classmethod
-    def predict_days_remaining(cls, history_data, current_remaining_kg=None, bottle_capacity=None):
-        """Predict remaining gas days with robust error handling"""
-        if bottle_capacity is None:
-            bottle_capacity = cls.DEFAULT_BOTTLE_CAPACITY
-        bottle_capacity = float(bottle_capacity)
-        """Predict remaining gas days with robust error handling"""
+    def _ai_rate(cls, metrics, baseline, cache_scope):
+        """Cache the rate, not days left: fresh weight still updates the forecast."""
+        if not getattr(settings, 'GEMINI_API_KEY', ''):
+            return baseline, 'usage'
+        model = getattr(settings, 'GEMINI_MODEL', 'gemini-3.5-flash-lite')
+        if not model:
+            return baseline, 'usage'
+        signature = json.dumps([cache_scope, model, metrics], sort_keys=True)
+        key = 'gas-forecast-rate-v2:' + hashlib.sha256(signature.encode()).hexdigest()
+        saved = cache.get(key)
+        if saved is not None:
+            return saved
+        result = (baseline, 'usage')
+        timeout = 60  # Retry unavailable AI later, without holding up every refresh.
         try:
-            if not settings.OPENROUTER_API_KEY:
-                raise ImproperlyConfigured("OPENROUTER_API_KEY is not set")
+            content = GeminiService.generate_json(
+                system_instruction=(
+                    'Estimate the daily LPG consumption rate from measured usage. '
+                    'Account for recent changes and weekday/weekend use. '
+                    'Do not invent extra measurements. Return a JSON object with '
+                    'daily_consumption_kg as a single positive number. '
+                    'Keep the rate between half and twice the supplied baseline.'
+                ),
+                prompt=json.dumps(dict(metrics, baseline_kg_per_day=baseline)),
+                max_output_tokens=180,
+            )
+            match = re.search(r'\{.*\}', content, re.DOTALL)
+            payload = json.loads(match.group() if match else content)
+            value = payload['daily_consumption_kg']
+            if isinstance(value, bool):
+                raise ValueError('Boolean consumption rate')
+            rate = float(value)
+            if not math.isfinite(rate) or not baseline * 0.5 <= rate <= baseline * 2:
+                raise ValueError('Forecast rate outside measured range')
+            result = (rate, 'ai')
+            timeout = 600
+        except Exception as exc:
+            logger.warning('Gas forecast using measured consumption: %s', type(exc).__name__)
+        cache.set(key, result, timeout=timeout)
+        return result
 
-            metrics = cls._calculate_metrics(history_data)
-            cls._debug_log(f"Metrics: {metrics}", level='info')
-            
-            # If current remaining gas not provided, estimate from latest data
-            if current_remaining_kg is None:
-                # Assume we start with some reasonable amount based on consumption patterns
-                current_remaining_kg = max(1.0, bottle_capacity * 0.3)  # Default to 30% capacity
-            
-            current_remaining_kg = float(current_remaining_kg)
-            cls._debug_log(f"Current remaining gas: {current_remaining_kg}kg", level='info')
+    @classmethod
+    def predict_days_remaining(cls, history_data, current_remaining_kg=None,
+                               bottle_capacity=None, *, cache_scope='', ai_enabled=True,
+                               observed_at=None):
+        capacity = float(bottle_capacity or cls.DEFAULT_BOTTLE_CAPACITY)
+        remaining = None if current_remaining_kg is None else float(current_remaining_kg)
+        result = {
+            'projected_days': 0.0, 'projected_hours': 0.0,
+            'expected_depletion_date': None, 'confidence': 0.0,
+            'trend': 'collecting', 'prediction_source': 'collecting',
+            'remaining_kg': remaining, 'daily_consumption_kg': 0.0,
+            'recommendation': 'Keep the sensor on while you use gas. At least one hour of measured use is needed for an early estimate.',
+            'calculation': 'Waiting for enough measured gas use.',
+        }
+        if remaining is None or not math.isfinite(remaining):
+            return result
+        remaining = min(capacity, max(0.0, remaining))
+        result['remaining_kg'] = remaining
+        if remaining == 0:
+            return dict(result, trend='empty', prediction_source='reading', confidence=1.0,
+                        expected_depletion_date=(observed_at or timezone.now()).isoformat(),
+                        recommendation='No gas remains in this bottle. Arrange a refill.',
+                        calculation='The latest reading shows 0 kg of gas.')
+        metrics = cls._calculate_metrics(history_data)
+        if metrics['observed_days'] < cls.MIN_HISTORY_DAYS:
+            return result
+        if metrics['avg_daily'] <= 0:
+            return dict(result, recommendation='No steady gas use has been measured yet. The estimate will appear after you use some gas.')
 
-            prompt = f"""Act as a precise gas consumption analyzer. Follow strictly:
-
-            Constraints:
-            - Bottle capacity: {bottle_capacity}kg
-            - Current remaining: {current_remaining_kg:.2f}kg
-            - Max possible days: {current_remaining_kg/metrics['avg_daily']:.1f}
-
-            Consumption Averages:
-            - Daily: {metrics['avg_daily']:.2f}kg
-            - Weekdays: {metrics['weekday_avg']:.2f}kg
-            - Weekends: {metrics['weekend_avg']:.2f}kg
-            - Recent 3 days: {metrics['recent_avg']:.2f}kg
-
-            Response (JSON, NO LISTS for numbers):
-            {{
-                "remaining_kg": {current_remaining_kg:.2f},
-                "projected_days": [number ≤ {current_remaining_kg/metrics['avg_daily']:.1f}],
-                "confidence": [number between 0.5-0.95],
-                "trend": ["increasing"/"decreasing"/"stable"],
-                "calculation": "[formula]",
-                "recommendation": "[advice]"
-            }}"""
-
-            for model in cls.MODEL_PRIORITY:
-                try:
-                    cls._debug_log(f"Trying model: {model}", level='info')
-                    
-                    payload = {
-                        "model": model,
-                        "messages": [{"role": "user", "content": prompt}],
-                        "temperature": 0.1,
-                        "response_format": {"type": "json_object"},
-                        "max_tokens": 400
-                    }
-
-                    start_time = time.time()
-                    result = OpenRouterService.create_completion(
-                        payload["messages"],
-                        model=model,
-                        temperature=payload["temperature"],
-                        response_format=payload["response_format"],
-                        max_tokens=payload["max_tokens"],
-                        timeout=20,
-                    )
-                    response_time = time.time() - start_time
-                    cls._debug_log(f"API response received in {response_time:.2f}s", level='info')
-                    content = result['choices'][0]['message']['content']
-                    cls._debug_log(f"Raw API response for {model}: {content[:500]}...", level='debug')
-                    
-                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                    if not json_match:
-                        cls._debug_log("No JSON in response", level='error')
-                        continue
-                    
-                    prediction = json.loads(json_match.group())
-                    
-                    if cls._validate_prediction(prediction, metrics, bottle_capacity):
-                        cls._debug_log(f"Valid prediction from {model}", level='info')
-                        return prediction
-                    
-                    cls._debug_log(f"Invalid prediction from {model}", level='warning')
-                    continue
-
-                except RequestException as e:
-                    cls._debug_log(f"Request failed for {model}: {str(e)}", level='error')
-                    continue
-                except json.JSONDecodeError as e:
-                    cls._debug_log(f"JSON parse error for {model}: {str(e)}", level='error')
-                    continue
-                except Exception as e:
-                    cls._debug_log(f"Unexpected error for {model}: {str(e)}", level='error')
-                    continue
-
-                time.sleep(1)
-
-            cls._debug_log("All AI models failed, using fallback calculation", level='warning')
-            
-            # Check if tank is empty or nearly empty
-            if current_remaining_kg <= 0.5:  # Less than 0.5kg remaining
-                return {
-                    "remaining_kg": float(current_remaining_kg),
-                    "projected_days": 0.0,
-                    "confidence": 1.0,
-                    "trend": "empty",
-                    "calculation": "Tank is empty or nearly empty",
-                    "recommendation": "Immediate refill required - tank is empty!"
-                }
-            
-            # Use current_remaining_kg from function parameter instead of missing metrics['remaining']
-            manual_projection = current_remaining_kg / metrics['recent_avg'] if metrics['recent_avg'] > 0 else 0
-            return {
-                "remaining_kg": float(current_remaining_kg),
-                "projected_days": float(round(manual_projection, 2)),
-                "confidence": 0.8,
-                "trend": "stable",
-                "calculation": f"{current_remaining_kg:.2f}kg / {metrics['recent_avg']:.2f}kg/day",
-                "recommendation": "Based on recent average consumption"
-            }
-
-        except Exception as e:
-            cls._debug_log(f"Critical failure: {str(e)}", level='error')
-            metrics = cls._calculate_metrics(history_data) if 'history_data' in locals() else {'avg_daily': 1}
-            # Use current_remaining_kg parameter or default to 0 if not available
-            remaining_kg = current_remaining_kg if 'current_remaining_kg' in locals() else 0
-            return {
-                "error": "Prediction failed",
-                "details": str(e),
-                "emergency_calculation": {
-                    "remaining_kg": float(remaining_kg),
-                    "projected_days": float(round(remaining_kg / metrics['avg_daily'], 2)) if metrics['avg_daily'] > 0 else 0,
-                    "calculation": "Emergency fallback"
-                }
-            }
+        rate = metrics['avg_daily']
+        if metrics['observed_days'] >= 3:
+            rate = 0.7 * metrics['recent_avg'] + 0.3 * rate
+        source = 'usage'
+        if ai_enabled:
+            rate, source = cls._ai_rate(metrics, rate, cache_scope)
+        days = remaining / rate
+        recent_ratio = metrics['recent_avg'] / metrics['avg_daily']
+        trend = 'increasing' if recent_ratio > 1.15 else 'decreasing' if recent_ratio < 0.85 else 'stable'
+        recommendation = ('AI estimate based on your measured gas use.' if source == 'ai'
+                          else 'Estimate based on your measured gas use.')
+        if metrics['observed_days'] < 1:
+            recommendation += ' This is an early estimate; a full day of readings will improve it.'
+        elif days < 2:
+            recommendation += ' Plan a refill soon.'
+        else:
+            recommendation += ' The time will change if you use more or less gas.'
+        return dict(
+            result, projected_days=round(days, 4), projected_hours=round(days * 24, 2),
+            expected_depletion_date=((observed_at or timezone.now()) + timedelta(days=days)).isoformat(),
+            confidence=round(min(0.85, 0.3 + metrics['observed_days'] / 14 * 0.55), 2),
+            trend=trend, prediction_source=source, daily_consumption_kg=round(rate, 4),
+            recommendation=recommendation,
+            calculation=f'{remaining:.2f} kg / {rate:.4f} kg per day = {days:.2f} days',
+        )

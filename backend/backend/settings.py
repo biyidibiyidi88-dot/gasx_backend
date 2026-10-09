@@ -29,6 +29,15 @@ OPENROUTER_FALLBACK_MODELS = [
 ]
 OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "https://gasx.app").strip()
 OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME", "GasX").strip()
+# Forecasts use Google's Gemini API directly. The key stays on the Django server.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_MODEL = os.getenv(
+    "GEMINI_MODEL", os.getenv("GAS_PREDICTION_MODEL", "gemini-3.5-flash-lite")
+).strip()
+# Accept the old OpenRouter-style model value while switching to the direct API.
+if GEMINI_MODEL.startswith("google/"):
+    GEMINI_MODEL = GEMINI_MODEL.removeprefix("google/")
+GAS_PREDICTION_MODEL = GEMINI_MODEL
 
 
 # Quick-start development settings - unsuitable for production

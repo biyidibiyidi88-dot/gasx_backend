@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model, login, logout
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.db import models, transaction
 from django.db.models import Count, F, Q
+from django.db.models.functions import TruncHour
 from django.http import FileResponse, HttpResponse
 from django.utils import timezone
 from rest_framework import generics, permissions, status
@@ -480,132 +482,68 @@ class GasPredictionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Get the user's primary sensor (or first sensor if multiple)
-            sensor = GasSensor.objects.filter(house__user=request.user).first()
-            if not sensor:
-                return Response(
-                    {"error": "No gas sensor found for this user"},
-                    status=status.HTTP_404_NOT_FOUND,
+        sensor_id = request.query_params.get("sensor_id")
+        if sensor_id is not None:
+            try:
+                sensor_id = int(sensor_id)
+            except (ValueError, TypeError):
+                return Response({"error": "Choose a valid gas sensor."}, status=400)
+        sensors = GasSensor.objects.filter(house__user=request.user).select_related("house__user")
+        sensor = sensors.filter(pk=sensor_id).first() if sensor_id is not None else sensors.first()
+        if sensor is None:
+            return Response({"error": "No gas sensor found for this account."}, status=404)
+
+        latest = GasReading.objects.filter(sensor=sensor).order_by("-reading_timestamp", "-id").first()
+        capacity = float(user_bottle_capacity_kg(sensor.house.user))
+        remaining = None
+        history = []
+        if latest is not None:
+            remaining = float(latest.remaining_gas)
+            if latest.raw_weight is not None:
+                remaining = float(max(Decimal('0'), min(
+                    Decimal(str(capacity)), latest.raw_weight - sensor.house.user.tare_weight
+                )))
+            # Cache the history briefly, but always use the latest weight above.
+            # Aggregating all 30 days avoids the old 100-row limit, which covered
+            # only a few minutes when the device uploaded every two seconds.
+            key = f"gas-history-v2:{sensor.pk}:{capacity}:{sensor.house.user.tare_weight}"
+            history = cache.get(key)
+            if history is None:
+                hourly = (
+                    GasReading.objects.filter(
+                        sensor=sensor,
+                        reading_timestamp__gte=latest.reading_timestamp - timedelta(days=30),
+                        reading_timestamp__lte=latest.reading_timestamp,
+                    )
+                    .order_by()
+                    .annotate(hour=TruncHour("reading_timestamp"))
+                    .values("hour")
+                    .annotate(
+                        first_at=models.Min("reading_timestamp"),
+                        last_at=models.Max("reading_timestamp"),
+                        remaining_kg=models.Avg("remaining_gas"),
+                    )
+                    .order_by("hour")
                 )
+                history = AIPredictionService.build_history(hourly, capacity)
+                cache.set(key, history, timeout=300)
 
-            # Fetch the most recent readings (unlimited time window, up to 100 points) 
-            # to ensure we have data even if the last reading was long ago.
-            readings = GasReading.objects.filter(
-                sensor=sensor
-            ).order_by("-reading_timestamp")[:100]
-
-            if not readings.exists():
-                return Response(
-                    {
-                        "status_code": 200,
-                        "message": "Collecting initial data",
-                        "projected_days": 0,
-                        "confidence": 0,
-                        "trend": "collecting",
-                        "recommendation": "Please wait for more readings to be recorded for a precise prediction.",
-                        "calculation": "No historical readings found in the last 30 days",
-                        "history_data": []
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            # Prepare history data for AI prediction
-            history_data = []
-            previous_reading = None
-
-            # Group readings by hour to reduce noise and get meaningful consumption patterns
-            hourly_readings = {}
-            for reading in readings:
-                hour_key = reading.reading_timestamp.replace(minute=0, second=0, microsecond=0)
-                if hour_key not in hourly_readings or reading.reading_timestamp > hourly_readings[hour_key].reading_timestamp:
-                    hourly_readings[hour_key] = reading
-            
-            # Sort hourly readings by timestamp
-            sorted_hourly = sorted(hourly_readings.values(), key=lambda x: x.reading_timestamp)
-            
-            # Calculate consumption between hourly readings (minimum 1 hour intervals)
-            previous_reading = None
-            for reading in sorted_hourly:
-                if previous_reading:
-                    time_diff = (
-                        reading.reading_timestamp - previous_reading.reading_timestamp
-                    ).total_seconds() / 86400  # days
-                    
-                    # Only process if time difference is at least 1 hour (0.042 days) to avoid noise
-                    if time_diff >= 0.042:  # 1 hour = 0.042 days
-                        consumption = float(previous_reading.remaining_gas) - float(
-                            reading.remaining_gas
-                        )
-                        
-                        # Filter out unrealistic consumption values (more than 5kg per day)
-                        daily_consumption = consumption / time_diff
-                        if -5.0 <= daily_consumption <= 5.0:  # Realistic range for gas consumption
-                            is_weekend = (
-                                reading.reading_timestamp.weekday() >= 5
-                            )  # Saturday or Sunday
-
-                            history_data.append(
-                                {
-                                    "date": reading.reading_timestamp.date().isoformat(),
-                                    "consumption_kg": daily_consumption,  # kg per day
-                                    "is_weekend": is_weekend,
-                                }
-                            )
-
-                previous_reading = reading
-
-            if not history_data:
-                return Response(
-                    {
-                        "status_code": 200,
-                        "message": "Insufficient data for trend analysis",
-                        "projected_days": 0,
-                        "confidence": 0,
-                        "trend": "collecting",
-                        "recommendation": "Analyzing consumption patterns... more data needed for high-confidence prediction.",
-                        "calculation": "Insufficient consumption events (minimum 2 distinct time periods required)",
-                        "history_data": []
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            # Get current remaining gas from latest reading
-            latest_reading = (
-                readings.first()
-            )  # readings are now correctly ordered by -reading_timestamp (latest first)
-            current_remaining_kg = (
-                float(latest_reading.remaining_gas) if latest_reading else 1.0
-            )
-
-            # Get prediction from AI service with dynamic bottle capacity
-            prediction = AIPredictionService.predict_days_remaining(
-                history_data, 
-                current_remaining_kg,
-                bottle_capacity=user_bottle_capacity_kg(sensor.house.user)
-            )
-
-            # Format response
-            response_data = {
-                "status_code": 200,
-                "message": "Prediction successful",
-                "projected_days": prediction.get("projected_days", 0),
-                "confidence": prediction.get("confidence", 0),
-                "trend": prediction.get("trend", "stable"),
-                "recommendation": prediction.get(
-                    "recommendation", "No specific recommendation"
-                ),
-                "calculation": prediction.get("calculation", "No calculation details"),
-                "history_data": history_data,
-            }
-
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response(
-                {"error": str(e), "details": "Failed to generate prediction"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        prediction = AIPredictionService.predict_days_remaining(
+            history, remaining, bottle_capacity=capacity,
+            cache_scope=f"{request.user.pk}:{sensor.pk}:{capacity}:{sensor.house.user.tare_weight}",
+            ai_enabled=sensor.ai_enabled,
+            observed_at=latest.reading_timestamp if latest else None,
+        )
+        if latest and timezone.now() - latest.reading_timestamp > timedelta(hours=1):
+            prediction["recommendation"] += " This uses an older reading; reconnect your sensor for an up-to-date estimate."
+        return Response({
+            "status_code": 200,
+            "message": "Learning your gas use" if prediction["trend"] == "collecting" else "Gas time estimate ready",
+            "sensor_id": sensor.pk,
+            "as_of": latest.reading_timestamp.isoformat() if latest else None,
+            **prediction,
+            "history_data": history,
+        })
 
 
 class GasReadingListView(generics.ListAPIView):
