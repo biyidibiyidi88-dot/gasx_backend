@@ -23,7 +23,7 @@
             Create your account to start monitoring your gas sensors and receiving real-time alerts.
           </p>
 
-          <!-- Benefits Grid -->
+          <!-- Benefits Pro -->
           <div class="space-y-8 mb-12">
             <div v-for="(benefit, index) in benefits" :key="index" class="group/item flex items-start space-x-6">
               <div class="w-12 h-12 bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center group-hover/item:border-teal-400 group-hover/item:bg-teal-400/10 transition-all duration-500">
@@ -263,7 +263,7 @@ const benefits = [
   { title: "Smart Safety", description: "Receive instant alerts for any leakage detection." },
   { title: "Deep Insights", description: "Visualize your gas consumption patterns over time." },
   { title: "Real-time Alerts", description: "Notifications sent via Email and Push channels." },
-  { title: "Global Mesh", description: "Secure your infrastructure from anywhere." }
+  { title: "Multiple sensors", description: "Secure your infrastructure from anywhere." }
 ];
 
 const passwordRequirements = computed(() => [

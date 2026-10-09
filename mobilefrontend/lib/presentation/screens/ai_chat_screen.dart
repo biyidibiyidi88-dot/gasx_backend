@@ -108,7 +108,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
                 children: [
                   Container(width: 20, height: 1, color: AppTheme.accentTeal.withOpacity(0.5)),
                   const SizedBox(width: 8),
-                  const Text('NEURAL INTERFACE V4.0', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2, color: AppTheme.accentTeal)),
+                  const Text('GASX ASSISTANT', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2, color: AppTheme.accentTeal)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -163,10 +163,10 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               child: const Icon(Icons.lightbulb_outline, size: 40, color: Colors.white),
             ),
             const SizedBox(height: 32),
-            const Text('INTELLIGENCE UPLINK', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, color: Colors.white)),
+            const Text('ASK THE GASX ASSISTANT', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, color: Colors.white)),
             const SizedBox(height: 8),
             const Text(
-              'STANDING BY FOR TECHNICAL INQUIRIES REGARDING STORAGE PRESSURE, SAFETY PROTOCOLS, AND CONSUMPTION ANALYTICS.',
+              'Ask me about gas safety, your gas level, or how to order a refill.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white24, letterSpacing: 1),
             ),
@@ -184,7 +184,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
         crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
-            isUser ? 'SOURCE NODE' : 'INTELLIGENCE ENGINE',
+            isUser ? 'YOU' : 'GASX ASSISTANT',
             style: TextStyle(
               fontSize: 8,
               fontWeight: FontWeight.w900,
@@ -226,7 +226,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
             child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.accentTeal),
           ),
           const SizedBox(width: 8),
-          const Text('PROCESSING DATA...', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: AppTheme.accentTeal, letterSpacing: 1)),
+          const Text('THINKING…', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: AppTheme.accentTeal, letterSpacing: 1)),
         ],
       ),
     );
@@ -247,7 +247,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               enabled: !isLoading,
               style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
-                hintText: 'TRANSMIT REQUEST...',
+                hintText: 'TYPE YOUR QUESTION…',
                 hintStyle: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.1), fontWeight: FontWeight.w900, fontStyle: FontStyle.italic),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.03),

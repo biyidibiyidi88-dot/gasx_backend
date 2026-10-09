@@ -7,6 +7,7 @@ class AudioAlarmService {
 
   final AudioPlayer _player = AudioPlayer();
   bool _initialized = false;
+  bool _isPlaying = false;
 
   AudioAlarmService._internal() {
     _init();
@@ -15,7 +16,7 @@ class AudioAlarmService {
   void _init() {
     if (_initialized) return;
     try {
-      _player.setReleaseMode(ReleaseMode.release);
+      _player.setReleaseMode(ReleaseMode.loop);
       _initialized = true;
     } catch (e) {
       debugPrint('AudioAlarmService initialization error: $e');
@@ -23,11 +24,14 @@ class AudioAlarmService {
   }
 
   Future<void> playAlarm() async {
+    if (_isPlaying) return;
     try {
       debugPrint('AudioAlarmService: Playing assets/sound/alarm.mp3');
       // For audioplayers ^6.0.0, asset path is relative to the assets/ directory.
       // So assets/sound/alarm.mp3 is loaded via AssetSource('sound/alarm.mp3').
+      await _player.setReleaseMode(ReleaseMode.loop);
       await _player.play(AssetSource('sound/alarm.mp3'));
+      _isPlaying = true;
     } catch (e) {
       debugPrint('AudioAlarmService play error: $e');
     }
@@ -36,7 +40,9 @@ class AudioAlarmService {
   Future<void> stop() async {
     try {
       await _player.stop();
+      _isPlaying = false;
     } catch (e) {
+      _isPlaying = false;
       debugPrint('AudioAlarmService stop error: $e');
     }
   }

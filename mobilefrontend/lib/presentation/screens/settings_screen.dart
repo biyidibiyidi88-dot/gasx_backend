@@ -74,7 +74,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(context, 'NOTIFICATIONS'),
           _buildToggleTile(
             context,
-            'Push Notifications',
+            'App alerts',
             settings.pushNotificationsEnabled,
             (v) {
               settingsNotifier.setPushNotificationsEnabled(v);
@@ -90,7 +90,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           _buildToggleTile(
             context,
-            'Critical Low Level SMS',
+            'Low gas text alerts',
             settings.smsAlertsEnabled,
             (v) {
               settingsNotifier.setSmsAlertsEnabled(v);
@@ -99,10 +99,10 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 32),
 
           // Alarm audio Section
-          _buildSectionHeader(context, 'SYSTEM AUDIO ALARM'),
+          _buildSectionHeader(context, 'SOUND ALERT'),
           _buildToggleTile(
             context,
-            'Gas Leak Audio Alarm',
+            'Sound alert for a gas leak',
             settings.audioAlarmEnabled,
             (v) {
               settingsNotifier.setAudioAlarmEnabled(v);
@@ -111,17 +111,17 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 32),
 
           // Gas Bottle Configuration Section
-          _buildSectionHeader(context, 'GAS BOTTLE CONFIGURATION'),
+          _buildSectionHeader(context, 'GAS BOTTLE DETAILS'),
           const SizedBox(height: 16),
           _GasBottleSettingsCard(user: user),
           const SizedBox(height: 32),
 
           // Thresholds
-          _buildSectionHeader(context, 'ALERTS & THRESHOLDS'),
+          _buildSectionHeader(context, 'ALERT SETTINGS'),
           const SizedBox(height: 16),
           _buildSliderTile(
             context,
-            'Low Level Warning',
+            'Low gas warning (%)',
             settings.lowLevelWarningThreshold,
             (v) {
               settingsNotifier.setLowLevelWarningThreshold(v);
@@ -134,7 +134,7 @@ class SettingsScreen extends ConsumerWidget {
             onPressed: () => ref.read(authStateProvider.notifier).logout(),
             icon: const Icon(Icons.logout, color: AppTheme.criticalRed),
             label: const Text(
-              'TERMINATE SESSION',
+              'LOG OUT',
               style: TextStyle(color: AppTheme.criticalRed, letterSpacing: 2),
             ),
           ),
@@ -305,7 +305,7 @@ class _GasBottleSettingsCardState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Bottle configuration saved successfully!'),
+            content: Text('Gas bottle details saved.'),
           ),
         );
       }
@@ -332,7 +332,7 @@ class _GasBottleSettingsCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('BOTTLE BRAND', style: Theme.of(context).textTheme.labelSmall),
+          Text('GAS BRAND', style: Theme.of(context).textTheme.labelSmall),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _brands.contains(_selectedBrand)
@@ -365,7 +365,7 @@ class _GasBottleSettingsCardState
           ),
           const SizedBox(height: 16),
           Text(
-            'BOTTLE SIZE / TYPE',
+            'BOTTLE SIZE',
             style: Theme.of(context).textTheme.labelSmall,
           ),
           const SizedBox(height: 8),
@@ -400,7 +400,7 @@ class _GasBottleSettingsCardState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'TARE WEIGHT (KG)',
+                      'EMPTY BOTTLE WEIGHT (KG)',
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                     const SizedBox(height: 8),
@@ -417,7 +417,7 @@ class _GasBottleSettingsCardState
                           borderRadius: BorderRadius.circular(12),
                         ),
                         helperText:
-                            'Estimate only; verify and edit to match the empty bottle stamp.',
+                            'This is an estimate. Check the empty bottle weight and update it if needed.',
                       ),
                     ),
                   ],
@@ -429,7 +429,7 @@ class _GasBottleSettingsCardState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'GAS CAPACITY (KG)',
+                      'GAS AMOUNT (KG)',
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                     const SizedBox(height: 8),
@@ -469,7 +469,7 @@ class _GasBottleSettingsCardState
                     )
                   : const Icon(Icons.save, color: Colors.black),
               label: Text(
-                _isSaving ? 'SAVING...' : 'SAVE BOTTLE CONFIGURATION',
+                _isSaving ? 'SAVING...' : 'SAVE BOTTLE DETAILS',
                 style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,

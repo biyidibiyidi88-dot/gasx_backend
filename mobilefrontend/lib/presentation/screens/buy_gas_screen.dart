@@ -58,7 +58,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'LOGISTICS',
+              'BUY GAS',
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w900,
@@ -67,7 +67,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
               ),
             ),
             Text(
-              'NODE SUPPLY MATRIX',
+              'GAS SUPPLIERS',
               style: TextStyle(
                 letterSpacing: 2,
                 fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
             ),
             alignment: Alignment.center,
             child: const Text(
-              'GRID_ACTIVE: DOUALA_CENTRAL',
+              'Gas suppliers near you',
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w900,
@@ -131,7 +131,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'REGIONAL NODES',
+              'NEARBY SUPPLIERS',
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w900,
@@ -148,7 +148,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
                   color: AppTheme.accentTeal,
                 ),
                 label: const Text(
-                  'AI RECOMMENDATION',
+                  'SUGGESTION',
                   style: TextStyle(
                     fontSize: 8,
                     fontWeight: FontWeight.w900,
@@ -281,7 +281,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${selected.storeName.toUpperCase()} MATRIX',
+              '${selected.storeName.toUpperCase()} STOCK',
               style: const TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w900,
@@ -297,7 +297,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
                 size: 16,
               ),
               label: const Text(
-                'TRACE ROUTE',
+                'Get directions',
                 style: TextStyle(
                   color: AppTheme.accentTeal,
                   fontSize: 10,
@@ -333,7 +333,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'CHOOSE A BOTTLE BRAND AND SIZE',
+                      'Choose a gas bottle',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 10,
@@ -372,10 +372,10 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
                     const SizedBox(height: 10),
                     Text(
                       selectedMatchesPreference
-                          ? 'Your saved brand and size were selected. You can change them above.'
+                          ? 'Your saved brand and size are selected. You can choose a different bottle above.'
                           : hasPreferredBottle
-                          ? 'Your saved bottle is in stock, and you selected a different variant. You can switch back above.'
-                          : 'Your saved bottle is not in stock here. Choose any available brand and size above.',
+                          ? 'Your saved bottle is in stock. You can choose it again above.'
+                          : 'Your saved bottle is out of stock here. Choose another bottle above.',
                       style: const TextStyle(
                         color: Colors.white54,
                         fontSize: 11,
@@ -422,7 +422,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
                           child: Text(
                             _orderingBottleId == selectedBottle.id
                                 ? 'ORDERING…'
-                                : 'ORDER SELECTED BOTTLE',
+                                : 'ORDER THIS BOTTLE',
                           ),
                         ),
                       ),
@@ -513,10 +513,10 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
                     : const Icon(Icons.my_location),
                 label: Text(
                   _gettingDeliveryLocation
-                      ? 'GETTING LOCATION…'
+                      ? 'FINDING LOCATION…'
                       : _deliveryPosition == null
                       ? 'USE MY CURRENT LOCATION'
-                      : 'UPDATE CURRENT LOCATION',
+                      : 'UPDATE MY LOCATION',
                 ),
               ),
             ),
@@ -524,7 +524,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
               const Padding(
                 padding: EdgeInsets.only(top: 6),
                 child: Text(
-                  'Your GPS location will be shared with the assigned delivery person.',
+                  'Your location will be shared with your delivery person.',
                   style: TextStyle(color: Colors.white54, fontSize: 11),
                 ),
               ),
@@ -698,7 +698,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('INTELLIGENCE UPLINK FAILED: $e')),
+          SnackBar(content: Text('Could not connect to the app: $e')),
         );
       }
     }
@@ -716,7 +716,7 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
             Icon(Icons.auto_awesome, color: AppTheme.accentTeal, size: 20),
             SizedBox(width: 8),
             Text(
-              'AI RECOMMENDATION',
+              'SUGGESTION',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
@@ -812,7 +812,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
               children: [
                 const Expanded(
                   child: Text(
-                    'CHECKOUT',
+                    'PAYMENT',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -847,7 +847,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
             _priceRow('TOTAL', total, isTotal: true),
             const SizedBox(height: 22),
             const Text(
-              'PAYMENT METHOD',
+              'CHOOSE HOW TO PAY',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 10,
@@ -880,7 +880,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
             const SizedBox(height: 16),
             if (_paymentMethod == null)
               const Text(
-                'Choose an operator to enter the wallet number to debit.',
+                'Choose Orange Money or MTN MoMo, then enter the phone number to pay from.',
                 style: TextStyle(color: Colors.white54, fontSize: 12),
               )
             else
@@ -891,8 +891,8 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
                   children: [
                     Text(
                       _paymentMethod == 'ORANGE_MONEY'
-                          ? 'ORANGE MONEY NUMBER TO DEBIT'
-                          : 'MTN MOMO NUMBER TO DEBIT',
+                          ? 'ORANGE MONEY PHONE NUMBER'
+                          : 'MTN MOMO PHONE NUMBER',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 10,
@@ -909,7 +909,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
                       maxLength: 9,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
-                        labelText: 'Phone number to debit',
+                        labelText: 'Phone number to pay from',
                         hintText: '6XX XXX XXX',
                         prefixText: '+237 ',
                         prefixStyle: TextStyle(
@@ -917,12 +917,12 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
                           fontWeight: FontWeight.w800,
                         ),
                         helperText:
-                            'Enter the number registered to this wallet.',
+                            'Enter the phone number linked to your wallet.',
                         counterStyle: TextStyle(color: Colors.white38),
                       ),
                       validator: (value) => (value ?? '').trim().length == 9
                           ? null
-                          : 'Enter all 9 digits of the wallet number.',
+                          : 'Enter the full 9-digit phone number.',
                     ),
                   ],
                 ),
@@ -946,7 +946,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
             if (_transactionId != null) ...[
               const SizedBox(height: 8),
               Text(
-                'DigiPay reference: $_transactionId',
+                'Payment reference: $_transactionId',
                 style: const TextStyle(color: Colors.white54, fontSize: 11),
               ),
             ],
@@ -972,7 +972,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
                           : () => _checkPayment(poll: false),
                       child: _checking
                           ? const Text('CHECKING PAYMENT…')
-                          : const Text('CHECK PAYMENT STATUS'),
+                          : const Text('CHECK PAYMENT'),
                     ),
             ),
             const SizedBox(height: 8),

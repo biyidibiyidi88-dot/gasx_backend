@@ -1,66 +1,95 @@
 import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 
-// Smart API configuration that detects environment
-const getApiBaseUrl = () => {
-  const isDevelopment = import.meta.env.DEV;
+const ONLINE_API_BASE_URL = 'https://web-production-c23ce.up.railway.app/api/';
+const normalizeBaseUrl = (url) => `${url.replace(/\/+$/, '')}/`;
 
-  // Android build routing logic
-  if (Capacitor.isNativePlatform()) {
-    if (isDevelopment) {
-      // Local dev builds map strictly to the host computer's backend
-      return 'http://10.0.2.2:8000/api/';
-    } else {
-      // Production builds map strictly to the Railway cloud backend
-      return 'https://gasx-backend-production.up.railway.app/api/';
-    }
+const getLocalFallbackBaseUrl = () => {
+  const explicitLocalUrl = import.meta.env.VITE_LOCAL_API_BASE_URL;
+  if (explicitLocalUrl) {
+    const normalized = normalizeBaseUrl(explicitLocalUrl);
+    if (normalized !== ONLINE_API_BASE_URL) return normalized;
   }
 
-  // If we have an explicit environment variable, use it (highest priority)
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    // Android emulator address for a backend running on the development host.
+    return 'http://10.0.2.2:8000/api/';
   }
 
-  // Check if we're running locally (localhost or 127.0.0.1)
-  const isLocalhost = window.location.hostname === 'localhost' || 
-                     window.location.hostname === '127.0.0.1' ||
-                     window.location.hostname === '0.0.0.0';
-  
-  // Only use local backend if we're both in dev mode AND on localhost
-  if (isDevelopment && isLocalhost) {
-    // Local development - use local Django server
-    return 'http://127.0.0.1:8000/api/';
-  } else {
-    // Production or deployed frontend - use Railway backend
-    return 'https://gasx-backend-production.up.railway.app/api';
+  // Backwards-compatible alias for existing browser/iOS development configs.
+  const legacyLocalUrl = import.meta.env.VITE_API_BASE_URL;
+  if (legacyLocalUrl) {
+    const normalized = normalizeBaseUrl(legacyLocalUrl);
+    if (normalized !== ONLINE_API_BASE_URL) return normalized;
   }
+
+  // Browser, iOS simulator, and desktop development. Physical devices can set
+  // VITE_LOCAL_API_BASE_URL to the computer's LAN address.
+  return 'http://127.0.0.1:8000/api/';
+};
+
+const LOCAL_API_BASE_URL = getLocalFallbackBaseUrl();
+
+const isPaymentInitiation = (config) =>
+  config?.method?.toLowerCase() === 'post' &&
+  /(?:^|\/)payments\/initiate\/?(?:\?|$)/i.test(config.url || '');
+
+const isSafeRead = (config) =>
+  ['get', 'head', 'options'].includes((config?.method || 'get').toLowerCase());
+
+const isNetworkFailure = (error) => {
+  if (error.response) return false;
+  if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') return true;
+
+  // A read can be retried after a timeout. Do not replay writes after a
+  // timeout because the online server may already have completed them.
+  return isSafeRead(error.config) && ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code);
 };
 
 const api = axios.create({
-  baseURL: getApiBaseUrl(),
+  baseURL: ONLINE_API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 10000,
 });
 
-// Request interceptor to add auth token to every request
+// Attach the saved login token to every API request.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Token ${token}`;
   }
   return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+}, (error) => Promise.reject(error));
 
-// Response interceptor for better error handling
+// Try the local backend only when the online server gives no HTTP response.
+// HTTP errors such as 401, 404, or 500 are returned as-is.
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    const requestBaseUrl = normalizeBaseUrl(config?.baseURL || '');
+    const canTryLocal =
+      config &&
+      requestBaseUrl === ONLINE_API_BASE_URL &&
+      !config._localFallbackAttempted &&
+      LOCAL_API_BASE_URL !== ONLINE_API_BASE_URL &&
+      !isPaymentInitiation(config) &&
+      isNetworkFailure(error);
+
+    if (canTryLocal) {
+      if (import.meta.env.DEV) {
+        console.warn('Online backend is unreachable; retrying on the local backend.');
+      }
+      return api.request({
+        ...config,
+        baseURL: LOCAL_API_BASE_URL,
+        _localFallbackAttempted: true,
+      });
+    }
+
     if (error.response?.status === 401) {
-      // Token expired or invalid - redirect to login
       localStorage.removeItem('authToken');
       window.location.href = '/login';
     }
@@ -68,15 +97,12 @@ api.interceptors.response.use(
   }
 );
 
-// Export the current API base URL for debugging
-export const getCurrentApiUrl = () => getApiBaseUrl();
+export const getCurrentApiUrl = () => ONLINE_API_BASE_URL;
 
-// Log current configuration in development
 if (import.meta.env.DEV) {
-  console.log('🔧 API Configuration:', {
-    baseURL: getApiBaseUrl(),
-    environment: import.meta.env.DEV ? 'development' : 'production',
-    hostname: window.location.hostname
+  console.log('API connection order:', {
+    primary: ONLINE_API_BASE_URL,
+    localFallback: LOCAL_API_BASE_URL,
   });
 }
 

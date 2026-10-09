@@ -14,16 +14,16 @@
         <div class="max-w-5xl mx-auto text-center">
           <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-8 animate-fade-in shadow-[0_0_30px_rgba(45,212,191,0.1)]">
             <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
-            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Autonomous Network v4.0.2</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Gas monitor for safer homes</span>
           </div>
           
           <h1 class="text-4xl sm:text-7xl font-black text-white mb-6 tracking-tighter uppercase italic leading-[0.9] animate-title">
-            LOGIC<br>
-            <span class="bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-600 bg-clip-text text-transparent">OVERDRIVE</span>
+            GAS<br>
+            <span class="bg-gradient-to-r from-teal-400 via-blue-500 to-indigo-600 bg-clip-text text-transparent">MONITORING</span>
           </h1>
           
           <p class="text-lg sm:text-xl text-white/40 mb-12 max-w-3xl mx-auto font-medium tracking-tight leading-relaxed animate-fade-in" style="animation-delay: 0.2s">
-            Industrial-grade gas telemetry powered by autonomous intelligence. Secure your infrastructure with zero-latency neural tracking.
+            Track gas levels, get leak alerts, and control your gas valve from one place.
           </p>
           
           <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8 animate-fade-in" style="animation-delay: 0.4s">
@@ -31,14 +31,14 @@
               to="/register" 
               class="group relative px-10 py-5 sm:px-14 sm:py-6 bg-teal-400 text-gray-950 font-black rounded-2xl sm:rounded-3xl transition-all duration-700 hover:scale-105 hover:shadow-[0_0_60px_rgba(45,212,191,0.5)] uppercase tracking-[0.3em] text-xs overflow-hidden"
             >
-              <span class="relative z-10 italic">Deploy Uplink</span>
+              <span class="relative z-10 italic">Create an account</span>
               <div class="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]"></div>
             </router-link>
             <router-link 
               to="/features" 
               class="px-10 py-5 sm:px-14 sm:py-6 bg-white/[0.02] backdrop-blur-2xl border border-white/10 text-white/60 font-black rounded-2xl sm:rounded-3xl transition-all duration-700 hover:bg-white/5 hover:text-white uppercase tracking-[0.3em] text-xs italic"
             >
-              Intelligence Hub
+              See how it works
             </router-link>
           </div>
         </div>
@@ -46,7 +46,7 @@
 
       <!-- Scroll Indicator -->
       <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-20 hover:opacity-100 transition-opacity duration-700 cursor-pointer">
-        <span class="text-[8px] font-black uppercase tracking-[0.5em] text-white italic">Stream Down</span>
+        <span class="text-[8px] font-black uppercase tracking-[0.5em] text-white italic">Scroll down</span>
         <div class="w-px h-16 bg-gradient-to-b from-teal-400 to-transparent"></div>
       </div>
     </section>
@@ -58,13 +58,13 @@
       <div class="container mx-auto px-6">
         <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-24">
           <div class="max-w-2xl">
-            <p class="text-xs font-black text-teal-400 uppercase tracking-[0.5em] mb-4 italic">Precision Engineering</p>
+            <p class="text-xs font-black text-teal-400 uppercase tracking-[0.5em] mb-4 italic">Simple and reliable</p>
             <h2 class="text-4xl sm:text-7xl font-black text-white tracking-tighter uppercase italic leading-none">
-              Core Network<br>Architecture
+              How the gas monitor<br>works
             </h2>
           </div>
           <div class="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] italic border-l border-white/5 pl-8 md:max-w-[200px]">
-            REDERIVING SCALABILITY THROUGH DECENTRALIZED SENSORY NODES.
+            Track gas use and control your sensors from one place.
           </div>
         </div>
         
@@ -89,7 +89,7 @@
             </p>
 
             <div class="mt-10 pt-8 border-t border-white/5 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-               <span class="text-[9px] font-black text-teal-400 uppercase tracking-widest italic">Sequence_0{{ index + 1 }}</span>
+               <span class="text-[9px] font-black text-teal-400 uppercase tracking-widest italic">Step {{ index + 1 }}</span>
                <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
             </div>
           </div>
@@ -105,11 +105,11 @@
         <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-32">
           <div class="lg:w-5/12">
             <h2 class="text-3xl sm:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tighter uppercase italic leading-[1.1]">
-              ZERO BIAS<br>
-              <span class="text-teal-400 decoration-white/10 underline underline-offset-8">TOTAL_LOGIC</span>
+              Clear gas information<br>
+              <span class="text-teal-400 decoration-white/10 underline underline-offset-8">ALL IN ONE PLACE</span>
             </h2>
             <p class="text-xl text-white/30 mb-14 font-medium leading-relaxed italic uppercase tracking-tighter">
-              Our neural interface provides real-time visualization of environmental metrics with military-grade precision.
+              See live readings from your gas sensors and get clear warnings when gas is detected.
             </p>
             <ul class="space-y-8">
               <li v-for="(item, index) in demoFeatures" :key="index" class="flex items-center group cursor-crosshair">
@@ -133,7 +133,7 @@
                  <div class="relative z-10 w-full h-full p-12 flex flex-col justify-between">
                     <div class="flex justify-between items-start">
                        <div class="space-y-1">
-                          <div class="text-[8px] font-black text-teal-400/50 uppercase tracking-widest italic">Signal_Strength</div>
+                          <div class="text-[8px] font-black text-teal-400/50 uppercase tracking-widest italic">Signal strength</div>
                           <div class="w-32 h-1 bg-white/5 rounded-full overflow-hidden"><div class="w-3/4 h-full bg-teal-400 animate-pulse"></div></div>
                        </div>
                        <div class="w-12 h-12 rounded-full border border-teal-400/40 border-t-teal-400 animate-spin"></div>
@@ -158,18 +158,18 @@
       
       <div class="container mx-auto px-6 relative z-10 text-center">
         <div class="max-w-4xl mx-auto space-y-12">
-          <div class="inline-block text-[10px] font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Final Validation</div>
+          <div class="inline-block text-[10px] font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Get started</div>
           <h2 class="text-5xl sm:text-9xl font-black text-white mb-8 tracking-tighter uppercase italic leading-[0.8] animate-pulse-slow">
-            SYNC YOUR<br>CONTROL
+            KEEP YOUR<br>GAS SAFE
           </h2>
           <p class="text-2xl text-white/30 mb-20 max-w-2xl mx-auto font-medium italic uppercase tracking-tighter">
-            Join the elite network of automated monitoring protocols.
+            Join people who use GasX to watch their gas levels and get safety alerts.
           </p>
           <router-link 
             to="/register" 
             class="group relative inline-block px-12 py-6 sm:px-20 sm:py-8 bg-teal-400 text-gray-950 font-black rounded-3xl sm:rounded-[2.5rem] transition-all duration-700 hover:scale-110 hover:shadow-[0_0_100px_rgba(45,212,191,0.6)] uppercase tracking-[0.4em] text-xs"
           >
-            <span class="relative z-10 italic">Initialize Deployment</span>
+            <span class="relative z-10 italic">Create an account</span>
             <div class="absolute inset-0 bg-white/40 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]"></div>
           </router-link>
         </div>
@@ -183,22 +183,22 @@ import { ref, h } from 'vue';
 
 const features = [
   {
-    title: "Real-time Hub",
-    description: "Nanosecond latency metrics delivered via our proprietary encrypted neural stream.",
+    title: "Live gas readings",
+    description: "See new gas readings as they arrive.",
     icon: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
       h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2.5', d: 'M13 10V3L4 14h7v7l9-11h-7z' })
     ])
   },
   {
-    title: "Log Analytics",
-    description: "Deep-packet inspection of all environmental variables with autonomous anomaly detection.",
+    title: "Usage history",
+    description: "Review past readings and spot changes in your gas use.",
     icon: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
       h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2.5', d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' })
     ])
   },
   {
-    title: "Global Mesh",
-    description: "Distributed monitoring network ensures redundant coverage across any infrastructure.",
+    title: "Multiple sensors",
+    description: "Connect and manage more than one gas sensor.",
     icon: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
       h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2.5', d: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9' })
     ])
@@ -206,11 +206,11 @@ const features = [
 ];
 
 const demoFeatures = [
-  "Autonomous sensory validation",
-  "Dynamic threshold adaptation",
-  "Neural pattern recognition",
-  "Multi-tenant logic isolation",
-  "99.999% Operational SLA"
+  "Automatic sensor checks",
+  "Choose when to get alerts",
+  "Find changes in gas use",
+  "Keep each account separate",
+  "Check when your system is online"
 ];
 </script>
 

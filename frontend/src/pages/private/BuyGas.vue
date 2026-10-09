@@ -10,12 +10,12 @@
       <div class="flex items-center justify-between px-8 py-5">
         <div class="flex items-center space-x-4">
           <div class="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Logistics / <span class="text-white/80">Node Supply Matrix</span></h1>
+          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Logistics / <span class="text-white/80">Buy gas</span></h1>
         </div>
         
         <div class="flex items-center gap-4">
            <div class="px-4 py-1.5 rounded-full bg-teal-400/5 border border-teal-400/20 text-[9px] font-black text-teal-400 uppercase tracking-widest italic">
-            GRID_ACTIVE: EU_WEST_1
+            Gas suppliers near you
           </div>
         </div>
       </div>
@@ -30,7 +30,7 @@
         <div class="lg:col-span-2 bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[3.5rem] p-12 h-[500px] relative overflow-hidden group/radar">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-teal-400/[0.03] via-transparent to-transparent opacity-50 group-hover/radar:opacity-100 transition-opacity duration-1000"></div>
           
-          <!-- Radar Grid -->
+          <!-- Radar Pro -->
           <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle, #2dd4bf 1px, transparent 1px); background-size: 40px 40px;"></div>
           
           <div class="relative h-full flex flex-col items-center justify-center text-center space-y-6">
@@ -41,13 +41,13 @@
             </div>
             
             <div class="space-y-2">
-              <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Geo-Registry Radar</h2>
-              <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] italic">Visualizing regional supply nodes across active grid.</p>
+              <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Nearby gas suppliers</h2>
+              <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.3em] italic">See gas suppliers near you.</p>
             </div>
 
             <div v-if="selectedStation" class="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 backdrop-blur-md">
               <div class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></div>
-              <span class="text-[9px] font-black text-white/80 uppercase tracking-widest italic">Locked on: {{ selectedStation.name }}</span>
+              <span class="text-[9px] font-black text-white/80 uppercase tracking-widest italic">Selected: {{ selectedStation.name }}</span>
             </div>
           </div>
 
@@ -58,8 +58,8 @@
         <!-- Node Registry (Stations List) -->
         <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[3rem] overflow-hidden flex flex-col h-[500px]">
           <div class="px-8 py-6 border-b border-white/5 flex justify-between items-center">
-            <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 italic">Regional Nodes</h2>
-            <div class="text-[9px] font-black text-teal-400 uppercase italic">{{ stations.length }} Detected</div>
+            <h2 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 italic">Nearby suppliers</h2>
+            <div class="text-[9px] font-black text-teal-400 uppercase italic">{{ stations.length }} found</div>
           </div>
           
           <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
@@ -73,7 +73,7 @@
               <div class="relative z-10 flex flex-col items-start gap-1">
                 <div class="flex justify-between items-center w-full">
                   <span class="text-lg font-black italic uppercase tracking-tighter transition-colors" :class="selectedStation?.id === station.id ? 'text-white' : 'text-white/60 group-hover:text-white'">{{ station.name }}</span>
-                  <span class="text-[9px] font-black text-teal-400/60 uppercase tracking-widest italic">APPROVED SUPPLIER</span>
+                  <span class="text-[9px] font-black text-teal-400/60 uppercase tracking-widest italic">Approved supplier</span>
                 </div>
                 <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest italic truncate w-full">{{ station.address }}</p>
               </div>
@@ -83,7 +83,7 @@
       </div>
 
       <section v-if="selectedStation" class="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-        <h2 class="text-sm font-black uppercase tracking-wider text-white">Order fulfilment</h2>
+        <h2 class="text-sm font-black uppercase tracking-wider text-white">How would you like to get your gas?</h2>
         <p class="mt-1 text-xs text-white/45">Choose to collect your bottle or have a delivery person bring it to you.</p>
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <select v-model="fulfillmentMethod" class="rounded-xl border border-white/10 bg-gray-900 px-4 py-3 text-sm text-white">
@@ -95,7 +95,7 @@
             <button type="button" @click="syncDeliveryLocation" :disabled="locationBusy" class="rounded-xl border border-teal-300/25 bg-teal-300/5 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-teal-100 disabled:opacity-50">
               {{ locationBusy ? 'Getting location…' : deliveryCoordinates ? 'Update current location' : 'Use my current location' }}
             </button>
-            <p v-if="deliveryCoordinates" class="text-xs text-white/45">Your GPS location will be shared with the assigned delivery person.</p>
+            <p v-if="deliveryCoordinates" class="text-xs text-white/45">Your location will be shared with the delivery person.</p>
             <p v-if="locationError" class="text-xs text-red-200">{{ locationError }}</p>
           </div>
         </div>
@@ -134,13 +134,13 @@
             <div class="flex justify-between text-white/65"><span>Delivery fee</span><span>{{ checkoutMethod === 'DELIVERY' ? '25' : '0' }} FCFA</span></div>
             <div class="flex justify-between font-black text-teal-300"><span>Total</span><span>{{ checkoutTotal.toLocaleString() }} FCFA</span></div>
           </div>
-          <p class="mt-4 text-xs font-bold uppercase tracking-wider text-white/55">Choose payment operator</p>
+          <p class="mt-4 text-xs font-bold uppercase tracking-wider text-white/55">Choose how to pay</p>
           <div class="mt-2 grid grid-cols-2 gap-3">
             <button type="button" @click="paymentOperator = 'ORANGE_MONEY'" :aria-pressed="paymentOperator === 'ORANGE_MONEY'" :class="paymentOperator === 'ORANGE_MONEY' ? 'border-orange-400 bg-orange-400/10 text-orange-200' : 'border-white/10 bg-white/5 text-white/65'" class="rounded-xl border px-4 py-3 text-sm font-bold">🟠 Orange Money</button>
             <button type="button" @click="paymentOperator = 'MTN_MOMO'" :aria-pressed="paymentOperator === 'MTN_MOMO'" :class="paymentOperator === 'MTN_MOMO' ? 'border-yellow-300 bg-yellow-300/10 text-yellow-100' : 'border-white/10 bg-white/5 text-white/65'" class="rounded-xl border px-4 py-3 text-sm font-bold">🟡 MTN MoMo</button>
           </div>
           <label v-if="paymentOperator" class="mt-4 block text-xs font-bold uppercase tracking-wider text-white/55">
-            {{ paymentOperator === 'ORANGE_MONEY' ? 'Orange Money' : 'MTN MoMo' }} number to debit
+            {{ paymentOperator === 'ORANGE_MONEY' ? 'Orange Money' : 'MTN MoMo' }} phone number for payment
             <span class="mt-2 flex rounded-xl border border-white/10 bg-white/5 text-white">
               <span class="border-r border-white/10 px-4 py-3 text-white/60">+237</span>
               <input v-model="payerPhone" :disabled="paymentOrderId !== null" type="tel" inputmode="numeric" maxlength="9" placeholder="6XX XXX XXX" class="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm tracking-normal text-white outline-none placeholder:text-white/30">
@@ -165,8 +165,8 @@
              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
           </div>
           <div>
-            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">{{ selectedStation.name }} Matrix</h3>
-            <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Available Capacities</h2>
+            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">{{ selectedStation.name }} stock</h3>
+            <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Gas bottles in stock</h2>
           </div>
         </div>
 
@@ -174,9 +174,9 @@
           <table class="w-full">
             <thead>
               <tr class="text-left text-[10px] font-black uppercase tracking-[0.4em] text-white/20 italic">
-                <th class="px-6 py-4">Matrix Component</th>
-                <th class="px-6 py-4 text-center">Protocol Level</th>
-                <th class="px-6 py-4 text-right">Acquisition</th>
+                <th class="px-6 py-4">Bottle</th>
+                <th class="px-6 py-4 text-center">Stock</th>
+                <th class="px-6 py-4 text-right">Price</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
@@ -194,7 +194,7 @@
                     'text-red-500 bg-red-400/10 border-red-500/20',
                     'px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border italic'
                   ]">
-                    {{ item.quantity }} UNITS_IN_NODE
+                    {{ item.quantity }} bottles in stock
                   </span>
                 </td>
                 <td class="px-6 py-8 text-right">
@@ -206,7 +206,7 @@
                   >
                     {{ String(selectedBottleId) === String(item.id) ? 'Selected' : 'Choose this bottle' }}
                   </button>
-                  <span v-else class="text-[9px] font-black text-white/10 uppercase tracking-widest italic">MATRIX_EMPTY</span>
+                  <span v-else class="text-[9px] font-black text-white/10 uppercase tracking-widest italic">No stock available</span>
                 </td>
               </tr>
             </tbody>

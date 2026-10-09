@@ -10,13 +10,13 @@
       <div class="flex items-center justify-between px-8 py-5">
         <div class="flex items-center space-x-4">
           <div class="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Allocation / <span class="text-white/80">Credit Protocol</span></h1>
+          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Plans / <span class="text-white/80">Choose a plan</span></h1>
         </div>
         
         <div class="flex items-center gap-6">
           <div class="text-right">
             <div class="text-[9px] font-black text-white/20 uppercase tracking-widest italic">Active Tier</div>
-            <div class="text-[11px] font-bold text-teal-400 uppercase italic tracking-widest">{{ currentPlan.name }} NODE</div>
+            <div class="text-[11px] font-bold text-teal-400 uppercase italic tracking-widest">{{ currentPlan.name }} plan</div>
           </div>
           <button @click="toggleTheme" class="p-2.5 bg-white/5 border border-white/10 rounded-xl text-white/40 hover:text-white transition-all">
             <svg v-if="isDark" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -35,18 +35,18 @@
         
         <div class="flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
           <div>
-            <h2 class="text-4xl font-black text-white italic uppercase tracking-tighter mb-2">Protocol Tiers</h2>
-            <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em] italic">Scale your monitoring matrix footprint</p>
+            <h2 class="text-4xl font-black text-white italic uppercase tracking-tighter mb-2">Choose a plan</h2>
+            <p class="text-[10px] font-bold text-white/30 uppercase tracking-[0.4em] italic">Choose how many gas sensors to use.</p>
           </div>
 
           <!-- Navigation Tabs -->
           <div class="flex p-1.5 bg-white/5 rounded-2xl border border-white/5">
-            <button @click="activeTab = 'plans'" :class="activeTab === 'plans' ? 'bg-teal-400 text-gray-950' : 'text-white/40 hover:text-white'" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 italic">Configuration</button>
-            <button @click="activeTab = 'payment'" :disabled="!selectedPlan" :class="activeTab === 'payment' ? 'bg-teal-400 text-gray-950' : 'text-white/40 hover:text-white disabled:opacity-20'" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 italic">Validation</button>
+            <button @click="activeTab = 'plans'" :class="activeTab === 'plans' ? 'bg-teal-400 text-gray-950' : 'text-white/40 hover:text-white'" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 italic">Plans</button>
+            <button @click="activeTab = 'payment'" :disabled="!selectedPlan" :class="activeTab === 'payment' ? 'bg-teal-400 text-gray-950' : 'text-white/40 hover:text-white disabled:opacity-20'" class="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 italic">Payment</button>
           </div>
         </div>
 
-        <!-- Plans Grid -->
+        <!-- Plans Pro -->
         <div v-if="activeTab === 'plans'" class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
           <div 
             v-for="plan in membershipPlans" 
@@ -55,14 +55,14 @@
             class="group/plan p-8 rounded-[2.5rem] border transition-all duration-500 cursor-pointer relative overflow-hidden"
             :class="selectedPlan?.id === plan.id ? 'bg-teal-400/10 border-teal-400/40 shadow-2xl' : 'bg-white/5 border-white/5 hover:border-white/20'"
           >
-            <div v-if="plan.popular" class="absolute top-6 right-6 px-3 py-1 bg-teal-400 rounded-full text-[8px] font-black text-gray-950 uppercase tracking-widest italic animate-pulse">OPTIMIZED_BIAS</div>
+            <div v-if="plan.popular" class="absolute top-6 right-6 px-3 py-1 bg-teal-400 rounded-full text-[8px] font-black text-gray-950 uppercase tracking-widest italic animate-pulse">Best value</div>
             
             <div class="relative z-10 space-y-6">
               <div>
-                <h4 class="text-[11px] font-black text-teal-400/60 uppercase tracking-widest mb-1 italic">{{ plan.name }} Matrix</h4>
+                <h4 class="text-[11px] font-black text-teal-400/60 uppercase tracking-widest mb-1 italic">{{ plan.name }} plan</h4>
                 <div class="flex items-baseline gap-2">
                   <span class="text-4xl font-black text-white italic tracking-tighter">{{ plan.displayPrice.toLocaleString() }}</span>
-                  <span class="text-[10px] font-black text-white/20 uppercase tracking-widest italic">FCFA / Cycle</span>
+                  <span class="text-[10px] font-black text-white/20 uppercase tracking-widest italic">FCFA / month</span>
                 </div>
               </div>
 
@@ -74,7 +74,7 @@
               </ul>
 
               <button class="w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 italic" :class="selectedPlan?.id === plan.id ? 'bg-teal-400 text-gray-950' : 'bg-white/5 text-white border border-white/10 group-hover/plan:bg-white/10'">
-                Lock Tier Logic
+                Choose this plan
               </button>
             </div>
           </div>
@@ -86,11 +86,11 @@
             
             <!-- Terminal Params -->
             <div class="space-y-8 bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 italic ml-4">Terminal Identification</h3>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 italic ml-4">Your details</h3>
               
               <div class="space-y-4">
                  <div class="space-y-2 group/input">
-                    <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Uplink Signal (Phone)</label>
+                    <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Phone number</label>
                     <div class="flex gap-2">
                       <div class="px-4 py-4 bg-white/5 border border-white/5 rounded-2xl text-white/40 text-sm font-black italic">+237</div>
                       <input v-model="phoneNumber" type="tel" placeholder="6XX XXX XXX" class="flex-1 px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.08] focus:outline-none text-white text-sm font-black italic tracking-tight transition-all">
@@ -98,7 +98,7 @@
                 </div>
 
                 <div class="space-y-3">
-                   <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Protocol Provider</label>
+                   <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Payment method</label>
                    <div class="grid grid-cols-2 gap-4">
                     <button 
                       v-for="method in paymentMethods" 
@@ -115,18 +115,18 @@
               </div>
             </div>
 
-            <!-- Validation Summary -->
+            <!-- Payment Summary -->
             <div class="space-y-8 bg-white/5 p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden group/summary">
               <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-teal-400/[0.03] to-transparent pointer-events-none"></div>
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 italic ml-4 relative z-10">Verification Buffer</h3>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 italic ml-4 relative z-10">Order summary</h3>
               
               <div class="space-y-4 relative z-10">
-                <div v-for="(val, label) in { TIER: selectedPlan.name, CYCLE: 'MONTHLY', NODES: selectedPlan.sensors }" :key="label" class="flex justify-between items-center border-b border-white/5 pb-2">
-                  <span class="text-[9px] font-black text-white/20 uppercase tracking-widest italic">{{ label }}_IDENT</span>
+                <div v-for="(val, label) in { PLAN: selectedPlan.name, MONTH: 'MONTHLY', SENSORS: selectedPlan.sensors }" :key="label" class="flex justify-between items-center border-b border-white/5 pb-2">
+                  <span class="text-[9px] font-black text-white/20 uppercase tracking-widest italic">{{ label }}</span>
                   <span class="text-[11px] font-black text-white italic">{{ val }}</span>
                 </div>
                 <div class="flex justify-between items-center pt-4">
-                  <span class="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] italic">TOTAL_ACQUISITION</span>
+                  <span class="text-[10px] font-black text-teal-400 uppercase tracking-[0.2em] italic">Total</span>
                   <span class="text-2xl font-black text-white italic tracking-tighter underline decoration-teal-400/40">{{ selectedPlan.displayPrice.toLocaleString() }} FCFA</span>
                 </div>
               </div>
@@ -136,8 +136,8 @@
                 :disabled="isProcessing || !phoneNumber"
                 class="w-full py-5 bg-teal-400 hover:bg-teal-300 disabled:bg-white/5 disabled:text-white/20 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 transition-all hover:shadow-[0_0_40px_rgba(45,212,191,0.4)] relative z-10 overflow-hidden"
               >
-                 <span v-if="isProcessing">{{ paymentStatus === 'pending' ? 'WAITING_FOR_USER_SIGNAL' : 'SYNCHRONIZING_CREDIT...' }}</span>
-                 <span v-else>INITIATE_ALLOCATION_SYNC</span>
+                 <span v-if="isProcessing">{{ paymentStatus === 'pending' ? 'Waiting for you to approve the payment...' : 'Confirming payment...' }}</span>
+                 <span v-else>Start payment</span>
               </button>
             </div>
           </div>
@@ -146,8 +146,8 @@
           <div v-if="paymentStatus === 'success'" class="bg-teal-400/10 border border-teal-400/20 p-6 rounded-3xl flex items-center gap-6 animate-pulse">
             <div class="w-12 h-12 rounded-2xl bg-teal-400/20 flex items-center justify-center text-teal-400"><svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>
             <div>
-              <h4 class="text-[11px] font-black text-teal-400 uppercase tracking-widest italic">ALLOCATION_SUCCESS</h4>
-              <p class="text-[9px] font-bold text-white/40 uppercase tracking-widest italic leading-relaxed">Matrix footprint expanded. Node ID: {{ transactionRef }} activated.</p>
+              <h4 class="text-[11px] font-black text-teal-400 uppercase tracking-widest italic">Payment complete</h4>
+              <p class="text-[9px] font-bold text-white/40 uppercase tracking-widest italic leading-relaxed">Your plan is active. Payment reference: {{ transactionRef }}.</p>
             </div>
           </div>
         </div>
@@ -167,8 +167,8 @@ const CAMPAY_BASE_URL = 'https://demo.campay.net/api'
 const CAMPAY_ACCESS_TOKEN = '81306ed002da31cea33d6d04ce2c7ccbc08b6aa5'
 
 const membershipPlans = [
-  { id: 'basic', name: 'Basic', displayPrice: 9990, apiPrice: 99, sensors: 1, features: ['1 Sensor Instance', 'SMTP Alert Uplink', 'Standard Telemetry'], popular: false },
-  { id: 'pro', name: 'Professional', displayPrice: 19990, apiPrice: 199, sensors: 5, features: ['5 Sensor Instances', 'Multi-Channel Alerting', 'AI Predicitive Bias'], popular: true }
+  { id: 'basic', name: 'Basic', displayPrice: 9990, apiPrice: 99, sensors: 1, features: ['1 gas sensor', 'Email alerts', 'Gas readings'], popular: false },
+  { id: 'pro', name: 'Professional', displayPrice: 19990, apiPrice: 199, sensors: 5, features: ['5 gas sensors', 'App, email, and text alerts', 'Gas use reports'], popular: true }
 ]
 
 const paymentMethods = [

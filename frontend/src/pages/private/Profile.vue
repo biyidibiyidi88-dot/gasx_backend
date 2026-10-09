@@ -20,7 +20,7 @@
       <div class="flex items-center justify-between px-8 py-5">
         <div class="flex items-center space-x-4">
           <div class="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Identity / <span class="text-white/80">Node Configuration</span></h1>
+          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Identity / <span class="text-white/80">Account settings</span></h1>
         </div>
         
         <button 
@@ -29,7 +29,7 @@
           class="group flex items-center px-6 py-2.5 bg-teal-400 hover:bg-teal-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 transition-all hover:shadow-[0_0_20px_rgba(45,212,191,0.4)]"
         >
           <svg v-if="isUpdating" class="animate-spin -ml-1 mr-2 h-3.5 w-3.5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          {{ isUpdating ? 'Processing...' : 'Commit Changes' }}
+          {{ isUpdating ? 'Processing...' : 'Save changes' }}
         </button>
       </div>
     </header>
@@ -65,17 +65,17 @@
           <div class="flex-1 space-y-6">
             <div>
               <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">{{ userStore.userProfile?.first_name }} {{ userStore.userProfile?.last_name }}</h2>
-              <p class="text-[10px] font-black text-teal-400/60 uppercase tracking-[0.3em] italic">Authorized Node Member</p>
+              <p class="text-[10px] font-black text-teal-400/60 uppercase tracking-[0.3em] italic">Account member</p>
             </div>
             
             <div class="grid grid-cols-2 gap-4 max-w-sm">
               <div class="bg-white/5 rounded-2xl p-4 border border-white/5 group/stat">
-                <div class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 italic">Identity Uplink</div>
+                <div class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 italic">Email address</div>
                 <div class="text-[11px] font-bold text-white/60 uppercase truncate italic">{{ userStore.userProfile?.email }}</div>
               </div>
               <div class="bg-white/5 rounded-2xl p-4 border border-white/5 group/stat">
-                <div class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 italic">Registry Date</div>
-                <div class="text-[11px] font-bold text-white/60 uppercase italic">CYCLE_JAN_2026</div>
+                <div class="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 italic">Member since</div>
+                <div class="text-[11px] font-bold text-white/60 uppercase italic">January 2026</div>
               </div>
             </div>
           </div>
@@ -87,27 +87,27 @@
         
         <!-- Left: Basic Attributes -->
         <div class="lg:col-span-2 space-y-8 p-10 bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[3rem]">
-          <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Attribute Modification</h3>
+          <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Edit your details</h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="space-y-4">
                <div class="space-y-2 group/input">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Forename Identifier</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">First name</label>
                 <input v-model="userStore.userProfile.first_name" type="text" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.08] focus:outline-none text-white text-sm font-black italic tracking-tight transition-all duration-500">
               </div>
               <div class="space-y-2 group/input">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Surname Extension</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Last name</label>
                 <input v-model="userStore.userProfile.last_name" type="text" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.08] focus:outline-none text-white text-sm font-black italic tracking-tight transition-all duration-500">
               </div>
             </div>
 
             <div class="space-y-4">
               <div class="space-y-2 opacity-50 cursor-not-allowed">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Encrypted Uplink (Read-Only)</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Email address (cannot be changed)</label>
                 <input :value="userStore.userProfile.email" type="email" disabled class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl text-white/40 text-sm font-black italic tracking-tight">
               </div>
               <div class="space-y-2 group/input">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Communication Link / Phone</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic group-focus-within/input:text-teal-400 transition-colors">Phone number</label>
                 <input v-model="userStore.userProfile.phone_number" type="tel" class="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.08] focus:outline-none text-white text-sm font-black italic tracking-tight transition-all duration-500">
               </div>
             </div>
@@ -117,12 +117,12 @@
         <!-- Right: Destructive Logic -->
         <div class="bg-red-500/[0.02] border border-red-500/10 rounded-[3rem] p-10 flex flex-col justify-between group/danger">
           <div class="space-y-4">
-            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-red-400/40 italic">Terminal Commands</h3>
-            <p class="text-[11px] font-bold text-white/30 uppercase tracking-widest leading-loose italic">Attention: Node termination will permanently erase all registry data, historical telemetry, and authorized access. This logic cannot be reversed.</p>
+            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-red-400/40 italic">Delete account</h3>
+            <p class="text-[11px] font-bold text-white/30 uppercase tracking-widest leading-loose italic">Deleting your account permanently removes your account and history. This cannot be undone.</p>
           </div>
           
           <button @click="confirmDeleteAccount = true" class="w-full py-5 border border-red-500/20 rounded-2xl text-red-400 hover:bg-red-500 hover:text-white transition-all duration-500 text-[10px] font-black uppercase tracking-[0.3em] italic">
-            PURGE_IDENTITY_NODE
+            DELETE MY ACCOUNT
           </button>
         </div>
       </div>
@@ -139,7 +139,7 @@
           <img :src="userStore.userProfile?.profile_image_url" class="max-w-full max-h-[70vh] object-contain rounded-[2rem] border-2 border-white/10 shadow-2xl relative z-10" alt="Identity Preview">
           
           <div class="absolute -top-16 inset-x-0 flex justify-center gap-4">
-             <button @click="removeProfileImage" class="px-6 py-3 bg-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl hover:bg-red-600 transition-all">Detach Image</button>
+             <button @click="removeProfileImage" class="px-6 py-3 bg-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl hover:bg-red-600 transition-all">Remove photo</button>
              <button @click="showImageModal = false" class="px-6 py-3 bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl hover:bg-white/20 transition-all">Close</button>
           </div>
         </div>
@@ -152,18 +152,18 @@
             </div>
             
             <div>
-              <h3 class="text-[11px] font-black uppercase tracking-[0.4em] text-red-500/60 mb-2 italic">DANGER_PROTOCOL</h3>
-              <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Terminate Node?</h2>
+              <h3 class="text-[11px] font-black uppercase tracking-[0.4em] text-red-500/60 mb-2 italic">Delete account</h3>
+              <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Delete your account?</h2>
             </div>
             
             <div class="space-y-4">
-              <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest italic text-center">Type "<span class="text-white/60">delete my account</span>" to confirm logic purge.</p>
+              <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest italic text-center">Type "<span class="text-white/60">delete my account</span>" to confirm.</p>
               <input v-model="deleteConfirmationText" type="text" class="w-full px-6 py-4 bg-white/5 border border-red-500/10 rounded-xl focus:border-red-500 focus:outline-none text-white text-center font-black italic">
             </div>
 
             <div class="flex gap-4">
               <button @click="confirmDeleteAccount = false; deleteConfirmationText = ''" class="flex-1 py-4 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-xl transition-all">Abort</button>
-              <button @click="deleteAccount" :disabled="deleteConfirmationText.toLowerCase() !== 'delete my account'" class="flex-1 py-4 bg-red-500 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-20 rounded-xl hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-all">Confirm Purge</button>
+              <button @click="deleteAccount" :disabled="deleteConfirmationText.toLowerCase() !== 'delete my account'" class="flex-1 py-4 bg-red-500 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-20 rounded-xl hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] transition-all">Confirm delete</button>
             </div>
           </div>
         </div>
@@ -208,7 +208,7 @@ const closeAllModals = () => {
 const onFileChange = (e) => {
   const file = e.target.files[0]
   if (!file) return
-  if (file.size > 10 * 1024 * 1024) return showNotificationMessage('Logic error: Signal too large (Max 10MB)', 'error')
+  if (file.size > 10 * 1024 * 1024) return showNotificationMessage('Image is too large. The limit is 10 MB.', 'error')
   
   selectedFile.value = file
   const reader = new FileReader()
@@ -243,8 +243,8 @@ const updateProfile = async () => {
   isUpdating.value = true
   try {
     await userStore.updateProfile(userStore.userProfile)
-    showNotificationMessage('Node logic updated')
-  } catch (e) { showNotificationMessage('Logic write failure', 'error') }
+    showNotificationMessage('Account details saved')
+  } catch (e) { showNotificationMessage('Could not save your account details', 'error') }
   finally { isUpdating.value = false }
 }
 
@@ -253,9 +253,9 @@ const deleteAccount = async () => {
   isDeleting.value = true
   try {
     await userStore.deleteAccount()
-    showNotificationMessage('Identity purged')
+    showNotificationMessage('Account deleted.')
     confirmDeleteAccount.value = false
-  } catch (e) { showNotificationMessage('Purge override failed', 'error') }
+  } catch (e) { showNotificationMessage('Could not delete your account', 'error') }
   finally { isDeleting.value = false }
 }
 

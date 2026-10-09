@@ -9,12 +9,12 @@
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center space-x-4">
           <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">System Command / <span class="text-white/80">Dashboard</span></h1>
+          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Home / <span class="text-white/80">Dashboard</span></h1>
         </div>
         
         <div class="flex items-center space-x-6">
           <div class="hidden sm:flex items-center space-x-2">
-            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Last Sync:</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Last updated:</span>
             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-teal-400/60">{{ formatTime(lastUpdated) }}</span>
           </div>
           <button @click="refreshData" class="group p-2 rounded-xl bg-white/5 border border-white/5 hover:border-teal-400/30 transition-all duration-300">
@@ -29,7 +29,7 @@
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6 custom-scrollbar">
       
-      <!-- Critical Alert / Intelligence Interrupt -->
+      <!-- Critical Alert / How it works Interrupt -->
       <transition name="slide-down">
         <div v-if="alert" class="relative group">
           <div class="absolute inset-0 bg-red-500/5 blur-2xl rounded-[1.5rem] sm:rounded-[2rem] opacity-50 group-hover:opacity-100 transition-opacity"></div>
@@ -40,12 +40,12 @@
               </svg>
             </div>
             <div class="flex-1">
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-red-400 mb-1 italic">Intelligence Interrupt // {{ alert.title }}</h3>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-red-400 mb-1 italic">Gas alert: {{ alert.title }}</h3>
               <p class="text-sm font-bold text-white/80 uppercase tracking-widest leading-relaxed">{{ alert.message }}</p>
             </div>
             <div class="flex items-center gap-3">
               <button v-if="alert.action" @click="alert.action.callback" class="px-6 py-2 bg-red-500/20 border border-red-500/30 text-[10px] font-black uppercase tracking-widest text-red-400 rounded-xl hover:bg-red-500/30 transition-all">
-                Execute Action
+                View details
               </button>
               <button @click="dismissAlert" class="p-2 text-white/20 hover:text-white transition-colors">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -55,13 +55,13 @@
         </div>
       </transition>
 
-      <!-- Top Row Grid -->
+      <!-- Top Row Pro -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         <!-- Tank Level Visualizer -->
         <div class="md:col-span-2 lg:col-span-1 bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 flex flex-col justify-between group hover:border-white/10 transition-all duration-500">
           <div class="flex justify-between items-center mb-8">
-            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Volumetric Status</h3>
+            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Gas level</h3>
             <span :class="[levelStatusClass, 'text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border border-current opacity-60']">{{ levelStatusText }}</span>
           </div>
 
@@ -79,7 +79,7 @@
               </svg>
               <div class="text-center group-hover:scale-110 transition-transform duration-500">
                 <div :class="[levelTextColorClass, 'text-5xl font-black italic tracking-tighter mb-1']">{{ Math.round(tank.level) }}%</div>
-                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Remanence</div>
+                <div class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Gas left</div>
               </div>
               <div class="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]"></div>
             </div>
@@ -88,18 +88,18 @@
           </div>
 
           <button @click="showRefillModal = true" class="mt-8 w-full py-4 bg-teal-400 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">
-            Schedule Refill Protocol
+            Order gas
           </button>
         </div>
 
-        <!-- Tank Metadata & Intelligence -->
+        <!-- Tank Metadata & How it works -->
         <div class="md:col-span-2 space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
             
-            <!-- Information Grid -->
+            <!-- Information Pro -->
             <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 space-y-8 flex flex-col justify-between">
               <div class="flex justify-between items-center">
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Node Metadata</h3>
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Sensor details</h3>
                 <svg class="h-4 w-4 text-white/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
 
@@ -112,7 +112,7 @@
 
               <div class="pt-4">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Daily Consumption Pattern</span>
+                  <span class="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Average gas use per day</span>
                   <span class="text-xs font-black text-teal-400 italic tracking-tight">{{ dailyUsage }} kg/day</span>
                 </div>
                 <div class="w-full bg-white/5 rounded-full h-1 overflow-hidden">
@@ -128,13 +128,13 @@
               <div class="flex justify-between items-center relative z-10">
                 <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic flex items-center">
                   <span class="w-1.5 h-1.5 rounded-full bg-teal-400 mr-2 animate-pulse shadow-[0_0_8px_rgba(45,212,191,0.5)]"></span>
-                  Predictive Analysis
+                  Gas use estimate
                 </h3>
               </div>
 
               <div v-if="isPredicting" class="flex-1 flex flex-col items-center justify-center space-y-4">
                 <div class="w-12 h-12 border-2 border-teal-400/20 border-t-teal-400 rounded-full animate-spin"></div>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 italic">Processing Logic...</span>
+                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 italic">Working...</span>
               </div>
 
               <div v-else class="space-y-8 relative z-10">
@@ -143,17 +143,17 @@
                     {{ prediction.trend === 'collecting' || prediction.days_remaining === 0 ? '--' : prediction.days_remaining }}
                   </div>
                   <div class="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-                    {{ prediction.trend === 'collecting' ? 'Intelligence Gathering...' : 'Projected Uptime / Days' }}
+                    {{ prediction.trend === 'collecting' ? 'Learning your gas use...' : 'Estimated days of gas left' }}
                   </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-center">
-                    <div class="text-[9px] font-black uppercase tracking-widest text-white/20 mb-1">Bias Confidence</div>
+                    <div class="text-[9px] font-black uppercase tracking-widest text-white/20 mb-1">Estimate accuracy</div>
                     <div class="text-lg font-black text-teal-400 italic tabular-nums">{{ (prediction.confidence * 100).toFixed(0) }}%</div>
                   </div>
                   <div class="bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-center">
-                    <div class="text-[9px] font-black uppercase tracking-widest text-white/20 mb-1">Trend Curve</div>
+                    <div class="text-[9px] font-black uppercase tracking-widest text-white/20 mb-1">Gas use trend</div>
                     <div class="text-lg font-black text-blue-400 italic uppercase">{{ prediction.trend }}</div>
                   </div>
                 </div>
@@ -176,8 +176,8 @@
         <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 hover:border-white/10 transition-all duration-500">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
             <div>
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Logic Stream</h3>
-              <div class="text-xl font-black text-white italic tracking-tight uppercase">Remanence History</div>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Gas level history</h3>
+              <div class="text-xl font-black text-white italic tracking-tight uppercase">Gas level history</div>
             </div>
             <div class="flex bg-white/5 rounded-xl p-1 border border-white/5">
               <button 
@@ -199,11 +199,11 @@
         <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 hover:border-white/10 transition-all duration-500">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
             <div>
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Resource Drain</h3>
-              <div class="text-xl font-black text-white italic tracking-tight uppercase">Consumption Intensity</div>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Gas use</h3>
+              <div class="text-xl font-black text-white italic tracking-tight uppercase">Gas used</div>
             </div>
             <div class="text-right">
-              <div class="text-[10px] font-black uppercase tracking-widest text-white/20 mb-0.5">Aggregate Drain</div>
+              <div class="text-[10px] font-black uppercase tracking-widest text-white/20 mb-0.5">Total gas used</div>
               <div class="text-lg font-black text-teal-400 italic tabular-nums">{{ totalConsumption.toFixed(2) }} kg</div>
             </div>
           </div>
@@ -246,7 +246,7 @@
           <div class="relative z-10">
             <div class="flex justify-between items-center mb-10">
               <div>
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 mb-1 italic">Protocol Entry</h3>
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 mb-1 italic">Refill details</h3>
                 <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Schedule Refill</h2>
               </div>
               <button @click="showRefillModal = false" class="p-2 text-white/20 hover:text-white transition-colors">
@@ -256,11 +256,11 @@
 
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Synchronization Node / Date</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Sensor / date</label>
                 <input type="date" v-model="refillDate" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic">
               </div>
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Temporal Window</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Delivery time</label>
                 <select v-model="refillTime" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic appearance-none cursor-pointer">
                   <option>Morning (8am-12pm)</option>
                   <option>Afternoon (12pm-4pm)</option>
@@ -268,13 +268,13 @@
                 </select>
               </div>
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Volume Requirement (KG)</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Bottle size (kg)</label>
                 <input type="number" v-model="refillQuantity" min="10" max="100" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold tabular-nums italic">
               </div>
 
               <div class="pt-6">
                 <button @click="scheduleRefill" class="w-full py-5 bg-teal-400 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all">
-                  Execute Transmission
+                  Book refill
                 </button>
               </div>
             </div>
@@ -291,8 +291,8 @@
           <div class="relative z-10">
             <div class="flex justify-between items-center mb-10">
               <div>
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 mb-1 italic">Core Configuration</h3>
-                <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Safety Bias</h2>
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 mb-1 italic">Main settings</h3>
+                <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Alert settings</h2>
               </div>
               <button @click="showSettingsModal = false" class="p-2 text-white/20 hover:text-white transition-colors">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -302,7 +302,7 @@
             <div class="space-y-8">
               <div class="space-y-2">
                 <div class="flex justify-between items-center px-4">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">Yellow Alert Pulse (%)</label>
+                  <label class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">Low gas warning (%)</label>
                   <span class="text-xs font-black text-white italic">{{ alertThresholds.lowLevel }}%</span>
                 </div>
                 <input type="range" v-model="alertThresholds.lowLevel" min="5" max="30" class="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-teal-400">
@@ -310,7 +310,7 @@
               
               <div class="space-y-2">
                 <div class="flex justify-between items-center px-4">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">Red Critical pulse (%)</label>
+                  <label class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">Very low gas warning (%)</label>
                   <span class="text-xs font-black text-red-400 italic">{{ alertThresholds.criticalLevel }}%</span>
                 </div>
                 <input type="range" v-model="alertThresholds.criticalLevel" min="1" max="15" class="w-full h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-red-400">
@@ -318,7 +318,7 @@
 
               <div class="pt-6">
                 <button @click="saveSettings" class="w-full py-5 bg-gradient-to-r from-teal-400 to-blue-500 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all">
-                  Commit Logic Change
+                  Save alert settings
                 </button>
               </div>
             </div>
@@ -409,10 +409,10 @@ const prediction = ref({
 
 // Computed Tank Info
 const tankInfo = computed(() => [
-  { label: 'Infrastructure Unit', value: 'Propane Node / V2' },
+  { label: 'Infrastructure Unit', value: 'Gas bottle / V2' },
   { label: 'Identity ID', value: tank.value.serialNumber },
-  { label: 'Volumetric Max', value: `${tank.value.capacity} KG` },
-  { label: 'Initial Uplink', value: tank.value.installationDate }
+  { label: 'Bottle capacity', value: `${tank.value.capacity} KG` },
+  { label: 'Installed on', value: tank.value.installationDate }
 ])
 
 // Styles & Status
@@ -423,9 +423,9 @@ const levelStatusClass = computed(() => {
 })
 
 const levelStatusText = computed(() => {
-  if (tank.value.level < alertThresholds.value.criticalLevel) return 'Protocol Red // Critical'
-  if (tank.value.level < alertThresholds.value.lowLevel) return 'Warning // Low Bias'
-  return 'Stable // Nominal'
+  if (tank.value.level < alertThresholds.value.criticalLevel) return 'Very low'
+  if (tank.value.level < alertThresholds.value.lowLevel) return 'Low gas'
+  return 'Gas level is normal'
 })
 
 const levelTextColorClass = computed(() => {
@@ -456,16 +456,16 @@ const dailyConsumptionData = computed(() => {
 })
 
 const quickActions = [
-  { text: 'Sync Refill', icon: 'M12 6v6m0 0v6m0-6h6m-6 0H6', handler: () => showRefillModal.value = true },
-  { text: 'Log Archive', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', handler: () => {} },
-  { text: 'Bias Logic', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', handler: () => showSettingsModal.value = true },
-  { text: 'AI Command', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', handler: () => router.push({ name: 'ai-chat' }) }
+  { text: 'Order gas', icon: 'M12 6v6m0 0v6m0-6h6m-6 0H6', handler: () => showRefillModal.value = true },
+  { text: 'Past readings', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', handler: () => {} },
+  { text: 'Alert settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', handler: () => showSettingsModal.value = true },
+  { text: 'Ask the assistant', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', handler: () => router.push({ name: 'ai-chat' }) }
 ]
 
 function getActionIconClass(text) {
-  if (text === 'Sync Refill') return 'text-teal-400'
-  if (text === 'Log Archive') return 'text-blue-400'
-  if (text === 'Bias Logic') return 'text-purple-400'
+  if (text === 'Order gas') return 'text-teal-400'
+  if (text === 'Past readings') return 'text-blue-400'
+  if (text === 'Alert settings') return 'text-purple-400'
   return 'text-cyan-400'
 }
 
@@ -490,7 +490,7 @@ const refreshData = async () => {
 }
 
 const scheduleRefill = () => {
-  alert(`Protocol Synchronized: Refill pending on ${refillDate.value} Window: ${refillTime.value}`)
+  alert(`Refill planned for ${refillDate.value} at ${refillTime.value}`)
   showRefillModal.value = false
   tank.value.lastRefill = new Date().toISOString().split('T')[0]
 }
@@ -513,9 +513,9 @@ const checkForAlerts = () => {
   if (leak) {
     alert.value = {
       type: 'error',
-      title: 'ANOMALY DETECTED',
-      message: `Critical pressure drop reported at Node Alpha. Direct intervention required.`,
-      action: { text: 'Abort Nodes', callback: () => {} }
+      title: 'GAS LEAK ALERT',
+      message: `A gas leak may be present. Check the alert and follow your safety steps.`,
+      action: { text: 'View sensor', callback: () => {} }
     }
     return
   }
@@ -523,16 +523,16 @@ const checkForAlerts = () => {
   if (tank.value.level < alertThresholds.value.criticalLevel) {
     alert.value = {
       type: 'error',
-      title: 'CRITICAL DEPLETION',
-      message: `System reserves at ${Math.round(tank.value.level)}%. Autonomous grid failure imminent.`,
-      action: { text: 'Execute Refill', callback: () => showRefillModal.value = true }
+      title: 'VERY LOW GAS',
+      message: `Only ${Math.round(tank.value.level)}% gas is left. Order a refill soon.`,
+      action: { text: 'Order gas', callback: () => showRefillModal.value = true }
     }
   } else if (tank.value.level < alertThresholds.value.lowLevel) {
     alert.value = {
       type: 'warning',
-      title: 'LOW BIAS DETECTED',
-      message: `Predicted exhaustion in ${prediction.value.days_remaining} cycles. Schedule sync.`,
-      action: { text: 'Queue Sync', callback: () => showRefillModal.value = true }
+      title: 'LOW GAS LEVEL',
+      message: `Your gas may run out in about ${prediction.value.days_remaining} days. Plan a refill.`,
+      action: { text: 'Order gas', callback: () => showRefillModal.value = true }
     }
   }
 }
@@ -598,7 +598,7 @@ const initializeCharts = () => {
       data: {
         labels: usageHistory.value.map(d => d.date),
         datasets: [{
-          label: 'Remanence',
+          label: 'Gas left',
           data: usageHistory.value.map(d => d.level),
           borderColor: '#2dd4bf',
           backgroundColor: createGradient(levelCtx, '#2dd4bf'),
@@ -631,7 +631,7 @@ const initializeCharts = () => {
       data: {
         labels: dailyConsumptionData.value.map(d => d.date),
         datasets: [{
-          label: 'Drain Intensity',
+          label: 'Gas used',
           data: dailyConsumptionData.value.map(d => d.consumption),
           backgroundColor: dailyConsumptionData.value.map(d => d.is_weekend ? '#3b82f6' : '#2dd4bf'),
           borderRadius: 6,

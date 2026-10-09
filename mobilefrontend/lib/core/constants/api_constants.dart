@@ -1,30 +1,51 @@
-import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  // Base URLs
-  static String get baseUrl {
-    if (kReleaseMode) {
-      return prodBaseUrl;
-    }
+  // Every app build tries Railway first, then the local Django server.
+  static const String onlineBaseUrl =
+      'https://web-production-c23ce.up.railway.app/api/';
 
-    // Check for web first as Platform is not available on web
-    if (kIsWeb) {
-      return 'http://localhost:8000/api/';
-    }
+  // Keep baseUrl for existing call sites; it always means the online primary.
+  static String get baseUrl => onlineBaseUrl;
 
-    // For mobile (Android emulator uses 10.0.2.2 to access host machine)
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/api/';
-    }
+  // Physical devices can override this at build time, for example:
+  // --dart-define=LOCAL_API_BASE_URL=http://192.168.1.10:8000/api/
+  static const String _localBaseUrlOverride = String.fromEnvironment(
+    'LOCAL_API_BASE_URL',
+  );
 
-    // iOS and Desktop
+  static String get localBaseUrl {
+    if (_localBaseUrlOverride.trim().isNotEmpty) {
+      return _normalizeBaseUrl(_localBaseUrlOverride);
+    }
+    if (kIsWeb) return 'http://localhost:8000/api/';
+    if (Platform.isAndroid) return 'http://10.0.2.2:8000/api/';
     return 'http://127.0.0.1:8000/api/';
   }
 
-  static const String localBaseUrl = 'http://127.0.0.1:8000/api/';
-  static const String prodBaseUrl =
-      'https://gasx-backend-production.up.railway.app/api/';
+  static List<String> get apiBaseUrls {
+    final local = localBaseUrl;
+    return local == onlineBaseUrl ? [onlineBaseUrl] : [onlineBaseUrl, local];
+  }
+
+  static String websocketUrlFor(String apiBaseUrl, String token) {
+    final normalizedBase = _normalizeBaseUrl(apiBaseUrl);
+    final serverBase = normalizedBase
+        .replaceFirst(RegExp(r'/api/?$'), '')
+        .replaceFirst(RegExp(r'/$'), '');
+    final websocketBase = serverBase
+        .replaceFirst(RegExp(r'^https://'), 'wss://')
+        .replaceFirst(RegExp(r'^http://'), 'ws://');
+    final encodedToken = Uri.encodeQueryComponent(token.trim());
+    return '$websocketBase/ws/gas-monitor/?token=$encodedToken';
+  }
+
+  static String _normalizeBaseUrl(String url) {
+    final trimmed = url.trim();
+    return trimmed.endsWith('/') ? trimmed : '$trimmed/';
+  }
 
   // Auth endpoints
   static const String register = 'auth/register/';

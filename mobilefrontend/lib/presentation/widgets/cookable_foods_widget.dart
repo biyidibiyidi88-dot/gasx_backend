@@ -128,7 +128,7 @@ class CookableFoodsWidget extends ConsumerWidget {
                 color: Colors.white.withOpacity(0.1), size: 48),
             const SizedBox(height: 16),
             Text(
-              'RESOURCE UNVIABLE',
+              'NOT ENOUGH GAS',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Colors.white.withOpacity(0.4),
                     fontWeight: FontWeight.w900,
@@ -136,7 +136,7 @@ class CookableFoodsWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Remaining gas insufficient for\nstandard cooking protocols.',
+              'There is not enough gas left to estimate cooking time.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withOpacity(0.2),

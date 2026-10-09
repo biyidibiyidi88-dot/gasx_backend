@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-[#020617] relative overflow-hidden font-['Inter',sans-serif] selection:bg-teal-500/30 selection:text-teal-200">
-    <!-- Bipsync 3D Grid Background -->
+    <!-- Bipsync 3D Pro Background -->
     <div class="absolute inset-0 z-0">
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#0f172a,transparent)]"></div>
       <div class="absolute inset-0" 
@@ -22,13 +22,13 @@
         <div>
           <div class="flex items-center space-x-3 mb-3">
             <div class="w-10 h-1 h-px bg-teal-400/50"></div>
-            <span class="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400/60">Neural Interface v4.0</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400/60">GasX assistant</span>
           </div>
           <h1 class="text-4xl sm:text-7xl font-black text-white uppercase italic tracking-tighter leading-none mb-4">
             AI <span class="text-transparent border-t border-b border-white/20 px-2">Assistant</span>
           </h1>
           <p class="text-sm font-medium text-white/40 max-w-xl uppercase tracking-widest leading-relaxed">
-            Holographic Intelligence for sub-surface telemetry and gas management optimization
+            Ask the GasX assistant about gas safety, readings, or orders.
           </p>
         </div>
 
@@ -57,7 +57,7 @@
         <div class="px-5 sm:px-10 py-4 sm:py-6 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
           <div class="flex items-center space-x-4">
             <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-            <span class="text-[10px] font-black uppercase tracking-[.3em] text-white">Neural Hub Initialized</span>
+            <span class="text-[10px] font-black uppercase tracking-[.3em] text-white">Assistant is ready</span>
           </div>
           <button 
             @click="refreshChat"
@@ -83,9 +83,9 @@
                 </svg>
               </div>
             </div>
-            <h2 class="text-3xl font-black text-white uppercase italic tracking-tighter mb-4">Intelligence Uplink</h2>
+            <h2 class="text-3xl font-black text-white uppercase italic tracking-tighter mb-4">Ask the assistant</h2>
             <p class="text-sm text-white/40 uppercase tracking-widest leading-relaxed mb-12 px-10">
-              Standing by for technical inquiries regarding storage pressure, safety protocols, and consumption analytics.
+              Ask me about gas safety, your gas level, or how to order a refill.
             </p>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
@@ -113,7 +113,7 @@
             ]">
               <!-- Identity Label -->
               <div :class="['text-[9px] font-black uppercase tracking-[.4em] mb-3 opactiy-40', message.role === 'user' ? 'text-teal-400' : 'text-blue-400']">
-                {{ message.role === 'user' ? 'Source Node' : 'Intelligence Engine' }}
+                {{ message.role === 'user' ? 'You' : 'GasX assistant' }}
               </div>
 
               <!-- Message Bubble -->
@@ -158,7 +158,7 @@
               <textarea
                 v-model="newMessage"
                 @keydown.enter.prevent="handleEnterKey"
-                placeholder="TRANSMIT REQUEST..."
+                placeholder="Type your question..."
                 :disabled="isLoading"
                 class="flex-1 bg-white/[0.03] border border-white/10 rounded-3xl p-6 text-sm text-white focus:outline-none focus:border-teal-500/50 focus:bg-white/[0.05] transition-all resize-none max-h-40 uppercase font-black tracking-widest placeholder:text-white/10 italic"
                 rows="1"
@@ -261,7 +261,7 @@ const sendQuickMessage = (message) => {
 const refreshChat = () => {
   messages.value = []
   newMessage.value = ''
-  showNotificationMessage('Buffer Purged')
+  showNotificationMessage('Chat cleared')
 }
 
 const sendMessage = async () => {
@@ -292,7 +292,7 @@ const sendMessage = async () => {
         messages: [
           {
             role: 'system',
-            content: 'You are the Bipsync AI, a high-fidelity intelligence hub for GaSX. You specialize in technical telemetry, safety optimization, and industrial gas logistics. Maintain a professional, data-centric, and sophisticated tone.'
+            content: 'You are the GasX assistant. Help people understand their gas readings, safety alerts, and orders. Use short sentences and common words. Explain technical terms in simple English.'
           },
           ...messages.value.map(m => ({ role: m.role, content: m.content }))
         ],
@@ -301,7 +301,7 @@ const sendMessage = async () => {
       })
     })
 
-    if (!response.ok) throw new Error('Uplink Interrupted')
+    if (!response.ok) throw new Error('Could not reach the assistant')
     const data = await response.json()
     
     messages.value.push({
@@ -310,12 +310,12 @@ const sendMessage = async () => {
       timestamp: new Date().toISOString()
     })
     
-    showNotificationMessage('Transmission Received')
+    showNotificationMessage('Message sent')
   } catch (error) {
-    showNotificationMessage('Uplink Failed', 'error')
+    showNotificationMessage('Could not reach the assistant', 'error')
     messages.value.push({
       role: 'assistant',
-      content: '⚠️ NODE TRANSMISSION FAILURE. RE-ESTABLISH CONNECTION.',
+      content: '⚠️ Could not send your message. Check your connection and try again.',
       timestamp: new Date().toISOString()
     })
   } finally {

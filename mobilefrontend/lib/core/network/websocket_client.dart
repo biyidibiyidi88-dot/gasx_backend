@@ -21,18 +21,6 @@ class WebSocketClient {
   Stream<Map<String, dynamic>> get stream => _controller.stream;
   bool get isConnected => _channel != null && !_isConnecting;
 
-  String get _wsUrl {
-    final base = ApiConstants.baseUrl;
-    // Strip trailing /api/ and replace protocol
-    final stripped = base.endsWith('/api/')
-        ? base.substring(0, base.length - '/api/'.length)
-        : base.replaceAll(RegExp(r'/api/?$'), '');
-    final wsBase = stripped
-        .replaceAll('http://', 'ws://')
-        .replaceAll('https://', 'wss://');
-    return '$wsBase/ws/gas-monitor/';
-  }
-
   Future<void> connect() async {
     if (_isConnecting || _channel != null) return;
     _isConnecting = true;
@@ -47,45 +35,67 @@ class WebSocketClient {
 
     if (token == null || token.isEmpty) {
       _isConnecting = false;
-      debugPrint('WebSocket: Connection aborted, no auth token found or storage exception');
+      debugPrint(
+        'WebSocket: Connection aborted, no auth token found or storage exception',
+      );
       return;
     }
 
-    final url = '$_wsUrl?token=${token.trim()}';
-    debugPrint('WebSocket: Connecting to $url');
+    for (final baseUrl in ApiConstants.apiBaseUrls) {
+      if (!_shouldReconnect) break;
 
-    try {
-      _channel = WebSocketChannel.connect(Uri.parse(url));
+      WebSocketChannel? candidate;
+      try {
+        final url = ApiConstants.websocketUrlFor(baseUrl, token);
+        candidate = WebSocketChannel.connect(Uri.parse(url));
+        await candidate.ready.timeout(const Duration(seconds: 8));
 
-      _isConnecting = false;
-      _reconnectDelay = 2;
-      debugPrint('WebSocket: Connection initialized');
+        if (!_shouldReconnect) {
+          await candidate.sink.close();
+          break;
+        }
 
-      _channel!.stream.listen(
-        (message) {
-          try {
-            final data = jsonDecode(message as String) as Map<String, dynamic>;
-            debugPrint('WebSocket: Received event type=${data['type']}');
-            _controller.add(data);
-          } catch (e) {
-            debugPrint('WebSocket: Error parsing message: $e');
-          }
-        },
-        onDone: () {
-          debugPrint('WebSocket: Connection closed');
-          _cleanupAndReconnect();
-        },
-        onError: (error) {
-          debugPrint('WebSocket: Connection error: $error');
-          _cleanupAndReconnect();
-        },
-        cancelOnError: false,
-      );
-    } catch (e) {
-      _isConnecting = false;
-      debugPrint('WebSocket: Exception while connecting: $e');
-      _cleanupAndReconnect();
+        _channel = candidate;
+        _isConnecting = false;
+        _reconnectDelay = 2;
+        debugPrint(
+          'WebSocket: Connected to ${baseUrl == ApiConstants.onlineBaseUrl ? 'online' : 'local'} backend',
+        );
+
+        candidate.stream.listen(
+          (message) {
+            try {
+              final data =
+                  jsonDecode(message as String) as Map<String, dynamic>;
+              debugPrint('WebSocket: Received event type=${data['type']}');
+              _controller.add(data);
+            } catch (e) {
+              debugPrint('WebSocket: Error parsing message: $e');
+            }
+          },
+          onDone: () {
+            debugPrint('WebSocket: Connection closed');
+            _cleanupAndReconnect();
+          },
+          onError: (error) {
+            debugPrint('WebSocket: Connection error: $error');
+            _cleanupAndReconnect();
+          },
+          cancelOnError: false,
+        );
+        return;
+      } catch (e) {
+        try {
+          await candidate?.sink.close();
+        } catch (_) {}
+        debugPrint(
+          'WebSocket: ${baseUrl == ApiConstants.onlineBaseUrl ? 'online' : 'local'} backend unavailable: $e',
+        );
+      }
     }
+
+    _isConnecting = false;
+    _cleanupAndReconnect();
   }
 
   void disconnect() {

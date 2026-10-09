@@ -10,7 +10,7 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-8 py-4 sm:py-5 gap-4">
         <div class="flex items-center space-x-4">
           <div class="w-1.5 h-1.5 sm:w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
-          <h1 class="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Infrastructure / <span class="text-white/80">Hardware Node Alpha</span></h1>
+          <h1 class="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Gas bottle / <span class="text-white/80">Gas sensor</span></h1>
         </div>
         
         <button 
@@ -63,7 +63,7 @@
 
             <!-- Labels & Indicators -->
             <div class="absolute inset-x-0 top-1/4 translate-y-2 pointer-events-none z-10 text-center">
-              <div class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.5em] text-white/20 mb-1 italic">Propane Node</div>
+              <div class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.5em] text-white/20 mb-1 italic">Gas bottle</div>
               <div class="text-2xl sm:text-4xl font-black text-white italic tracking-tighter uppercase drop-shadow-2xl">V2.Alpha</div>
             </div>
 
@@ -72,13 +72,13 @@
               <div class="flex items-center gap-2"><div class="w-4 h-0.5 bg-white/10"></div>75%</div>
               <div class="flex items-center gap-2"><div class="w-4 h-0.5 bg-white/10"></div>50%</div>
               <div class="flex items-center gap-2" :class="tank.level < 40 ? 'text-yellow-400/40' : ''"><div class="w-4 h-0.5 bg-current opacity-20"></div>25%</div>
-              <div class="flex items-center gap-2" :class="tank.level < 20 ? 'text-red-400/40' : ''"><div class="w-4 h-0.5 bg-current opacity-20"></div>MIN_CAP</div>
+              <div class="flex items-center gap-2" :class="tank.level < 20 ? 'text-red-400/40' : ''"><div class="w-4 h-0.5 bg-current opacity-20"></div>LOW</div>
             </div>
           </div>
 
           <div class="mt-8 sm:mt-12 text-center group-hover/viz:scale-105 transition-transform duration-700">
              <div class="text-4xl sm:text-6xl font-black text-white italic tracking-tighter tabular-nums mb-1">{{ Math.round(tank.level) }}%</div>
-             <div class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Volumetric Saturation</div>
+             <div class="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-white/30 italic">Gas left</div>
           </div>
         </div>
 
@@ -89,11 +89,11 @@
           <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 hover:border-white/10 transition-all duration-500">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 pb-6 border-b border-white/5 gap-4">
                <div>
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Node Identification</h3>
-                <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Hardware Telemetry</h2>
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic mb-1">Sensor name</h3>
+                <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Sensor readings</h2>
               </div>
               <span :class="[statusBadgeClass, 'px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-current opacity-80 italic']">
-                {{ tank.status }} Protocol
+                {{ tank.status }}
               </span>
             </div>
 
@@ -104,7 +104,7 @@
               </div>
             </div>
 
-            <!-- Intelligence Notification -->
+            <!-- How it works Notification -->
             <div :class="[statusCardClass, 'p-6 rounded-2xl flex items-center gap-6 border backdrop-blur-md relative overflow-hidden group/alert']">
               <div class="absolute inset-0 bg-white/5 opacity-0 group-hover/alert:opacity-100 transition-opacity"></div>
               <div class="w-12 h-12 rounded-2xl bg-current opacity-10 flex items-center justify-center flex-shrink-0"></div>
@@ -118,11 +118,11 @@
             </div>
           </div>
 
-          <!-- Secondary Interaction Grid -->
+          <!-- Secondary Interaction Pro -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <!-- Consumption Analysis -->
             <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 space-y-6">
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Cycle Analytics</h3>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 italic">Gas use history</h3>
               <div class="space-y-4">
                 <div v-for="stat in usageStats" :key="stat.label" class="flex justify-between items-baseline border-b border-white/5 pb-2">
                   <span class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">{{ stat.label }}</span>
@@ -147,7 +147,7 @@
           <div class="flex flex-col sm:flex-row gap-4">
             <button @click="refillTank" class="flex-1 py-4 sm:py-5 bg-teal-400 hover:bg-teal-300 rounded-2xl sm:rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 transition-all hover:shadow-[0_0_40px_rgba(45,212,191,0.4)] flex items-center justify-center gap-3 active:scale-95">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
-              Initialize Refill Protocol
+              Order a refill
             </button>
             <button class="py-4 sm:px-8 sm:py-5 bg-white/5 border border-white/10 rounded-2xl sm:rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-all group flex items-center justify-center">
               <svg class="h-5 w-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -178,22 +178,22 @@ const tank = ref({
 
 const tankSpecs = [
   { label: 'Propane Unit Type', value: 'V2 Cylinder' },
-  { label: 'Node Capacity', value: '6 KG / PRO' },
-  { label: 'Registry Serial', value: 'CAL-0842-AX' },
+  { label: 'Bottle size', value: '6 KG / PRO' },
+  { label: 'Serial number', value: 'CAL-0842-AX' },
   { label: 'Manufacturer ID', value: 'Calor LDT' }
 ];
 
 const usageStats = computed(() => [
-  { label: 'Projected Uptime', value: `${estimatedRemaining.value} Cycles` },
-  { label: 'Depletion Rate', value: '1.2 KG / CYCLE' },
-  { label: 'Last Log Entry', value: '3 DAYS PRIOR' }
+  { label: 'Estimated days of gas left', value: `${estimatedRemaining.value} days` },
+  { label: 'Daily gas use', value: '1.2 kg / day' },
+  { label: 'Last reading', value: '3 days ago' }
 ]);
 
 const safetyRules = [
-  'STORE UPRIGHT IN VENTILATED ZONE',
-  'MAINTAIN THERMAL BIAS CLEARANCE',
-  'REGULAR LEAK DETECTION PROTOCOL',
-  'SECURE VALVE DURING DORMANT PHASES'
+  'Keep the bottle upright in a well-aired place.',
+  'Keep the bottle away from heat.',
+  'Check the bottle and hose for leaks.',
+  'Close the valve when the bottle is not in use.'
 ];
 
 // Bubbles logic
@@ -241,15 +241,15 @@ const statusCardClass = computed(() => ({
 }[tank.value.status]));
 
 const statusMessage = computed(() => ({
-  'Nominal': 'INTELLIGENCE_NOMINAL',
-  'Low': 'LOW_RESERVE_BIAS',
-  'Critical': 'CRITICAL_DEPLETION_ALARM'
+  'Nominal': 'Working normally',
+  'Low': 'Low gas warning',
+  'Critical': 'Very low gas warning'
 }[tank.value.status]));
 
 const statusSubmessage = computed(() => ({
-  'Nominal': 'System operating within specified volumetric parameters.',
-  'Low': 'Node reserves dropping below stable threshold. Recommend refill.',
-  'Critical': 'Node failure imminent. Order immediate infrastructure resupply.'
+  'Nominal': 'Your gas level is good.',
+  'Low': 'Your gas is running low. Order a refill soon.',
+  'Critical': 'Your gas is almost gone. Order a refill now.'
 }[tank.value.status]));
 
 const statusIconPath = computed(() => ({

@@ -101,7 +101,7 @@ class _VendorInventoryScreenState extends ConsumerState<VendorInventoryScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not update this bottle stock.')),
+          const SnackBar(content: Text('Could not update bottle stock.')),
         );
       }
     } finally {
@@ -115,7 +115,7 @@ class _VendorInventoryScreenState extends ConsumerState<VendorInventoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'SUPPLIER INVENTORY',
+          'SUPPLIER STOCK',
           style: TextStyle(
             letterSpacing: 1.4,
             fontWeight: FontWeight.w900,
@@ -187,12 +187,12 @@ class _VendorInventoryScreenState extends ConsumerState<VendorInventoryScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('No inventory added yet.'),
+                  const Text('You have not added any stock yet.'),
                   const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: _saving ? null : _addBottle,
                     icon: const Icon(Icons.add),
-                    label: const Text('Add a bottle'),
+                    label: const Text('Add a gas bottle'),
                   ),
                 ],
               ),
@@ -271,7 +271,7 @@ class _BottleInventoryDialogState extends State<_BottleInventoryDialog> {
   Widget build(BuildContext context) {
     final bottle = widget.bottle;
     return AlertDialog(
-      title: Text(_isEditing ? 'Manage bottle stock' : 'Add bottle variant'),
+      title: Text(_isEditing ? 'Update bottle stock' : 'Add a gas bottle'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(

@@ -101,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'MEMBER LOGIN',
+                          'WELCOME BACK',
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                         const SizedBox(height: 8),

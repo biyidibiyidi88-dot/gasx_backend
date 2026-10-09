@@ -85,7 +85,8 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        request.user.auth_token.delete()
+        # Keep the account's DRF token stable across app logouts so linked
+        # devices such as the ESP32 continue using the same credential.
         logout(request)
         return Response(status=status.HTTP_200_OK)
 
@@ -782,7 +783,7 @@ class GasReadingCreateView(generics.CreateAPIView):
         sensor = gas_reading.sensor
         if raw_weight is not None:
             sensor.raw_weight = raw_weight
-            sensor.save(update_fields=['raw_weight'])
+            sensor.save(update_fields=['raw_weight', 'updated_at'])
 
         # Check if gas level is at or below critical thresholds
         remaining_gas_val = float(gas_reading.remaining_gas)
@@ -864,7 +865,11 @@ class GasReadingCreateView(generics.CreateAPIView):
         # Include current remote commands in response so ESP32 can act immediately
         headers = self.get_success_headers(serializer.data)
         response_data = serializer.data
-        response_data['valve_command'] = sensor.desired_valve_state
+        response_data['valve_command'] = (
+            sensor.desired_valve_state
+            if sensor.desired_valve_state != sensor.current_valve_state
+            else "NONE"
+        )
         response_data['alarm_command'] = sensor.desired_alarm_state
         return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -996,9 +1001,16 @@ class SensorDeviceCommandView(APIView):
                 sensor.desired_valve_state = "CLOSE"
                 sensor.save(update_fields=["desired_valve_state"])
 
+            # Send valve commands only until the device reports the target state.
+            # This prevents old CLOSE commands from undoing a newer local toggle.
+            valve_command = (
+                sensor.desired_valve_state
+                if sensor.desired_valve_state != sensor.current_valve_state
+                else "NONE"
+            )
             return Response({
                 "sensor_id": sensor.id,
-                "valve_command": sensor.desired_valve_state,
+                "valve_command": valve_command,
                 "desired_valve_state": sensor.desired_valve_state,
                 "current_valve_state": sensor.current_valve_state,
                 "alarm_command": sensor.desired_alarm_state,
@@ -1039,9 +1051,20 @@ class GasLeakAlertCreateView(APIView):
                     house__user=request.user,
                 )
                 # A detected leak always becomes a pending close command too.
+                fields_to_update = []
                 if sensor.desired_valve_state != "CLOSE":
                     sensor.desired_valve_state = "CLOSE"
-                    sensor.save(update_fields=["desired_valve_state"])
+                    fields_to_update.append("desired_valve_state")
+                # A leak alert must leave the device alarm armed, even if a
+                # previous remote command had silenced it.
+                if sensor.desired_alarm_state != "ARM":
+                    sensor.desired_alarm_state = "ARM"
+                    fields_to_update.append("desired_alarm_state")
+                if sensor.is_alarm_silenced:
+                    sensor.is_alarm_silenced = False
+                    fields_to_update.append("is_alarm_silenced")
+                if fields_to_update:
+                    sensor.save(update_fields=[*fields_to_update, "updated_at"])
 
                 # Create the alert using the serializer's method
                 alert = serializer.create_alert(serializer.validated_data)
@@ -1069,16 +1092,17 @@ class GasLeakAlertCreateView(APIView):
                 from .models import Notification
 
                 try:
-                    notification = Notification.objects.create(
-                        alert=alert,
-                        notification_method="EMAIL",
-                        recipient_address=alert.user.email,
-                        notification_status="SENT" if email_sent else "FAILED",
-                        error_message=email_error if email_error else None,
-                    )
-                    logging.info(
-                        f"Created notification record {notification.id} for gas leak alert {alert.id}"
-                    )
+                    if not Notification.objects.filter(alert=alert).exists():
+                        notification = Notification.objects.create(
+                            alert=alert,
+                            notification_method="EMAIL",
+                            recipient_address=alert.user.email,
+                            notification_status="SENT" if email_sent else "FAILED",
+                            error_message=email_error if email_error else None,
+                        )
+                        logging.info(
+                            f"Created notification record {notification.id} for gas leak alert {alert.id}"
+                        )
                 except Exception as e:
                     logging.error(f"Failed to create notification record: {str(e)}")
 

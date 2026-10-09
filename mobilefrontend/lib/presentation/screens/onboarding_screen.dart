@@ -17,33 +17,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingData> _slides = [
     OnboardingData(
-      title: 'AI-Powered Predictions',
-      headline: 'Smart Exhaustion Tracking',
-      description: 'Stop guessing. Our AI analyzes your unique usage patterns to predict your exact Exhaustion Date. Know precisely how many days of cooking you have left before you even start the stove.',
+      title: 'Gas use estimates',
+      headline: 'Know when gas is running low',
+      description: 'The app learns how quickly you use gas and estimates how many days are left in your bottle.',
       icon: Icons.auto_awesome,
     ),
     OnboardingData(
-      title: 'Your Intelligent AI Assistant',
-      headline: 'Meet Your Kitchen Manager',
-      description: "Chat with our integrated AI to check your status or plan your meals. Ask: 'Do I have enough gas for beans tonight?' and get an instant answer based on your real-time data.",
+      title: 'Help when you need it',
+      headline: 'Ask the GasX assistant',
+      description: "Ask about your gas level, safety, or meals. The assistant uses your latest readings to help.",
       icon: Icons.chat_bubble_outline,
     ),
     OnboardingData(
-      title: 'Instant Danger Alerts & SMS',
-      headline: '24/7 Multi-Channel Safety',
-      description: "Your safety is our priority. In case of a leak or fire, the system sends an Instant SMS to your phone and a Push Notification to the app, ensuring you're alerted even if you're offline.",
+      title: 'Gas leak and low gas alerts',
+      headline: 'Alerts when there is danger',
+      description: "If the sensor detects a gas leak, the valve closes and the app shows an alert.",
       icon: Icons.security_rounded,
     ),
     OnboardingData(
-      title: 'Auto-Shutoff Protection',
-      headline: 'Proactive Hardware Control',
-      description: "If danger is detected, the system automatically shuts off the gas flow at the source. We don't just monitor the danger; we stop it before it starts.",
+      title: 'Automatic gas shutoff',
+      headline: 'Gas valve closes when a leak is detected',
+      description: "If a gas leak is detected, the device closes the gas valve to help keep you safe.",
       icon: Icons.power_settings_new_rounded,
     ),
     OnboardingData(
-      title: 'Vendor Marketplace & Routing',
-      headline: 'Find & Route to Your Refill',
-      description: "Never run dry. View all nearby vendors selling your preferred gas brand. Compare prices, check availability, and get turn-by-turn map routing directly to the station.",
+      title: 'Find and order gas',
+      headline: 'Find a gas supplier nearby',
+      description: "Find nearby suppliers, compare prices, choose a bottle, and get directions to the shop.",
       icon: Icons.map_rounded,
     ),
   ];

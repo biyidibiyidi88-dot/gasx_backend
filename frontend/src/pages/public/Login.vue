@@ -20,10 +20,10 @@
             <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent italic">Dashboard</span>
           </h2>
           <p class="text-xl text-white/40 mb-12 font-medium leading-relaxed max-w-md">
-            Sign in to monitor your consumption and manage your hardware nodes efficiently.
+            Sign in to check your gas level, view alerts, and manage your sensors.
           </p>
 
-          <!-- Stats Grid -->
+          <!-- Stats Pro -->
           <div class="grid grid-cols-2 gap-8 mb-12">
             <div v-for="stat in stats" :key="stat.label" class="group/stat">
               <div class="text-3xl font-black text-white italic tracking-tighter group-hover/stat:text-teal-400 transition-colors">{{ stat.value }}</div>
@@ -31,7 +31,7 @@
             </div>
           </div>
 
-          <!-- Intelligence Log -->
+          <!-- Alerts -->
           <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 max-w-sm">
             <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 mb-6 flex items-center">
               <span class="w-1 h-1 bg-teal-400 rounded-full mr-2"></span>
@@ -224,7 +224,7 @@ const stats = [
 const logs = [
   { text: 'Auth Service Online', tag: 'OK', color: 'text-teal-400' },
   { text: 'Encryption Active', tag: 'SECURE', color: 'text-teal-400/60' },
-  { text: 'Mesh Network Node', tag: 'SYNCED', color: 'text-blue-400' }
+  { text: 'Sensor connection', tag: 'SYNCED', color: 'text-blue-400' }
 ];
 
 const validateEmail = (email) => {

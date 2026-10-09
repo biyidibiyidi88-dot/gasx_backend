@@ -20,7 +20,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final authState = ref.watch(authStateProvider);
     final user = authState.user;
 
-    if (user == null) return const Center(child: Text('LOGGED OUT'));
+    if (user == null) return const Center(child: Text('SIGNED OUT'));
 
     return Scaffold(
       appBar: AppBar(
@@ -28,7 +28,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'IDENTITY',
+              'ACCOUNT',
               style: TextStyle(
                 fontSize: 8,
                 fontWeight: FontWeight.w900,
@@ -37,7 +37,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             Text(
-              'NODE CONFIGURATION',
+              'ACCOUNT SETTINGS',
               style: TextStyle(
                 letterSpacing: 2,
                 fontWeight: FontWeight.bold,
@@ -141,7 +141,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'AUTHORIZED NODE MEMBER',
+                  'ACCOUNT HOLDER',
                   style: TextStyle(
                     fontSize: 8,
                     fontWeight: FontWeight.w900,
@@ -162,7 +162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'ATTRIBUTE MODIFICATION',
+          'EDIT YOUR DETAILS',
           style: TextStyle(
             fontSize: 8,
             fontWeight: FontWeight.w900,
@@ -171,17 +171,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        _buildTextField('FORENAME IDENTIFIER', user.firstName),
+        _buildTextField('FIRST NAME', user.firstName),
         const SizedBox(height: 16),
-        _buildTextField('SURNAME EXTENSION', user.lastName),
+        _buildTextField('LAST NAME', user.lastName),
         const SizedBox(height: 16),
         _buildTextField(
-          'ENCRYPTED UPLINK (READ-ONLY)',
+          'EMAIL ADDRESS (CANNOT BE CHANGED)',
           user.email,
           enabled: false,
         ),
         const SizedBox(height: 16),
-        _buildTextField('COMMUNICATION LINK', '+237 6XX XXX XXX'),
+        _buildTextField('PHONE NUMBER', '+237 6XX XXX XXX'),
       ],
     );
   }
@@ -252,7 +252,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'TERMINAL COMMANDS',
+            'DELETE ACCOUNT',
             style: TextStyle(
               fontSize: 8,
               fontWeight: FontWeight.w900,
@@ -262,7 +262,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'ATTENTION: NODE TERMINATION WILL PERMANENTLY ERASE ALL REGISTRY DATA AND AUTHORIZED ACCESS.',
+            'Deleting your account permanently removes your saved details and history. You cannot undo this.',
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.bold,
@@ -285,7 +285,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
               child: const Text(
-                'PURGE_IDENTITY_NODE',
+                'DELETE MY ACCOUNT',
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
@@ -310,7 +310,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('NODE LOGIC UPDATED')));
+        ).showSnackBar(const SnackBar(content: Text('Account details updated.')));
       }
     } catch (e) {
       if (mounted) {
@@ -375,7 +375,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'NODE CONFIGURATION SETTINGS',
+                      'ACCOUNT SETTINGS SETTINGS',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
@@ -387,7 +387,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                     // Bottle Size Dropdown
                     _buildDropdown(
-                      'BOTTLE_SIZE (FIXES CAPACITY)',
+                      'GAS BOTTLE SIZE',
                       localSize,
                       ['SMALL_6KG', 'MEDIUM_12_5KG', 'BIG_50KG'],
                       (val) {
@@ -410,7 +410,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                     // Bottle Brand Dropdown
                     _buildDropdown(
-                      'PREFERRED_BOTTLE_BRAND',
+                      'GAS BOTTLE BRAND',
                       localBrand,
                       [
                         'SCTM',
@@ -480,14 +480,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('CONFIGURATION SECURED'),
+                                content: Text('Settings saved.'),
                               ),
                             );
                           } catch (e) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('CONFIGURATION FAILED: $e'),
+                                content: Text('Could not save settings: $e'),
                               ),
                             );
                           }
@@ -501,7 +501,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                         child: const Text(
-                          'SAVE CONFIGURATION',
+                          'SAVE SETTINGS',
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
@@ -541,7 +541,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           _confirmDelete();
                         },
                         child: Text(
-                          'TERMINATE_ACCOUNT',
+                          'DELETE ACCOUNT',
                           style: TextStyle(
                             fontSize: 8,
                             fontWeight: FontWeight.w900,
@@ -563,6 +563,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _calculateTare(String size, String brand) {
     return BottleProfiles.estimatedTareFor(size, brand).toStringAsFixed(2);
+  }
+
+  String _bottleOptionLabel(String value) {
+    const labels = {
+      'SMALL_6KG': 'Small (6 kg)',
+      'MEDIUM_12_5KG': 'Medium (12.5 kg)',
+      'BIG_50KG': 'Large (50 kg)',
+      'TOTAL_ENERGIES': 'Total Energies',
+      'AZA_MRS': 'Aza MRS',
+    };
+    return labels[value] ?? value.replaceAll('_', ' ');
   }
 
   Widget _buildDropdown(
@@ -607,7 +618,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           items: items.map((String item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item.replaceAll('_', ' ')),
+              child: Text(_bottleOptionLabel(item)),
             );
           }).toList(),
           onChanged: (val) {
@@ -675,7 +686,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: const Color(0xFF0F172A),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text(
-          'DANGER_PROTOCOL',
+          'DELETE ACCOUNT',
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w900,
@@ -684,13 +695,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
         content: const Text(
-          'TERMINATE IDENTITY NODE? THIS LOGIC CANNOT BE REVERSED.',
+          'DELETE YOUR ACCOUNT? YOU CANNOT UNDO THIS.',
           style: TextStyle(fontSize: 14, color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ABORT'),
+            child: const Text('CANCEL'),
           ),
           TextButton(
             onPressed: () async {
@@ -702,13 +713,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               } catch (e) {
                 if (mounted) {
                   messenger.showSnackBar(
-                    SnackBar(content: Text('TERMINATION FAILED: $e')),
+                    SnackBar(content: Text('Could not delete your account: $e')),
                   );
                 }
               }
             },
             child: const Text(
-              'CONFIRM PURGE',
+              'CONFIRM DELETE',
               style: TextStyle(color: Colors.redAccent),
             ),
           ),

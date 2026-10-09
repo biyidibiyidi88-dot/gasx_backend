@@ -108,7 +108,7 @@ class PaymentInitiateView(APIView):
             bottle.stock_quantity -= 1
             bottle.save(update_fields=["stock_quantity", "updated_at"])
             delivery_fee = (
-                Decimal("25") if fulfillment == "DELIVERY" else Decimal("0")
+                Decimal("50") if fulfillment == "DELIVERY" else Decimal("0")
             )
             payment_amount = (bottle.price + delivery_fee).quantize(
                 Decimal("1"), rounding=ROUND_HALF_UP

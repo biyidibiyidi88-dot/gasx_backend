@@ -90,7 +90,7 @@
             @click.stop
           >
             <div class="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-              <h3 class="text-xs font-black uppercase tracking-[0.2em] text-white">Intelligence Log</h3>
+              <h3 class="text-xs font-black uppercase tracking-[0.2em] text-white">Alerts</h3>
               <button 
                 @click="markAllAsRead"
                 class="text-[10px] font-black uppercase tracking-widest text-teal-400 hover:text-teal-300 transition-colors"

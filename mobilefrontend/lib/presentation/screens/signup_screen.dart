@@ -154,7 +154,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         return;
       }
     } else if (_needsVerification && _identityCard == null) {
-      _showMessage('Upload your identity card to apply.');
+      _showMessage('Upload your ID card to apply.');
       return;
     }
 
@@ -382,8 +382,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   const SizedBox(height: 24),
                                   Text(
                                     _accountType == 'gas_supplier'
-                                        ? 'SUPPLIER VERIFICATION'
-                                        : 'DELIVERY PERSON VERIFICATION',
+                                        ? 'SUPPLIER ACCOUNT REVIEW'
+                                        : 'DELIVERY ACCOUNT REVIEW',
                                     style: const TextStyle(
                                       color: AppTheme.accentTeal,
                                       fontSize: 11,
@@ -393,7 +393,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   const Text(
-                                    'Applications stay pending until an administrator reviews the documents.',
+                                    'An admin must check your documents before approving this account.',
                                     style: TextStyle(
                                       color: Colors.white54,
                                       fontSize: 12,
@@ -401,15 +401,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                   _documentPicker(
-                                    'Identity card (PDF or image)',
+                                    'ID card (PDF or image)',
                                     _identityCard,
                                     () => _chooseDocument('identity'),
                                   ),
                                   const SizedBox(height: 10),
                                   _documentPicker(
                                     _accountType == 'gas_supplier'
-                                        ? 'Supporting authenticity document'
-                                        : 'Additional supporting document (optional)',
+                                        ? 'Business proof document'
+                                        : 'Extra document (optional)',
                                     _supportingDocument,
                                     () => _chooseDocument('support'),
                                     required: _accountType == 'gas_supplier',
@@ -456,7 +456,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                     const Padding(
                                       padding: EdgeInsets.only(top: 8),
                                       child: Text(
-                                        'Enter the business address, or provide both GPS coordinates. Coordinates are optional when the address is provided, but they place the shop on the map.',
+                                        'Enter the business address. You can also use your current location to show customers where the shop is.',
                                         style: TextStyle(
                                           color: Colors.white54,
                                           fontSize: 11,
@@ -500,7 +500,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                         : _handleSignup,
                                     child: Text(
                                       _submitting
-                                          ? 'SUBMITTING…'
+                                          ? 'SAVING…'
                                           : 'CREATE ACCOUNT',
                                     ),
                                   ),

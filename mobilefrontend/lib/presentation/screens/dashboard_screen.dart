@@ -57,7 +57,7 @@ class DashboardScreen extends ConsumerWidget {
       body: sensorsAsync.when(
         data: (sensors) {
           if (sensors.isEmpty) {
-            return const Center(child: Text('No sensors found'));
+            return const Center(child: Text('No gas sensors found.'));
           }
           final sensor = sensors.first;
           final predictionAsync = ref.watch(predictionProvider(sensor.id));
@@ -109,7 +109,7 @@ class DashboardScreen extends ConsumerWidget {
                       child: _buildStatCard(
                         context,
                         'STATUS',
-                        sensor.isActive ? 'NOMINAL' : 'OFFLINE',
+                        sensor.isActive ? 'READY' : 'OFFLINE',
                         sensor.isActive
                             ? AppTheme.accentTeal
                             : Colors.redAccent,
@@ -181,7 +181,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'PREDICTIVE ANALYSIS',
+                'GAS USE ESTIMATE',
                 style: Theme.of(
                   context,
                 ).textTheme.labelSmall?.copyWith(color: AppTheme.accentTeal),
@@ -206,8 +206,8 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 Text(
                   prediction.trend == 'collecting'
-                      ? 'COLLECTING DATA...'
-                      : 'PROJECTED UPTIME / DAYS',
+                      ? 'LEARNING YOUR GAS USE…'
+                      : 'ESTIMATED DAYS OF GAS LEFT',
                   style: const TextStyle(
                     fontSize: 10,
                     color: Colors.white24,
@@ -223,14 +223,14 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Expanded(
                 child: _buildSubPredictionStat(
-                  'CONFIDENCE',
+                  'ESTIMATE ACCURACY',
                   '${(prediction.confidenceScore * 100).toInt()}%',
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildSubPredictionStat(
-                  'TREND',
+                  'GAS USE TREND',
                   prediction.trend.toUpperCase(),
                 ),
               ),
@@ -248,7 +248,7 @@ class DashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'AI RECOMMENDATION',
+                  'SUGGESTION',
                   style: TextStyle(
                     fontSize: 8,
                     color: AppTheme.accentTeal,
@@ -322,20 +322,20 @@ class DashboardScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('NODE METADATA', style: Theme.of(context).textTheme.labelSmall),
+          Text('SENSOR DETAILS', style: Theme.of(context).textTheme.labelSmall),
           const SizedBox(height: 20),
-          _buildMetadataRow('IDENTITY ID', sensor.sensorId),
-          _buildMetadataRow('INFRASTRUCTURE', 'PROPANE NODE / V2'),
+          _buildMetadataRow('SENSOR ID', sensor.sensorId),
+          _buildMetadataRow('DEVICE TYPE', 'GAS SENSOR'),
           _buildMetadataRow(
-            'GROSS SCALE WEIGHT',
+            'BOTTLE WEIGHT',
             '${sensor.rawWeight.toStringAsFixed(2)} KG',
           ),
           _buildMetadataRow(
-            'VOLUMETRIC MAX',
+            'BOTTLE CAPACITY',
             '${capacity.toStringAsFixed(2)} KG',
           ),
           _buildMetadataRow(
-            'EMPTY WEIGHT / TARE',
+            'EMPTY BOTTLE WEIGHT',
             '${user?.tareWeight ?? "12.50"} KG',
           ),
         ],
@@ -479,7 +479,7 @@ class DashboardScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'GAS VALVE REMOTE CONTROL',
+                  'GAS VALVE CONTROL',
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.white38,

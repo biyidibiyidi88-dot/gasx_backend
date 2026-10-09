@@ -13,6 +13,7 @@
 #include <ESP32Servo.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <math.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -34,11 +35,10 @@ const int ALARM_SILENCE_PIN = 26;
 const int VALVE_CONTROL_BUTTON_PIN = 25;  // New button for valve control
 
 // Configuration
-const char* API_TOKEN = "84eae07987192e82a910087ba4112cc7f29055fd";
 const int SENSOR_ID = 13;
 const char* DEVICE_ID = "ESP32_GAS_001";
 const char* LOCATION = "Home Gas Monitor";
-const char* api_base_url = "https://gasx-backend-production.up.railway.app/api";
+const char* api_base_url = "https://web-production-c23ce.up.railway.app/api";
 
 // Thresholds
 const int GAS_NORMAL_THRESHOLD = 200;
@@ -46,10 +46,11 @@ const int GAS_WARNING_THRESHOLD = 400;
 const int GAS_CRITICAL_THRESHOLD = 600;
 
 // Timing
-const unsigned long READING_INTERVAL = 30000;
+const unsigned long READING_INTERVAL = 10000;
 const unsigned long WEIGHT_READING_INTERVAL = 10000;
 const unsigned long DEVICE_COMMAND_POLL_INTERVAL = 3000;
 const unsigned long ALERT_COOLDOWN = 10000;
+const unsigned long GAS_SAFE_RESET_MS = 10000;
 const unsigned long BUTTON_DEBOUNCE = 500;
 const unsigned long WIFI_CHECK_INTERVAL = 10000;
 const unsigned long LCD_REFRESH_INTERVAL = 500; // 500ms non-blocking refresh rate
@@ -74,6 +75,7 @@ Preferences preferences;
 WiFiManager wifiManager;
 Servo valveServo;
 HTTPClient http;
+String deviceApiToken;
 
 // State Variables
 struct {
@@ -90,13 +92,19 @@ struct {
   bool scaleReadingValid = false;
   bool valveClosed = false;
   bool gasSafetyLockout = false;
+  bool alarmArmed = true;
   bool alarmActive = false;
+  bool buzzerOutputOn = false;
+  unsigned long lastAlarmToggle = 0;
+  unsigned long safeGasSince = 0;
   float currentWeight = 0.0;
   float lastStableWeight = 0.0;
   float calibration_factor = 1.0;
   int currentGasLevel = 0;
   GasSeverity currentSeverity = GAS_LOW;
 } state;
+
+void syncValveStateToBackend();
 
 void setup() {
   Serial.begin(115200);
@@ -128,7 +136,11 @@ void setup() {
   // Restore saved valve state from flash storage (do NOT move motor on boot!)
   state.valveClosed = preferences.getBool("valve_closed", false);
   state.gasSafetyLockout = preferences.getBool("gas_lockout", false);
+  deviceApiToken = preferences.getString("api_token", "");
   Serial.printf("ℹ️ Valve boot state loaded: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
+  Serial.println(deviceApiToken.length() > 0
+                     ? "✅ API token loaded from device storage"
+                     : "⚠️ API token missing; provision it once with: set_token <token>");
 
   testLEDs();
   initializeLoadCell();
@@ -154,6 +166,7 @@ void loop() {
   handleWiFiConnection();
   handleButtons();
   monitorGas();
+  updateAlarmOutput();
   monitorWeight();
   handleLCDRefresh();
   if (millis() - state.lastDeviceCommandPollTime >= DEVICE_COMMAND_POLL_INTERVAL) {
@@ -205,8 +218,12 @@ void handleButtons() {
   if (digitalRead(VALVE_CONTROL_BUTTON_PIN) == LOW && 
       millis() - state.lastValveButtonPress > BUTTON_DEBOUNCE) {
     state.lastValveButtonPress = millis();
+    bool wasClosed = state.valveClosed;
     toggleValve();
     Serial.printf("🔧 Valve toggled: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
+    if (state.valveClosed != wasClosed) {
+      syncValveStateToBackend();
+    }
     
     // Update LCD to show valve status
     lcd.clear();
@@ -227,6 +244,29 @@ void handleButtons() {
   }
 }
 
+void syncValveStateToBackend() {
+  if (!state.wifiConnected || deviceApiToken.length() == 0) return;
+
+  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) + "/control-valve/");
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Token " + deviceApiToken);
+
+  StaticJsonDocument<128> doc;
+  doc["command"] = state.valveClosed ? "CLOSE" : "OPEN";
+  String payload;
+  serializeJson(doc, payload);
+
+  int code = http.POST(payload);
+  if (code == 200) {
+    Serial.println("☁️ Local valve state synced to backend");
+  } else {
+    Serial.printf("⚠️ Could not sync local valve state: HTTP %d\n", code);
+    if (code > 0) Serial.println(http.getString());
+  }
+  http.end();
+}
+
 void monitorGas() {
   int gasLevel = readGasSensor();
   
@@ -245,7 +285,21 @@ void monitorGas() {
   
   // Handle alerts for MEDIUM, HIGH and CRITICAL levels immediately upon gas detection
   if (newSeverity >= GAS_MEDIUM) {
+    state.safeGasSince = 0;
     handleGasAlert(gasLevel, newSeverity);
+  } else if (state.gasSafetyLockout) {
+    if (state.alarmActive) stopAlarmOutput();
+    // Require a continuous safe reading before allowing an intentional reopen.
+    if (state.safeGasSince == 0) state.safeGasSince = millis();
+    if (millis() - state.safeGasSince >= GAS_SAFE_RESET_MS) {
+      state.gasSafetyLockout = false;
+      preferences.putBool("gas_lockout", false);
+      state.safeGasSince = 0;
+      Serial.println("✅ Gas level stayed safe; valve can be opened manually or remotely");
+    }
+  } else {
+    if (state.alarmActive) stopAlarmOutput();
+    state.safeGasSince = 0;
   }
 }
 
@@ -263,8 +317,11 @@ void sendRegularReadings() {
     if (!state.wifiConnected) {
       Serial.println("⚠️  Skipping weight upload - WiFi not connected");
     } else if (state.scaleCalibrated && state.scaleReadingValid) {
-      sendWeightReading();
-      Serial.printf("📡 Gross bottle weight sent: %.2f kg\n", state.currentWeight);
+      if (sendWeightReading()) {
+        Serial.printf("📡 Backend accepted gross bottle weight: %.2f kg\n", state.currentWeight);
+      } else {
+        Serial.println("⚠️  Backend did not accept the weight; it will retry at the next interval");
+      }
     } else {
       Serial.println("⚠️  Skipping weight upload: scale is uncalibrated or reading is invalid");
     }
@@ -303,20 +360,38 @@ void initializeLoadCell() {
 }
 
 void loadCalibration() {
-  state.calibration_factor = preferences.getFloat("cal_factor", 0.0);
-  state.scaleCalibrated = preferences.getBool("cal_done", false);
-  if (state.scaleCalibrated) {
+  const float storedFactor = preferences.getFloat("cal_factor", 0.0f);
+  const bool calibrationMarkedDone = preferences.getBool("cal_done", false);
+  if (calibrationMarkedDone && isfinite(storedFactor) && fabsf(storedFactor) > 0.000001f) {
+    state.calibration_factor = storedFactor;
+    state.scaleCalibrated = true;
     scale.set_scale(state.calibration_factor);
     Serial.printf("✅ Calibration loaded: %.2f\n", state.calibration_factor);
   } else {
+    state.scaleCalibrated = false;
+    preferences.putBool("cal_done", false);
     Serial.println("⚠️  Scale not calibrated - use 'calibrate' command");
   }
 }
 
-void saveCalibration() {
-  preferences.putFloat("cal_factor", state.calibration_factor);
-  preferences.putBool("cal_done", true);
-  Serial.println("💾 Calibration saved");
+bool saveCalibration(float calibrationFactor) {
+  if (!isfinite(calibrationFactor) || fabsf(calibrationFactor) <= 0.000001f) {
+    Serial.println("❌ Calibration not saved: invalid calibration factor");
+    return false;
+  }
+
+  const size_t factorBytes = preferences.putFloat("cal_factor", calibrationFactor);
+  const size_t doneBytes = preferences.putBool("cal_done", true);
+  const float savedFactor = preferences.getFloat("cal_factor", 0.0f);
+  const bool savedDone = preferences.getBool("cal_done", false);
+  const bool saved = factorBytes == sizeof(float) && doneBytes > 0 && savedDone &&
+                     isfinite(savedFactor) && fabsf(savedFactor - calibrationFactor) < 0.000001f;
+  if (saved) {
+    Serial.println("💾 Calibration saved to ESP32 flash and verified");
+  } else {
+    Serial.println("❌ Calibration could not be verified in ESP32 flash");
+  }
+  return saved;
 }
 
 // Sensor Functions
@@ -382,10 +457,6 @@ void processDeviceCommands(JsonObject doc) {
     valveCmd.toUpperCase();
     if (valveCmd == "CLOSE") {
       if (!state.valveClosed) closeValve();
-      if (state.currentSeverity < GAS_MEDIUM && state.gasSafetyLockout) {
-        state.gasSafetyLockout = false;
-        preferences.putBool("gas_lockout", false);
-      }
       Serial.println("🔒 Remote command: Valve CLOSE acknowledged");
     } else if (valveCmd == "OPEN" && state.valveClosed) {
       if (state.currentSeverity >= GAS_MEDIUM || state.gasSafetyLockout) {
@@ -400,23 +471,27 @@ void processDeviceCommands(JsonObject doc) {
   if (doc.containsKey("alarm_command")) {
     String alarmCmd = doc["alarm_command"].as<String>();
     alarmCmd.toUpperCase();
-    if (alarmCmd == "SILENCE" && state.alarmActive) {
+    if (alarmCmd == "SILENCE") {
+      state.alarmArmed = false;
       silenceAlarm();
       Serial.println("🔇 Remote command: Alarm SILENCED");
-    } else if (alarmCmd == "ARM" && !state.alarmActive) {
-      state.alarmActive = true;
+    } else if (alarmCmd == "ARM") {
+      state.alarmArmed = true;
+      if (state.currentSeverity >= GAS_MEDIUM && !state.alarmActive) {
+        activateAlarm(state.currentSeverity);
+      }
       Serial.println("🔊 Remote command: Alarm ARMED");
     }
   }
 }
 
 void pollDeviceCommands() {
-  if (!state.wifiConnected) return;
+  if (!state.wifiConnected || deviceApiToken.length() == 0) return;
 
   http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) +
              "/device-command/?current_valve=" + (state.valveClosed ? "CLOSE" : "OPEN"));
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  http.addHeader("Authorization", "Token " + String(API_TOKEN));
+  http.addHeader("Authorization", "Token " + deviceApiToken);
 
   int code = http.GET();
   if (code == 200) {
@@ -430,16 +505,17 @@ void pollDeviceCommands() {
 }
 
 // Send gross bottle weight only; the backend subtracts the configured tare.
-void sendWeightReading() {
-  if (!state.wifiConnected || !state.scaleCalibrated || !state.scaleReadingValid) {
+bool sendWeightReading() {
+  if (!state.wifiConnected || deviceApiToken.length() == 0 ||
+      !state.scaleCalibrated || !state.scaleReadingValid) {
     Serial.println("⚠️  Skipping weight transmission - no calibrated valid weight");
-    return;
+    return false;
   }
   
   http.begin(String(api_base_url) + "/gas-readings/create/");
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Token " + String(API_TOKEN));
+  http.addHeader("Authorization", "Token " + deviceApiToken);
   
   float rawRounded = roundf(state.currentWeight * 100.0f) / 100.0f;
   
@@ -459,6 +535,8 @@ void sendWeightReading() {
     if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
       processDeviceCommands(resDoc.as<JsonObject>());
     }
+    http.end();
+    return true;
   } else {
     Serial.printf("❌ Weight reading failed: %d\n", httpResponseCode);
     if (httpResponseCode > 0) {
@@ -467,6 +545,7 @@ void sendWeightReading() {
   }
   
   http.end();
+  return false;
 }
 
 void handleGasAlert(int gasLevel, GasSeverity severity) {
@@ -484,7 +563,7 @@ void handleGasAlert(int gasLevel, GasSeverity severity) {
   Serial.printf("🚨 Gas Alert: %s (Level: %d)\n", severityStr.c_str(), gasLevel);
   
   if (severity >= GAS_MEDIUM) {
-    // Close the valve before the blocking alarm pattern runs.
+    // Close the valve and start the alarm immediately after gas detection.
     if (!state.gasSafetyLockout) {
       state.gasSafetyLockout = true;
       preferences.putBool("gas_lockout", true);
@@ -493,7 +572,7 @@ void handleGasAlert(int gasLevel, GasSeverity severity) {
       closeValve();
       Serial.printf("🔒 Valve automatically closed due to %s gas level\n", severityStr.c_str());
     }
-    if (!state.alarmActive) {
+    if (state.alarmArmed && !state.alarmActive) {
       activateAlarm(severity);
     }
     
@@ -508,12 +587,12 @@ void handleGasAlert(int gasLevel, GasSeverity severity) {
 }
 
 void sendGasLeakAlert(int gasLevel, String severity) {
-  if (!state.wifiConnected) return;
+  if (!state.wifiConnected || deviceApiToken.length() == 0) return;
   
   http.begin(String(api_base_url) + "/alerts/gas-leak/");
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Token " + String(API_TOKEN));
+  http.addHeader("Authorization", "Token " + deviceApiToken);
   
   StaticJsonDocument<1024> doc;
   doc["sensor_id"] = SENSOR_ID;  // This endpoint uses sensor_id (different from gas-readings)
@@ -589,40 +668,43 @@ void buzzerOff() {
 }
 
 void activateAlarm(GasSeverity severity) {
+  if (!state.alarmArmed || severity < GAS_MEDIUM) return;
+
   state.alarmActive = true;
-  
-  // Different alarm patterns based on severity
-  switch (severity) {
-    case GAS_CRITICAL:
-      // Continuous alarm
+  state.buzzerOutputOn = true;
+  state.lastAlarmToggle = millis();
+  buzzerOn();
+}
+
+void updateAlarmOutput() {
+  if (!state.alarmActive || !state.alarmArmed) return;
+
+  if (state.currentSeverity == GAS_CRITICAL) {
+    if (!state.buzzerOutputOn) {
       buzzerOn();
-      break;
-    case GAS_HIGH:
-      // Fast beeping
-      for (int i = 0; i < 10; i++) {
-        buzzerOn();
-        delay(100);
-        buzzerOff();
-        delay(100);
-      }
-      break;
-    case GAS_MEDIUM:
-      // Slow beeping
-      for (int i = 0; i < 5; i++) {
-        buzzerOn();
-        delay(300);
-        buzzerOff();
-        delay(300);
-      }
-      break;
-    default:
-      break;
+      state.buzzerOutputOn = true;
+    }
+    return;
+  }
+
+  const unsigned long interval = state.currentSeverity == GAS_HIGH ? 150 : 400;
+  if (millis() - state.lastAlarmToggle >= interval) {
+    state.lastAlarmToggle = millis();
+    state.buzzerOutputOn = !state.buzzerOutputOn;
+    if (state.buzzerOutputOn) buzzerOn();
+    else buzzerOff();
   }
 }
 
-void silenceAlarm() {
+void stopAlarmOutput() {
   buzzerOff();
   state.alarmActive = false;
+  state.buzzerOutputOn = false;
+  state.lastAlarmToggle = 0;
+}
+
+void silenceAlarm() {
+  stopAlarmOutput();
   Serial.println("🔇 Alarm silenced");
 }
 
@@ -702,7 +784,32 @@ void handleSerialCommands() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    command.toLowerCase();
+
+    String normalizedCommand = command;
+    normalizedCommand.toLowerCase();
+    const String tokenCommandPrefix = "set_token ";
+    if (normalizedCommand.startsWith(tokenCommandPrefix)) {
+      String newToken = command.substring(tokenCommandPrefix.length());
+      newToken.trim();
+      bool isValidToken = newToken.length() == 40;
+      for (size_t i = 0; isValidToken && i < newToken.length(); i++) {
+        const char c = newToken[i];
+        isValidToken = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
+                       (c >= 'A' && c <= 'F');
+      }
+
+      if (isValidToken) {
+        newToken.toLowerCase();
+        deviceApiToken = newToken;
+        preferences.putString("api_token", deviceApiToken);
+        Serial.println("✅ API token saved to device storage");
+      } else {
+        Serial.println("❌ Token not saved; expected a 40-character API token");
+      }
+      return;
+    }
+
+    command = normalizedCommand;
     
     if (command == "calibrate") startWeightCalibration();
     else if (command == "tare") tareScale();
@@ -723,6 +830,9 @@ void startWeightCalibration() {
     Serial.println("❌ Scale not ready");
     return;
   }
+
+  const bool hadPreviousCalibration = state.scaleCalibrated;
+  const float previousCalibrationFactor = state.calibration_factor;
   
   Serial.println("\n=== Weight Calibration ===");
   Serial.println("1. Remove all weight and press ENTER");
@@ -733,6 +843,10 @@ void startWeightCalibration() {
 
   Serial.println("\n2. Enter known weight (kg):");
   float known_weight = readFloatFromSerial();
+  if (!isfinite(known_weight) || known_weight <= 0.0f) {
+    Serial.println("❌ Calibration stopped: enter a valid weight greater than zero");
+    return;
+  }
   Serial.printf("Known weight: %.2f kg\n", known_weight);
 
   Serial.println("\n3. Place weight and press ENTER");
@@ -741,17 +855,23 @@ void startWeightCalibration() {
   Serial.println("🔄 Calibrating...");
   delay(2000);
   long reading = scale.get_value(10);
-  state.calibration_factor = reading / known_weight;
-  scale.set_scale(state.calibration_factor);
+  const float calibrationFactor = static_cast<float>(reading) / known_weight;
+  if (!isfinite(calibrationFactor) || fabsf(calibrationFactor) <= 0.000001f) {
+    Serial.println("❌ Calibration stopped: sensor produced an invalid factor");
+    return;
+  }
 
-  Serial.printf("✅ Calibration factor: %.2f\n", state.calibration_factor);
+  scale.set_scale(calibrationFactor);
+  Serial.printf("✅ Calibration factor: %.2f\n", calibrationFactor);
   Serial.printf("Current reading: %.2f kg\n", scale.get_units(5));
-  Serial.println("Save calibration? (y/n)");
-
-  if (readYesNoFromSerial()) {
+  if (saveCalibration(calibrationFactor)) {
+    state.calibration_factor = calibrationFactor;
     state.scaleCalibrated = true;
-    saveCalibration();
-    Serial.println("✅ Calibration saved");
+  } else {
+    state.calibration_factor = previousCalibrationFactor;
+    state.scaleCalibrated = hadPreviousCalibration;
+    if (hadPreviousCalibration) scale.set_scale(previousCalibrationFactor);
+    else scale.set_scale();
   }
 }
 
@@ -823,13 +943,6 @@ float readFloatFromSerial() {
   return value;
 }
 
-bool readYesNoFromSerial() {
-  while (!Serial.available());
-  char response = Serial.read();
-  while (Serial.available()) Serial.read();
-  return (response == 'y' || response == 'Y');
-}
-
 void printDeviceInfo() {
   Serial.println("\n=== DEVICE INFO - QUALITY VERSION ===");
   Serial.printf("Device ID: %s\n", DEVICE_ID);
@@ -855,6 +968,7 @@ void printHelp() {
   Serial.println("valve_close  - Close gas valve");
   Serial.println("valve_toggle - Toggle valve state");
   Serial.println("alarm_off    - Silence alarm");
+  Serial.println("set_token .. - Save the API token to device storage");
   Serial.println("info         - Show device information");
   Serial.println("test_leds    - Test LED functionality");
   Serial.println("help         - Show this help menu");

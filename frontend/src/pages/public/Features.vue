@@ -12,21 +12,21 @@
   <div class="container mx-auto px-6 text-center">
     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-8 animate-fade-in">
       <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
-      <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">System Capability</span>
+      <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">What the app can do</span>
     </div>
     
     <h1 class="text-4xl sm:text-7xl font-black text-white mb-6 tracking-tighter uppercase italic leading-[0.9] animate-title">
-      Autonomous<br>
-      <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">Grid Logic</span>
+      Automatic<br>
+      <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">Gas monitoring</span>
     </h1>
     
     <p class="text-lg sm:text-xl text-white/40 max-w-3xl mx-auto font-medium tracking-tight animate-fade-in" style="animation-delay: 0.2s">
-      Deep-layer integration of advanced sensing protocols and neural monitoring.
+      Check gas levels, receive leak alerts, and manage your gas bottles.
     </p>
   </div>
 </section>
 
-    <!-- Main Features Grid -->
+    <!-- Main Features Pro -->
     <section class="pb-32">
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -62,13 +62,13 @@
           <div class="lg:w-1/2">
             <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-8">
               <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-              <span class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Zero Latency</span>
+              <span class="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Fast alerts</span>
             </div>
             <h2 class="text-3xl sm:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tighter uppercase italic leading-[1.1]">
-              Instant Pulse<br>Notifications
+              Get alerts right away
             </h2>
             <p class="text-xl text-white/40 mb-10 font-medium leading-relaxed">
-              Immediate algorithmic warnings deployed across multiple encrypted channels.
+              Get quick alerts in the app, by email, or by text message.
             </p>
             <ul class="space-y-6">
               <li v-for="item in alertDetails" :key="item" class="flex items-center group/item">
@@ -94,13 +94,13 @@
           <div class="lg:w-1/2">
             <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-8">
               <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-              <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400">Deep Analytics</span>
+              <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400">Usage reports</span>
             </div>
             <h2 class="text-3xl sm:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tighter uppercase italic leading-[1.1]">
-              Historical<br>Trend Logic
+              See your gas use over time
             </h2>
             <p class="text-xl text-white/40 mb-10 font-medium leading-relaxed">
-              Mapping consumption paths to optimize efficiency and security.
+              Review your gas use over time to plan your next refill.
             </p>
             <ul class="space-y-6">
               <li v-for="item in analyticsDetails" :key="item" class="flex items-center group/item">
@@ -131,23 +131,23 @@
           <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-teal-400/10 blur-[100px] rounded-full"></div>
           
           <h2 class="text-3xl sm:text-6xl font-black text-white mb-8 sm:mb-10 tracking-tighter uppercase italic leading-tight relative z-10">
-            Initialize Your<br>Safe Grid
+            Make your home<br>safer with GasX
           </h2>
           <p class="text-white/40 font-medium mb-12 max-w-2xl mx-auto relative z-10 uppercase tracking-widest text-xs">
-            Join the collective intelligence network protecting tomorrow's infrastructure.
+            Use GasX to monitor gas and keep your home safer.
           </p>
           <div class="flex flex-col sm:flex-row justify-center gap-6 relative z-10">
             <router-link 
               to="/register" 
               class="px-10 py-5 sm:px-12 sm:py-6 bg-teal-400 text-gray-950 font-black rounded-2xl transition-all duration-500 hover:scale-110 hover:shadow-[0_0_80px_rgba(45,212,191,0.5)] uppercase tracking-[0.2em] text-sm"
             >
-              Access Network
+              Create an account
             </router-link>
             <router-link 
               to="/contact" 
               class="px-10 py-5 sm:px-12 sm:py-6 bg-white/5 border border-white/10 text-white font-black rounded-2xl transition-all duration-500 hover:bg-white/10 uppercase tracking-[0.2em] text-sm"
             >
-              Contact Command
+              Contact us
             </router-link>
           </div>
         </div>
@@ -161,47 +161,47 @@ import { ref } from 'vue';
 
 const features = ref([
   {
-    title: "Pulse Tracking",
-    description: "24/7 autonomous monitoring of nodes with 30-second interval validation.",
+    title: "Live gas readings",
+    description: "Your sensors check gas levels every 30 seconds, day and night.",
     iconTemplate: `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>`
   },
   {
-    title: "Logic Alerts",
-    description: "Customizable neural interrupts for low-threshold or unsafe conditions.",
+    title: "Gas alerts",
+    description: "Choose when you want an alert about low gas or a possible leak.",
     iconTemplate: `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`
   },
   {
-    title: "Trend Engine",
-    description: "Deep analytics for consumption pattern mapping and efficiency optimization.",
+    title: "Gas use reports",
+    description: "Simple reports help you understand your gas use.",
     iconTemplate: `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>`
   },
   {
-    title: "Mesh Storage",
-    description: "Distributed historical logs with immutable backup protocols.",
+    title: "Reading history",
+    description: "Review readings from previous days.",
     iconTemplate: `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>`
   },
   {
-    title: "Security Nodes",
-    description: "Automatic intervention protocols during critical danger detection.",
+    title: "Secure gas sensors",
+    description: "The valve closes when the sensor detects a gas leak.",
     iconTemplate: `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>`
   },
   {
-    title: "Universal Link",
-    description: "Seamless synchronization with global smart-grid home platforms.",
+    title: "Works with your home",
+    description: "Connect your gas sensor to the app.",
     iconTemplate: `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>`
   }
 ]);
 
 const alertDetails = [
-  "Encrypted mobile push interrupts",
-  "Neural log reporting via email",
-  "Critical SMS override pulse"
+  "App alerts",
+  "Get alerts by email",
+  "Text message alerts"
 ];
 
 const analyticsDetails = [
-  "Consumption bias identification",
-  "Predictive swarm replenishment",
-  "Efficiency curve optimization"
+  "Understand your gas use",
+  "Plan your next refill",
+  "See how your gas use changes"
 ];
 </script>
 

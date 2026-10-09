@@ -13,12 +13,12 @@
       <div class="container mx-auto px-6 text-center">
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-8 animate-fade-in shadow-[0_0_30px_rgba(45,212,191,0.1)]">
           <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
-          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">The Mission Arc</span>
+          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Our mission</span>
         </div>
         
         <h1 class="text-4xl sm:text-7xl font-black text-white mb-6 tracking-tighter uppercase italic leading-[0.9] animate-title">
           SMARTER SAFETY<br>
-          <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent decoration-white/10 underline-offset-8">TOTAL_LOGIC</span>
+          <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent decoration-white/10 underline-offset-8">ALL IN ONE PLACE</span>
         </h1>
         
         <p class="text-lg sm:text-2xl text-white/30 max-w-3xl mx-auto font-medium italic uppercase tracking-tighter animate-fade-in" style="animation-delay: 0.2s">
@@ -27,7 +27,7 @@
       </div>
     </section>
 
-    <!-- Our Genesis -->
+    <!-- How we started -->
     <section class="py-16 sm:py-32 relative overflow-hidden">
       <div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-teal-400/20 to-transparent"></div>
       
@@ -35,24 +35,24 @@
         <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-32">
           <div class="lg:w-1/2 space-y-8 sm:space-y-12">
             <div>
-              <p class="text-xs font-black text-teal-400 uppercase tracking-[0.5em] mb-4 italic">Origin_Sequence</p>
-              <h2 class="text-4xl sm:text-7xl font-black text-white tracking-tighter uppercase italic leading-none mb-6 sm:mb-10">Our Genesis</h2>
+              <p class="text-xs font-black text-teal-400 uppercase tracking-[0.5em] mb-4 italic">Our story</p>
+              <h2 class="text-4xl sm:text-7xl font-black text-white tracking-tighter uppercase italic leading-none mb-6 sm:mb-10">How we started</h2>
               
               <div class="space-y-6 sm:space-y-8 text-lg sm:text-xl text-white/30 font-bold uppercase tracking-tighter italic leading-relaxed">
-                <p>Founded in 2023, GaSX emerged with a singular purpose: to replace binary protocols with intelligent awareness.</p>
-                <p>We've evolved into a trusted global node, securing thousands of households through zero-latency sensing and predictive analysis.</p>
+                <p>We started GaSX to help people monitor gas use and keep their homes safer.</p>
+                <p>Our app helps people track gas levels, receive leak alerts, and manage gas sensors.</p>
               </div>
             </div>
             
             <div class="flex items-center gap-8 sm:gap-12 pt-8 border-t border-white/5">
               <div class="flex flex-col">
                 <span class="text-3xl sm:text-5xl font-black text-white tracking-tighter italic">2023</span>
-                <span class="text-[9px] font-black uppercase tracking-[0.3em] text-teal-400 mt-2 italic shadow-teal-400/20 shadow-sm">Est_Deployment</span>
+                <span class="text-[9px] font-black uppercase tracking-[0.3em] text-teal-400 mt-2 italic shadow-teal-400/20 shadow-sm">Started</span>
               </div>
               <div class="w-px h-16 bg-white/10"></div>
               <div class="flex flex-col">
                 <span class="text-3xl sm:text-5xl font-black text-white tracking-tighter italic">99.9%</span>
-                <span class="text-[9px] font-black uppercase tracking-[0.3em] text-teal-400 mt-2 italic">Logic_Accuracy</span>
+                <span class="text-[9px] font-black uppercase tracking-[0.3em] text-teal-400 mt-2 italic">Sensor accuracy</span>
               </div>
             </div>
           </div>
@@ -67,7 +67,7 @@
               >
               <!-- HUD Overlay -->
               <div class="absolute inset-10 border border-teal-400/20 rounded-[2.5rem] pointer-events-none opacity-0 group-hover/image:opacity-100 transition-all duration-1000">
-                 <div class="absolute top-6 left-6 text-[8px] font-black text-teal-400 uppercase tracking-widest italic">Matrix_Scan_Active</div>
+                 <div class="absolute top-6 left-6 text-[8px] font-black text-teal-400 uppercase tracking-widest italic">System is active</div>
               </div>
             </div>
           </div>
@@ -75,14 +75,14 @@
       </div>
     </section>
 
-    <!-- Logic Core Grid -->
+    <!-- Our values Pro -->
     <section class="py-16 sm:py-56 bg-white/[0.005] relative overflow-hidden">
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(45,212,191,0.03),_transparent)]"></div>
       
       <div class="container mx-auto px-6 relative z-10">
         <div class="text-center mb-16 sm:mb-32">
-          <p class="text-xs font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Proprietary Principles</p>
-          <h2 class="text-4xl sm:text-8xl font-black text-white tracking-tighter uppercase italic leading-[0.8] mb-8">Logic Core</h2>
+          <p class="text-xs font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Our values</p>
+          <h2 class="text-4xl sm:text-8xl font-black text-white tracking-tighter uppercase italic leading-[0.8] mb-8">Our values</h2>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -112,7 +112,7 @@
       
       <div class="container mx-auto px-6">
         <div class="text-center mb-16 sm:mb-32">
-          <p class="text-xs font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">The Intelligence Layer</p>
+          <p class="text-xs font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Our team</p>
           <h2 class="text-4xl sm:text-8xl font-black text-white tracking-tighter uppercase italic leading-[0.8]">Network Architects</h2>
         </div>
         
@@ -152,18 +152,18 @@ import { ref } from 'vue';
 
 const values = ref([
   {
-    title: "Safety Node",
-    description: "Prioritizing environmental security through rigorous algorithmic validation.",
+    title: "Safety first",
+    description: "We help you find gas leaks early and respond quickly.",
     iconTemplate: `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`
   },
   {
-    title: "Pure Logic",
-    description: "Discarding legacy sensory metrics for next-gen neural pattern mapping.",
+    title: "Simple to use",
+    description: "Clear readings and alerts help you understand what is happening.",
     iconTemplate: `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`
   },
   {
-    title: "Global Mesh",
-    description: "Operating at scale to protect the collective infrastructure of the future.",
+    title: "Multiple sensors",
+    description: "Manage all your gas sensors from one account.",
     iconTemplate: `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`
   }
 ]);
@@ -171,26 +171,26 @@ const values = ref([
 const team = ref([
   {
     name: "Alex Johnson",
-    position: "Protocol Architect",
-    bio: "Visionary specialized in decentralized system logic and infrastructure safety.",
+    position: "Software developer",
+    bio: "Builds the software that connects gas sensors to the app.",
     image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=774&q=80"
   },
   {
     name: "Maria Garcia",
-    position: "Intelligence Lead",
-    bio: "Expert in neural sensory networks and zero-bias environmental tracking.",
+    position: "Safety lead",
+    bio: "Helps make gas sensors accurate and safe.",
     image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=776&q=80"
   },
   {
     name: "Sam Wilson",
     position: "Visual Experience",
-    bio: "Crafting the immersive interfaces that bridge human intent with machine logic.",
+    bio: "Designs the screens people use in the app.",
     image: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=1740&q=80"
   },
   {
     name: "Taylor Chen",
     position: "Global Support",
-    bio: "Ensuring near-perfect reliability across the entire distributed monitoring grid.",
+    bio: "Helps keep the gas monitoring service working well.",
     image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=774&q=80"
   }
 ]);

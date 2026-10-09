@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import '../models/notification_models.dart';
-import '../../core/constants/api_constants.dart';
 
 class NotificationRepository {
   final Dio _dio;
@@ -9,8 +8,10 @@ class NotificationRepository {
 
   Future<List<NotificationModel>> getNotifications() async {
     try {
-      final response = await _dio.get('/notifications/');
-      return (response.data as List).map((n) => NotificationModel.fromJson(n)).toList();
+      final response = await _dio.get('notifications/');
+      return (response.data as List)
+          .map((n) => NotificationModel.fromJson(n))
+          .toList();
     } catch (e) {
       rethrow;
     }
@@ -18,7 +19,7 @@ class NotificationRepository {
 
   Future<void> markAsRead(int id) async {
     try {
-      await _dio.post('/notifications/$id/read/');
+      await _dio.post('notifications/$id/read/');
     } catch (e) {
       rethrow;
     }
@@ -26,7 +27,7 @@ class NotificationRepository {
 
   Future<void> markAllAsRead() async {
     try {
-      await _dio.post('/notifications/mark-all-read/');
+      await _dio.post('notifications/mark-all-read/');
     } catch (e) {
       rethrow;
     }
@@ -34,7 +35,7 @@ class NotificationRepository {
 
   Future<void> deleteNotification(int id) async {
     try {
-      await _dio.delete('/notifications/$id/');
+      await _dio.delete('notifications/$id/');
     } catch (e) {
       rethrow;
     }

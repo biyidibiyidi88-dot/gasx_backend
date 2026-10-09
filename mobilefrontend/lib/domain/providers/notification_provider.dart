@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dio_provider.dart';
 import '../../data/repositories/notification_repository.dart';
@@ -13,48 +14,75 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository(dio);
 });
 
-class NotificationsNotifier extends StateNotifier<AsyncValue<List<NotificationModel>>> {
+class NotificationsNotifier
+    extends StateNotifier<AsyncValue<List<NotificationModel>>> {
   final NotificationRepository _repository;
   final Ref _ref;
   StreamSubscription? _subscription;
+  Timer? _refreshTimer;
+  final Set<int> _knownNotificationIds = {};
+  bool _hasInitialSnapshot = false;
+  bool _isFetching = false;
 
-  NotificationsNotifier(this._repository, this._ref) : super(const AsyncValue.loading()) {
+  NotificationsNotifier(this._repository, this._ref)
+    : super(const AsyncValue.loading()) {
     _init();
   }
 
   Future<void> _init() async {
-    await _fetch();
     _subscribeToWebSocket();
+    await _fetch();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) => _fetch());
   }
 
-  Future<void> _fetch({bool showPushNotification = false}) async {
+  Future<void> _fetch() async {
+    if (_isFetching) return;
+    _isFetching = true;
     try {
-      final oldList = state.valueOrNull ?? [];
       final data = await _repository.getNotifications();
       state = AsyncValue.data(data);
 
-      if (showPushNotification && oldList.isNotEmpty) {
-        final oldIds = oldList.map((n) => n.id).toSet();
-        // Identify new, unresolved alerts
-        final newAlerts = data.where((n) => !oldIds.contains(n.id) && !n.isResolved).toList();
+      final newAlerts = _hasInitialSnapshot
+          ? data
+                .where(
+                  (notification) =>
+                      !_knownNotificationIds.contains(notification.id) &&
+                      !notification.isResolved,
+                )
+                .toList()
+          : const <NotificationModel>[];
+      _knownNotificationIds
+        ..clear()
+        ..addAll(data.map((notification) => notification.id));
+      _hasInitialSnapshot = true;
 
-        for (final notification in newAlerts) {
-          await NotificationService.instance.showNotification(
-            id: notification.id,
-            title: _getAlertTitle(notification.alertType),
-            body: notification.alertMessage,
-          );
+      for (final notification in newAlerts) {
+        await NotificationService.instance.showNotification(
+          id: notification.id,
+          title: _getAlertTitle(notification.alertType),
+          body: notification.alertMessage,
+        );
+      }
 
-          if (notification.alertType == 'GAS_LEAK') {
-            final settings = _ref.read(settingsProvider);
-            if (settings.audioAlarmEnabled) {
-              AudioAlarmService.instance.playAlarm();
-            }
-          }
-        }
+      // Keep the configured phone alarm active for as long as a leak is open.
+      // This also handles an alert that was already active when the app opens.
+      final hasActiveLeak = data.any(
+        (notification) =>
+            notification.alertType.toUpperCase() == 'GAS_LEAK' &&
+            !notification.isResolved,
+      );
+      if (hasActiveLeak && _ref.read(settingsProvider).audioAlarmEnabled) {
+        await AudioAlarmService.instance.playAlarm();
+      } else {
+        await AudioAlarmService.instance.stop();
       }
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      // Preserve the last known alerts while the connection is recovering.
+      if (state.valueOrNull == null) {
+        state = AsyncValue.error(e, st);
+      }
+    } finally {
+      _isFetching = false;
     }
   }
 
@@ -77,25 +105,32 @@ class NotificationsNotifier extends StateNotifier<AsyncValue<List<NotificationMo
     _subscription?.cancel();
 
     final wsClient = _ref.read(websocketClientProvider);
-    _subscription = wsClient.stream.listen((event) {
-      final type = event['type'];
-      if (type == 'notifications') {
-        // Re-fetch from REST and trigger push notifications for any new records
-        _fetch(showPushNotification: true);
-      }
-    }, onError: (e) {
-      print('WebSocket notifications subscription error: $e');
-    });
+    _subscription = wsClient.stream.listen(
+      (event) {
+        final type = event['type'];
+        if (type == 'notifications') {
+          _fetch();
+        }
+      },
+      onError: (e) {
+        debugPrint('WebSocket notifications subscription error: $e');
+      },
+    );
   }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _subscription?.cancel();
     super.dispose();
   }
 }
 
-final notificationsProvider = StateNotifierProvider<NotificationsNotifier, AsyncValue<List<NotificationModel>>>((ref) {
-  final repo = ref.watch(notificationRepositoryProvider);
-  return NotificationsNotifier(repo, ref);
-});
+final notificationsProvider =
+    StateNotifierProvider<
+      NotificationsNotifier,
+      AsyncValue<List<NotificationModel>>
+    >((ref) {
+      final repo = ref.watch(notificationRepositoryProvider);
+      return NotificationsNotifier(repo, ref);
+    });

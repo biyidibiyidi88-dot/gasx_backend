@@ -55,7 +55,7 @@
         <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic">No deliveries in this queue</p>
       </div>
 
-      <!-- Delivery Cards Grid -->
+      <!-- Delivery Cards Pro -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <div
           v-for="delivery in displayedDeliveries"

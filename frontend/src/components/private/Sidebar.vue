@@ -44,7 +44,7 @@
           </h1>
           <div class="flex items-center space-x-1.5 mt-1">
             <span class="w-1 h-1 rounded-full bg-teal-500 animate-pulse"></span>
-            <span class="text-[9px] font-black tracking-[0.3em] text-white/40 uppercase">Intelligence Pro</span>
+            <span class="text-[9px] font-black tracking-[0.3em] text-white/40 uppercase">GasX</span>
           </div>
         </div>
       </div>
@@ -64,7 +64,7 @@
           <div class="grid grid-cols-2 gap-6 text-left">
             <div class="flex flex-col">
               <span class="text-3xl font-black text-white leading-none tracking-tighter">{{ userStore.systemStatus.tanks }}</span>
-              <span class="text-[9px] font-bold uppercase tracking-widest text-white/20 mt-2">Nodes</span>
+              <span class="text-[9px] font-bold uppercase tracking-widest text-white/20 mt-2">Sensors</span>
             </div>
             <div class="flex flex-col border-l border-white/5 pl-6">
               <span class="text-3xl font-black text-teal-400 leading-none tracking-tighter">{{ userStore.systemStatus.normal }}</span>

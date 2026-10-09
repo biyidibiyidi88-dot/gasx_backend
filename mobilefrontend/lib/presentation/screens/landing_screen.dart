@@ -53,7 +53,7 @@ class LandingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'SMART FUEL MANAGEMENT\nPOWERED BY BIPSYNC AI',
+                  'SMART GAS MONITORING',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(height: 2),
                 ),
@@ -61,7 +61,7 @@ class LandingScreen extends StatelessWidget {
                 
                 // Action Section
                 CustomButton(
-                  text: 'Access Portal',
+                  text: 'Sign in',
                   icon: Image.asset('assets/icons/app_icon.png', width: 24, height: 24),
                   onPressed: () => context.go('/login'),
                 ),
@@ -69,7 +69,7 @@ class LandingScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () => context.go('/register'),
                   child: Text(
-                    'CREATE NEW ACCOUNT',
+                    'CREATE AN ACCOUNT',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppTheme.accentTeal),
                   ),
                 ),

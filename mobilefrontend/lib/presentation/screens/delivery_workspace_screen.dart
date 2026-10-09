@@ -197,8 +197,8 @@ class _DeliveryWorkspaceScreenState
     final title = _isSupplier
         ? 'SUPPLIER ORDERS'
         : _isDriver
-        ? 'DELIVERY JOBS'
-        : 'MY GAS ORDERS';
+        ? 'DELIVERY ORDERS'
+        : 'MY ORDERS';
     if ((_isSupplier || _isDriver) && applicationStatus != 'approved') {
       return Scaffold(
         appBar: AppBar(title: Text(title), backgroundColor: Colors.transparent),
@@ -211,7 +211,7 @@ class _DeliveryWorkspaceScreenState
                 const Icon(Icons.hourglass_top, size: 44, color: Colors.amber),
                 const SizedBox(height: 18),
                 Text(
-                  'APPLICATION ${applicationStatus.toUpperCase()}',
+                  'ACCOUNT ${applicationStatus.toUpperCase()}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
@@ -220,7 +220,7 @@ class _DeliveryWorkspaceScreenState
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  'The administrator must approve your verification before you can manage orders.',
+                  'An admin must approve your account before you can manage orders.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54),
                 ),
@@ -289,7 +289,7 @@ class _DeliveryWorkspaceScreenState
         status == 'PENDING' &&
         order['delivery_person'] == null) {
       nextStatus = 'ASSIGNED';
-      action = 'ACCEPT JOB';
+      action = 'ACCEPT ORDER';
     }
     if (_isDriver && !isPickup && status == 'ASSIGNED') {
       nextStatus = 'OUT_FOR_DELIVERY';
@@ -301,7 +301,7 @@ class _DeliveryWorkspaceScreenState
     }
     if (_isSupplier && isPickup && status == 'READY_FOR_PICKUP') {
       nextStatus = 'PICKED_UP';
-      action = 'CONFIRM CUSTOMER PICKUP';
+      action = 'CONFIRM PICKUP';
     }
     if (!_isSupplier &&
         !_isDriver &&
@@ -381,7 +381,7 @@ class _DeliveryWorkspaceScreenState
               child: OutlinedButton.icon(
                 onPressed: busy ? null : () => _openCustomerRoute(order),
                 icon: const Icon(Icons.directions),
-                label: const Text('ROUTE TO CUSTOMER'),
+                label: const Text('GET DIRECTIONS TO CUSTOMER'),
               ),
             ),
           ],
@@ -416,7 +416,7 @@ class _DeliveryWorkspaceScreenState
                       ? null
                       : () => _confirmDelivery(order, 'CLIENT'),
                   icon: const Icon(Icons.task_alt),
-                  label: Text(busy ? 'SAVING…' : 'CONFIRM I RECEIVED THE GAS'),
+                  label: Text(busy ? 'SAVING…' : 'CONFIRM GAS RECEIVED'),
                 ),
               ),
             ],
@@ -453,7 +453,7 @@ class _DeliveryWorkspaceScreenState
                   child: Text(
                     _checkingPaymentId == order['id']
                         ? 'CHECKING PAYMENT…'
-                        : 'CHECK PAYMENT STATUS',
+                        : 'CHECK PAYMENT',
                   ),
                 ),
               ),
@@ -462,7 +462,7 @@ class _DeliveryWorkspaceScreenState
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
-                  'Payment needs support review. Do not submit another payment for this order.',
+                  'We could not confirm this payment. Contact support before paying again.',
                   style: TextStyle(color: Colors.amber, fontSize: 11),
                 ),
               ),
@@ -515,7 +515,7 @@ class _DeliveryWorkspaceScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'DELIVERY COMPLETION',
+            'DELIVERY STATUS',
             style: TextStyle(
               color: Colors.white54,
               fontSize: 9,

@@ -24,8 +24,8 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('COMMUNICATION', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white24)),
-            Text('NODE INTELLIGENCE', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('ALERTS', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.white24)),
+            Text('ALERTS', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         backgroundColor: Colors.transparent,
@@ -64,10 +64,10 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
   Widget _buildFilters() {
     final filters = [
-      {'value': 'all', 'label': 'MATRIX'},
-      {'value': 'unread', 'label': 'UNRESOLVED'},
-      {'value': 'alerts', 'label': 'ANOMALIES'},
-      {'value': 'system', 'label': 'CORE LOG'},
+      {'value': 'all', 'label': 'ALL ALERTS'},
+      {'value': 'unread', 'label': 'NEW'},
+      {'value': 'alerts', 'label': 'GAS ALERTS'},
+      {'value': 'system', 'label': 'SYSTEM'},
     ];
 
     return SizedBox(
@@ -164,7 +164,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                             style: const TextStyle(fontSize: 9, color: Colors.white24, fontWeight: FontWeight.w900, letterSpacing: 1),
                           ),
                           if (!n.isResolved)
-                            const Text('UNRESOLVED', style: TextStyle(fontSize: 8, color: AppTheme.accentTeal, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                            const Text('NEW', style: TextStyle(fontSize: 8, color: AppTheme.accentTeal, fontWeight: FontWeight.w900, letterSpacing: 1)),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -175,12 +175,12 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Text(n.sensorName ?? 'SYSTEM GRID', style: TextStyle(fontSize: 9, color: AppTheme.accentTeal.withOpacity(0.6), fontWeight: FontWeight.w900, letterSpacing: 1)),
+                          Text(n.sensorName ?? 'SYSTEM', style: TextStyle(fontSize: 9, color: AppTheme.accentTeal.withOpacity(0.6), fontWeight: FontWeight.w900, letterSpacing: 1)),
                           const SizedBox(width: 8),
                           const Icon(Icons.circle, size: 4, color: Colors.white10),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(n.houseAddress ?? 'CORE LOCATION', style: const TextStyle(fontSize: 9, color: Colors.white24, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)),
+                            child: Text(n.houseAddress ?? 'LOCATION', style: const TextStyle(fontSize: 9, color: Colors.white24, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)),
                           ),
                         ],
                       ),
@@ -230,9 +230,9 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         children: [
           Icon(Icons.notifications_none, size: 64, color: Colors.white.withOpacity(0.05)),
           const SizedBox(height: 24),
-          const Text('ZERO DEVIATIONS DETECTED', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, color: Colors.white24)),
+          const Text('NO NEW ALERTS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, color: Colors.white24)),
           const SizedBox(height: 8),
-          const Text('ALL NODES OPERATING WITHIN NOMINAL RANGE', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white10, letterSpacing: 2)),
+          const Text('YOUR SENSORS ARE WORKING NORMALLY', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white10, letterSpacing: 2)),
         ],
       ),
     );
@@ -257,11 +257,11 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('TRANSMISSION RULES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 4, color: AppTheme.accentTeal)),
+            const Text('ALERT SETTINGS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 4, color: AppTheme.accentTeal)),
             const SizedBox(height: 32),
-            _buildSettingToggle('SMTP_LINK', true),
-            _buildSettingToggle('DIRECT_NOTIFY', true),
-            _buildSettingToggle('BINARY_SMS', false),
+            _buildSettingToggle('Email alerts', true),
+            _buildSettingToggle('App alerts', true),
+            _buildSettingToggle('Text message alerts', false),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -273,7 +273,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('APPLY CONFIGURATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)),
+                child: const Text('SAVE SETTINGS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 2)),
               ),
             ),
           ],

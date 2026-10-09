@@ -13,16 +13,16 @@
       <div class="container mx-auto px-6 text-center">
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-8 animate-fade-in shadow-[0_0_30px_rgba(45,212,191,0.1)]">
           <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
-          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Commercial Protocols</span>
+          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Plans and prices</span>
         </div>
         
         <h1 class="text-4xl sm:text-7xl font-black text-white mb-6 tracking-tighter uppercase italic leading-[0.9] animate-title">
-          TRANSPARENT<br>
-          <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent decoration-white/10 underline-offset-8">SCALABILITY</span>
+          Clear<br>
+          <span class="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent decoration-white/10 underline-offset-8">Prices</span>
         </h1>
         
         <p class="text-lg sm:text-2xl text-white/30 max-w-3xl mx-auto font-medium italic uppercase tracking-tighter animate-fade-in" style="animation-delay: 0.2s">
-          Acquire precision monitoring at any scale. No hidden bias. Just raw logic.
+          Choose a plan that fits your home or business. See what is included and what it costs.
         </p>
       </div>
     </section>
@@ -37,21 +37,21 @@
               :class="billingCycle === 'monthly' ? 'bg-teal-400 text-gray-950 shadow-[0_0_30px_rgba(45,212,191,0.4)]' : 'text-white/30 hover:text-white'"
               class="whitespace-nowrap px-6 sm:px-10 py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-700 italic"
             >
-              Pulse Monthly
+              Pay monthly
             </button>
             <button
               @click="billingCycle = 'annually'"
               :class="billingCycle === 'annually' ? 'bg-teal-400 text-gray-950 shadow-[0_0_30px_rgba(45,212,191,0.4)]' : 'text-white/30 hover:text-white'"
               class="whitespace-nowrap px-6 sm:px-10 py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-700 ml-2 italic"
             >
-              Annual Stream <span class="ml-1 sm:ml-2 opacity-50">(-20%)</span>
+              Pay yearly <span class="ml-1 sm:ml-2 opacity-50">(-20%)</span>
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Pricing Plans Grid -->
+    <!-- Pricing Plans Pro -->
     <section class="mb-56 relative">
       <div class="container mx-auto px-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 max-w-7xl mx-auto items-center">
@@ -61,12 +61,12 @@
             <div class="absolute -top-20 -right-20 w-40 h-40 bg-white/5 blur-[80px]"></div>
             
             <div class="mb-14 relative z-10">
-              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400/60 mb-6 italic">Initial Node</h2>
+              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400/60 mb-6 italic">Basic plan</h2>
               <div class="flex items-baseline gap-2">
                 <span class="text-6xl font-black text-white tracking-tighter italic">
                   {{ billingCycle === 'monthly' ? '9,990' : '7,990' }}
                 </span>
-                <span class="text-[10px] font-black text-white/20 uppercase tracking-widest italic">FCFA / Pulse</span>
+                <span class="text-[10px] font-black text-white/20 uppercase tracking-widest italic">FCFA / month</span>
               </div>
             </div>
             
@@ -78,7 +78,7 @@
             </ul>
 
             <router-link to="/register" class="block w-full py-5 text-center bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white/80 hover:bg-white/10 hover:text-white transition-all duration-700 italic">
-              Initialize_Logic
+              Choose plan
             </router-link>
           </div>
 
@@ -87,16 +87,16 @@
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(45,212,191,0.08),_transparent)]"></div>
             
             <div class="absolute top-0 left-1/2 -translate-x-1/2 px-8 py-2.5 bg-teal-400 rounded-b-3xl">
-              <span class="text-[9px] font-black uppercase tracking-[0.3em] text-gray-950 italic">Optimum_Bias</span>
+              <span class="text-[9px] font-black uppercase tracking-[0.3em] text-gray-950 italic">Most popular</span>
             </div>
             
             <div class="mb-14 relative z-10">
-              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400 mb-6 italic">Neural Grid</h2>
+              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-teal-400 mb-6 italic">Pro plan</h2>
               <div class="flex items-baseline gap-2">
                 <span class="text-8xl font-black text-white tracking-tighter italic">
                   {{ billingCycle === 'monthly' ? '19,990' : '15,990' }}
                 </span>
-                <span class="text-[11px] font-black text-white/20 uppercase tracking-widest italic">FCFA / Pulse</span>
+                <span class="text-[11px] font-black text-white/20 uppercase tracking-widest italic">FCFA / month</span>
               </div>
             </div>
             
@@ -117,10 +117,10 @@
             <div class="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/5 blur-[80px]"></div>
             
             <div class="mb-14 relative z-10">
-              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/60 mb-6 italic">Global Swarm</h2>
+              <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/60 mb-6 italic">Business plan</h2>
               <div class="flex items-baseline gap-2">
                 <span class="text-6xl font-black text-white tracking-tighter italic">49,990</span>
-                <span class="text-[10px] font-black text-white/20 uppercase tracking-widest italic">FCFA / Pulse</span>
+                <span class="text-[10px] font-black text-white/20 uppercase tracking-widest italic">FCFA / month</span>
               </div>
             </div>
             
@@ -146,8 +146,8 @@
       
       <div class="container mx-auto px-6">
         <div class="text-center mb-16 sm:mb-32">
-          <p class="text-xs font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Analytical Buffer</p>
-          <h2 class="text-4xl sm:text-8xl font-black text-white tracking-tighter uppercase italic leading-[0.8]">Logic Matrix</h2>
+          <p class="text-xs font-black text-teal-400 uppercase tracking-[0.6em] mb-4 italic">Compare plans</p>
+          <h2 class="text-4xl sm:text-8xl font-black text-white tracking-tighter uppercase italic leading-[0.8]">Compare plans</h2>
         </div>
         
         <div class="max-w-6xl mx-auto overflow-hidden rounded-3xl sm:rounded-[2.5rem] border border-white/5 bg-white/[0.02] backdrop-blur-3xl shadow-3xl">
@@ -155,10 +155,10 @@
             <table class="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr class="border-b border-white/5 bg-white/[0.01]">
-                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-white/20 italic">PROTOCOL_SPEC</th>
-                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-teal-400/40 italic">NODE</th>
-                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-teal-400 italic">GRID</th>
-                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-blue-400/40 italic">SWARM</th>
+                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-white/20 italic">FEATURE</th>
+                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-teal-400/40 italic">BASIC</th>
+                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-teal-400 italic">PRO</th>
+                  <th class="px-6 sm:px-12 py-6 sm:py-10 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] text-blue-400/40 italic">BUSINESS</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
@@ -183,13 +183,13 @@
       <div class="container mx-auto px-6">
         <div class="max-w-4xl mx-auto space-y-16">
           <h2 class="text-3xl sm:text-6xl font-black text-white mb-6 sm:mb-8 tracking-tighter uppercase italic leading-[1.1] animate-pulse-slow">
-            DEPLOY<br>ACQUISITION
+            CHOOSE<br>A PLAN
           </h2>
           <router-link 
             to="/register" 
             class="group relative inline-block px-12 py-6 sm:px-24 sm:py-10 bg-teal-400 text-gray-950 font-black rounded-3xl sm:rounded-[3rem] transition-all duration-700 hover:scale-110 hover:shadow-[0_0_120px_rgba(45,212,191,0.6)] uppercase tracking-[0.5em] text-xs"
           >
-            <span class="relative z-10 italic">Initialize Network Sync</span>
+            <span class="relative z-10 italic">Get started</span>
             <div class="absolute inset-0 bg-white/40 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]"></div>
           </router-link>
         </div>
@@ -203,19 +203,19 @@ import { ref } from 'vue';
 
 const billingCycle = ref('monthly');
 
-const basicFeatures = ['Real-time Hub Access', 'Uplink Alert Buffer', 'Single Node Mapping', '7-Cycle Log History', 'Core Logic Connectivity'];
-const proFeatures = ['Neural Alert Stream', 'Deep Analytics Grid', '5-Node Mesh Mapping', '30-Cycle Log History', 'Priority Uplink Slot'];
-const enterpriseFeatures = ['Infinite Swarm Nodes', 'Multi-Tenant Logic', 'Autonomous Reporting', 'Global Log Stream', '24/7 Deep Link', 'Elite Node Master'];
+const basicFeatures = ['Live gas readings', 'Gas alerts', '1 sensor', '7 days of history', 'Basic support'];
+const proFeatures = ['App and email alerts', 'Gas use reports', 'Up to 5 sensors', '30 days of history', 'Priority support'];
+const enterpriseFeatures = ['More sensors', 'Multiple user accounts', 'Automatic reports', 'Full reading history', '24/7 support', 'Manage all sensors'];
 
 const comparisonFeatures = [
-  { name: 'Neural Stream', basic: true, pro: true, enterprise: true },
+  { name: 'Live readings', basic: true, pro: true, enterprise: true },
   { name: 'Core Alerts', basic: true, pro: true, enterprise: true },
-  { name: 'Push Protocol', basic: false, pro: true, enterprise: true },
-  { name: 'SMS Override', basic: false, pro: true, enterprise: true },
-  { name: 'Deep Analytics', basic: false, pro: true, enterprise: true },
-  { name: 'Multi-Node', basic: false, pro: true, enterprise: true },
-  { name: 'Swarm Reports', basic: false, pro: false, enterprise: true },
-  { name: 'Direct Logic', basic: false, pro: false, enterprise: true }
+  { name: 'App alerts', basic: false, pro: true, enterprise: true },
+  { name: 'Text message alerts', basic: false, pro: true, enterprise: true },
+  { name: 'Usage reports', basic: false, pro: true, enterprise: true },
+  { name: 'Multiple sensors', basic: false, pro: true, enterprise: true },
+  { name: 'Reports for all sensors', basic: false, pro: false, enterprise: true },
+  { name: 'Direct support', basic: false, pro: false, enterprise: true }
 ];
 </script>
 

@@ -7,7 +7,7 @@
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center space-x-4">
            <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Geospatial Intelligence / <span class="text-white/80">Vendor Network</span></h1>
+           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Map / <span class="text-white/80">Gas suppliers</span></h1>
         </div>
       </div>
     </header>
@@ -17,13 +17,13 @@
       <div class="w-full lg:w-[400px] shrink-0 bg-white/[0.02] backdrop-blur-3xl border-r border-white/5 flex flex-col h-[40vh] lg:h-full z-20 shadow-2xl order-2 lg:order-1 relative">
         <div class="p-6 border-b border-white/5 bg-gray-950/40">
           <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter mb-1">Local Suppliers</h2>
-          <p class="text-[9px] font-black uppercase tracking-widest text-teal-400">Authorized Distribution Nodes</p>
+          <p class="text-[9px] font-black uppercase tracking-widest text-teal-400">Approved suppliers</p>
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
           <div v-if="loading" class="flex flex-col items-center justify-center p-8 space-y-4">
             <div class="w-8 h-8 border-2 border-teal-400/20 border-t-teal-400 rounded-full animate-spin"></div>
-            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 italic">Scanning Area...</span>
+            <span class="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 italic">Finding suppliers near you...</span>
           </div>
           
           <div v-for="vendor in vendors" :key="vendor.id" 
@@ -42,7 +42,7 @@
         
         <div v-if="!mapLoaded" class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
           <div class="w-12 h-12 border-2 border-teal-400/20 border-t-teal-400 rounded-full animate-spin mb-4"></div>
-          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Synchronizing Jawg Matrix...</span>
+          <span class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Loading map...</span>
         </div>
 
         <!-- Detail Overlay -->
@@ -52,7 +52,7 @@
             <p class="text-[10px] uppercase font-bold text-white/50 tracking-widest mb-4">{{ selectedVendor.address }}</p>
             
             <button @click="openNavigation" class="w-full py-3.5 bg-gradient-to-r from-teal-400 to-blue-500 rounded-xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_20px_rgba(45,212,191,0.3)] transition-all flex items-center justify-center">
-              Launch Navigation Route
+              Get directions
             </button>
           </div>
         </transition>

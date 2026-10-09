@@ -20,14 +20,14 @@
       <div class="flex items-center justify-between px-8 py-5">
         <div class="flex items-center space-x-4">
           <div class="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
-          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Communication / <span class="text-white/80">Node Intelligence</span></h1>
+          <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Alerts / <span class="text-white/80">Alert list</span></h1>
           <span v-if="unreadCount > 0" class="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full text-[9px] font-black text-red-400 uppercase tracking-widest animate-pulse italic">
-            {{ unreadCount }} New Logs
+            {{ unreadCount }} new alerts
           </span>
         </div>
         
         <div class="flex items-center gap-4">
-          <button @click="markAllAsRead" class="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white hover:border-white/20 transition-all italic">Mark All Resolved</button>
+          <button @click="markAllAsRead" class="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white hover:border-white/20 transition-all italic">Mark all as read</button>
           <button @click="showNotificationSettings = true" class="p-2.5 bg-teal-400 hover:bg-teal-300 rounded-xl text-gray-950 transition-all hover:shadow-[0_0_20px_rgba(45,212,191,0.4)]">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </button>
@@ -38,7 +38,7 @@
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar max-w-5xl mx-auto w-full">
       
-      <!-- Intelligence Filters -->
+      <!-- How it works Filters -->
       <div class="flex flex-wrap items-center justify-between gap-6 bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-6 group/filters">
         <div class="flex items-center gap-3 overflow-x-auto scrollbar-hide">
           <button 
@@ -54,11 +54,11 @@
         </div>
 
         <div class="flex items-center gap-4">
-          <span class="text-[9px] font-black text-white/20 uppercase tracking-widest italic">Sequence Buffer:</span>
+          <span class="text-[9px] font-black text-white/20 uppercase tracking-widest italic">Sort by:</span>
           <select v-model="sortBy" class="bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-teal-400/30 transition-all cursor-pointer italic">
-            <option value="newest">Recent_First</option>
-            <option value="oldest">Historical_First</option>
-            <option value="priority">Priority_First</option>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="priority">Most important first</option>
           </select>
         </div>
       </div>
@@ -66,15 +66,15 @@
       <!-- Feed Content -->
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 animate-pulse">
         <div class="w-12 h-12 rounded-2xl border-2 border-teal-400/20 border-t-teal-400 animate-spin mb-4"></div>
-        <div class="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] italic">Synthesizing_Logs...</div>
+        <div class="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] italic">Loading alerts...</div>
       </div>
 
       <div v-else-if="filteredNotifications.length === 0" class="flex flex-col items-center justify-center py-20 group/empty">
         <div class="w-20 h-20 rounded-[2.5rem] bg-white/5 border border-white/10 flex items-center justify-center text-white/10 mb-8 group-hover/empty:scale-110 transition-transform duration-700">
           <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
         </div>
-        <h3 class="text-xl font-black text-white italic uppercase tracking-tighter mb-2">Zero Deviations Detected</h3>
-        <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest italic">All nodes operating within specified logic thresholds.</p>
+        <h3 class="text-xl font-black text-white italic uppercase tracking-tighter mb-2">No new alerts</h3>
+        <p class="text-[10px] font-bold text-white/20 uppercase tracking-widest italic">Your sensors are working normally.</p>
       </div>
 
       <div v-else class="space-y-4">
@@ -117,14 +117,14 @@
                 </div>
                 
                 <div class="flex items-center gap-4">
-                  <span class="text-[10px] font-black text-teal-400/60 uppercase tracking-widest italic">{{ n.sensor_name || 'System Grid' }}</span>
+                  <span class="text-[10px] font-black text-teal-400/60 uppercase tracking-widest italic">{{ n.sensor_name || 'System' }}</span>
                   <div class="w-1 h-1 rounded-full bg-white/10"></div>
                   <span class="text-[10px] font-bold text-white/20 uppercase tracking-widest italic truncate max-w-xs">{{ n.house_address }}</span>
                 </div>
 
                 <div class="flex gap-4 pt-4">
-                  <button v-if="!n.is_resolved" @click="markAsRead(n)" class="text-[9px] font-black text-teal-400 uppercase tracking-widest italic hover:text-teal-300 transition-colors">RESOLVE_LOG</button>
-                  <button @click="dismissNotification(n)" class="text-[9px] font-black text-white/20 uppercase tracking-widest italic hover:text-white/40 transition-colors">PURGE_SEQ</button>
+                  <button v-if="!n.is_resolved" @click="markAsRead(n)" class="text-[9px] font-black text-teal-400 uppercase tracking-widest italic hover:text-teal-300 transition-colors">Mark as read</button>
+                  <button @click="dismissNotification(n)" class="text-[9px] font-black text-white/20 uppercase tracking-widest italic hover:text-white/40 transition-colors">Remove</button>
                 </div>
               </div>
             </div>
@@ -147,16 +147,16 @@
                 <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
               </div>
               <div>
-                <h3 class="text-[11px] font-black uppercase tracking-[0.4em] text-teal-400/60 mb-2 italic">Intelligence Bias</h3>
-                <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Transmission Rules</h2>
+                <h3 class="text-[11px] font-black uppercase tracking-[0.4em] text-teal-400/60 mb-2 italic">Alert settings</h3>
+                <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Alert options</h2>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
               <!-- Channel Logic -->
               <div class="space-y-6">
-                <h4 class="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] italic ml-4">Communication Uplinks</h4>
-                <div v-for="(val, key) in { emailEnabled: 'SMTP_Link', pushEnabled: 'Direct_Notify', smsEnabled: 'Binary_SMS' }" :key="key" class="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all cursor-pointer group/toggle" @click="settings[key] = !settings[key]">
+                <h4 class="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] italic ml-4">How to get alerts</h4>
+                <div v-for="(val, key) in { emailEnabled: 'Email', pushEnabled: 'App alerts', smsEnabled: 'Text messages' }" :key="key" class="flex items-center justify-between p-4 rounded-2xl hover:bg-white/5 transition-all cursor-pointer group/toggle" @click="settings[key] = !settings[key]">
                   <span class="text-[10px] font-black uppercase tracking-widest italic" :class="settings[key] ? 'text-teal-400' : 'text-white/40'">{{ val }}</span>
                   <div class="w-12 h-6 rounded-full relative transition-colors duration-500" :class="settings[key] ? 'bg-teal-400' : 'bg-white/10'">
                     <div class="absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-all duration-500" :class="settings[key] ? 'translate-x-6' : 'translate-x-0'"></div>
@@ -169,11 +169,11 @@
                 <h4 class="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] italic ml-4">Alert Sensitivity</h4>
                 <div class="space-y-4">
                   <div v-for="(label, key) in { criticalAlerts: 'Criticals', warningAlerts: 'Warnings' }" :key="key" class="space-y-2 group/input">
-                    <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">{{ label }} Protocol</label>
+                    <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">{{ label }}</label>
                     <select v-model="settings[key]" class="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-[10px] font-black text-white uppercase tracking-widest outline-none focus:border-teal-400/30 transition-all cursor-pointer italic appearance-none">
-                      <option value="all">Analyze All</option>
+                      <option value="all">All alerts</option>
                       <option value="important">Important Only</option>
-                      <option value="none">Ignore Seq</option>
+                      <option value="none">No alerts</option>
                     </select>
                   </div>
                 </div>
@@ -182,8 +182,8 @@
 
             <!-- Modal Footer -->
             <div class="flex gap-4 pt-8 border-t border-white/5">
-              <button @click="showNotificationSettings = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Abort Sync</button>
-              <button @click="saveNotificationSettings" class="flex-1 py-5 bg-teal-400 text-gray-950 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">Apply Modification</button>
+              <button @click="showNotificationSettings = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Cancel</button>
+              <button @click="saveNotificationSettings" class="flex-1 py-5 bg-teal-400 text-gray-950 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">Save settings</button>
             </div>
           </div>
         </div>
@@ -216,12 +216,12 @@ const hours = Array.from({ length: 24 }, (_, i) => ({
 }))
 
 const filters = [
-  { value: 'all', label: 'Matrix' },
+  { value: 'all', label: 'All alerts' },
   { value: 'unread', label: 'Unresolved' },
-  { value: 'alerts', label: 'Anomalies' },
-  { value: 'system', label: 'Core Log' },
-  { value: 'tanks', label: 'Hardware' },
-  { value: 'payments', label: 'Credit' }
+  { value: 'alerts', label: 'Gas alerts' },
+  { value: 'system', label: 'System' },
+  { value: 'tanks', label: 'Gas sensors' },
+  { value: 'payments', label: 'Payments' }
 ]
 
 const settings = ref({
@@ -264,7 +264,7 @@ const fetchNotifications = async () => {
   try {
     const res = await api.get('/notifications/')
     notifications.value = res.data
-  } catch (e) { showToastMessage('Fetch failure', 'error') }
+  } catch (e) { showToastMessage('Could not load alerts', 'error') }
   finally { isLoading.value = false }
 }
 
@@ -272,32 +272,32 @@ const markAsRead = async (n) => {
   try {
     await api.post(`/notifications/${n.id}/read/`)
     n.is_resolved = true
-    showToastMessage('Log resolved')
-  } catch (e) { showToastMessage('State override failure', 'error') }
+    showToastMessage('Alert marked as read')
+  } catch (e) { showToastMessage('Could not update the alert', 'error') }
 }
 
 const markAllAsRead = async () => {
   try {
     await api.post('/notifications/mark-all-read/')
     notifications.value.forEach(n => n.is_resolved = true)
-    showToastMessage('All sequences resolved')
-  } catch (e) { showToastMessage('Global override failure', 'error') }
+    showToastMessage('All alerts marked as read')
+  } catch (e) { showToastMessage('Could not mark alerts as read', 'error') }
 }
 
 const dismissNotification = async (n) => {
   try {
     await api.delete(`/notifications/${n.id}/`)
     notifications.value = notifications.value.filter(item => item.id !== n.id)
-    showToastMessage('Log purged')
-  } catch (e) { showToastMessage('Purge failure', 'error') }
+    showToastMessage('Alert removed')
+  } catch (e) { showToastMessage('Could not remove the alert', 'error') }
 }
 
 const saveNotificationSettings = async () => {
   try {
     await api.post('/notifications/settings/', settings.value)
     showNotificationSettings.value = false
-    showToastMessage('Rules updated')
-  } catch (e) { showToastMessage('Write failure', 'error') }
+    showToastMessage('Settings saved')
+  } catch (e) { showToastMessage('Could not save settings', 'error') }
 }
 
 onMounted(() => {

@@ -8,7 +8,7 @@
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center space-x-4">
            <div class="w-2 h-2 rounded-full animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]" :class="profile.is_approved ? 'bg-teal-400' : 'bg-yellow-400'"></div>
-           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Vendor Module / <span class="text-white/80">Identity & Location</span></h1>
+           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Supplier / <span class="text-white/80">Identity & Location</span></h1>
         </div>
       </div>
     </header>
@@ -16,7 +16,7 @@
     <main class="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 relative z-10 custom-scrollbar max-w-5xl mx-auto w-full">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
-          <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Profile Configuration</h2>
+          <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Business profile</h2>
           <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mt-1 italic">Submit your documents to activate public listing.</p>
         </div>
       </div>
@@ -28,48 +28,48 @@
           <svg class="w-7 h-7 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </div>
         <div class="relative z-10">
-          <h3 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-400 mb-1 italic">Verification Pending</h3>
-          <p class="text-[11px] font-bold text-white/60 tracking-wide uppercase leading-relaxed">Your identity documents are under review by Network Intelligence. Once validated, your node will appear on the public consumer mapping grid.</p>
+          <h3 class="text-xs font-black uppercase tracking-[0.3em] text-yellow-400 mb-1 italic">Waiting for approval</h3>
+          <p class="text-[11px] font-bold text-white/60 tracking-wide uppercase leading-relaxed">We are checking your documents. When they are approved, customers will be able to find your business on the supplier map.</p>
         </div>
       </div>
 
       <div v-else-if="profile.is_approved" class="p-6 bg-teal-400/10 border border-teal-400/20 rounded-[2rem] flex items-center shadow-[0_0_30px_rgba(45,212,191,0.15)] gap-4">
         <svg class="w-6 h-6 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span class="text-sm font-black uppercase tracking-widest text-teal-400 italic">Node Validated & Publicly Broadcasted</span>
+        <span class="text-sm font-black uppercase tracking-widest text-teal-400 italic">Your business is approved and visible to customers</span>
       </div>
 
-      <!-- Main Form Grid -->
+      <!-- Main Form Pro -->
       <form @submit.prevent="saveProfile" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Identity Section -->
         <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 hover:border-white/10 transition-all duration-500 space-y-6">
           <div class="border-b border-white/5 pb-4 mb-6">
-            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Core Metadata</h3>
+            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Business details</h3>
           </div>
 
           <div class="space-y-2">
-            <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Commercial Node Name</label>
+            <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Business name</label>
             <input type="text" v-model="profile.store_name" required class="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic transition-colors">
           </div>
 
           <div class="space-y-4 pt-4 border-t border-white/5">
-            <h4 class="text-[9px] font-black uppercase tracking-widest text-blue-400 italic">Verification Documents</h4>
+            <h4 class="text-[9px] font-black uppercase tracking-widest text-blue-400 italic">Documents for review</h4>
             <div class="space-y-2">
-              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Identity card (.pdf, .jpg, .png)</label>
+              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">ID card (.pdf, .jpg, .png)</label>
               <input type="file" accept="image/*,.pdf" @change="handleFileUpload('identity_card', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 text-white/40 text-[11px]">
               <div v-if="files.identity_card" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Selected: {{ files.identity_card.name }}</div>
-              <div v-else-if="profile.has_identity_card" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Identity document already submitted</div>
+              <div v-else-if="profile.has_identity_card" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">ID card already sent</div>
             </div>
             <div class="space-y-2">
               <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Tax payment receipt</label>
               <input type="file" accept="image/*,.pdf" @change="handleFileUpload('tax_payment_document', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 text-white/40 text-[11px]">
               <div v-if="files.tax_payment_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Selected: {{ files.tax_payment_document.name }}</div>
-              <div v-else-if="profile.has_tax_payment_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Tax document already submitted</div>
+              <div v-else-if="profile.has_tax_payment_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Tax receipt already sent</div>
             </div>
             <div class="space-y-2">
-              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Business authenticity document</label>
+              <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Proof that your business is real</label>
               <input type="file" accept="image/*,.pdf" @change="handleFileUpload('additional_document', $event)" class="w-full px-5 py-3 bg-white/5 border border-white/10 rounded-2xl file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-[0.2em] file:bg-teal-400/10 file:text-teal-400 text-white/40 text-[11px]">
               <div v-if="files.additional_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1 truncate">Selected: {{ files.additional_document.name }}</div>
-              <div v-else-if="profile.has_additional_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Supporting document already submitted</div>
+              <div v-else-if="profile.has_additional_document" class="text-[9px] font-bold text-teal-400 ml-2 mt-1">Proof document already sent</div>
             </div>
           </div>
         </div>
@@ -78,33 +78,33 @@
         <div class="bg-white/[0.02] backdrop-blur-3xl border border-white/5 rounded-[2.5rem] p-8 hover:border-white/10 transition-all duration-500 space-y-6 flex flex-col justify-between">
           <div>
             <div class="border-b border-white/5 pb-4 mb-6">
-              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Geospatial Sync</h3>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 italic">Business location</h3>
             </div>
 
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Physical Address Line</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Street address</label>
                 <input type="text" v-model="profile.address" required class="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic transition-colors" placeholder="e.g. 100 Main St, Douala">
               </div>
 
               <div class="space-y-4">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Interactive Geospatial Pinpoint</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Choose your location on the map</label>
                 <div class="h-[200px] w-full rounded-2xl border border-white/10 overflow-hidden relative z-10 mt-2">
                   <div id="location-picker-map" class="absolute inset-0 z-0"></div>
                   <div v-if="!pickerMapLoaded" class="absolute inset-0 bg-gray-950/80 backdrop-blur-sm z-20 flex items-center justify-center">
-                    <span class="text-[9px] font-black uppercase tracking-widest text-teal-400 animate-pulse">Initializing Map Module...</span>
+                    <span class="text-[9px] font-black uppercase tracking-widest text-teal-400 animate-pulse">Loading map...</span>
                   </div>
                 </div>
-                <p class="text-[8px] font-bold text-white/40 ml-2 mb-4">Click anywhere on the map to set exact coordinates manually.</p>
+                <p class="text-[8px] font-bold text-white/40 ml-2 mb-4">Click your business location on the map.</p>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Latitude Coord</label>
+                  <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Latitude</label>
                   <input type="number" step="any" v-model="profile.latitude" required class="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold tabular-nums italic placeholder-white/20" placeholder="0.000000">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Longitude Coord</label>
+                  <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Longitude</label>
                   <input type="number" step="any" v-model="profile.longitude" required class="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold tabular-nums italic placeholder-white/20" placeholder="0.000000">
                 </div>
               </div>
@@ -114,13 +114,13 @@
           <div class="space-y-4">
             <button type="button" @click="fetchCurrentLocation" class="w-full py-4 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center justify-center">
               <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              Auto-Sync GPS Device Coordinates
+              Use my current location
             </button>
             
             <button type="submit" class="w-full py-5 bg-gradient-to-r from-teal-400 to-blue-500 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all flex items-center justify-center relative overflow-hidden group/btn shadow-xl">
               <span class="relative z-10 flex items-center justify-center h-full">
-                <span v-if="loading" class="animate-pulse">Transmitting Data...</span>
-                <span v-else>Commit Profile Logic</span>
+                <span v-if="loading" class="animate-pulse">Saving...</span>
+                <span v-else>Save profile</span>
               </span>
             </button>
           </div>
@@ -237,12 +237,12 @@ const fetchCurrentLocation = () => {
         alert('Coordinates synchronized from satellite proxy.');
       },
       (error) => {
-        alert('Geospatial Sync Failed: ' + error.message);
+        alert('Business location Failed: ' + error.message);
       },
       { enableHighAccuracy: true }
     );
   } else {
-    alert("Geolocation is not supported by this command terminal.");
+    alert("Location sharing is not available in this browser.");
   }
 };
 
@@ -326,7 +326,7 @@ const saveProfile = async () => {
     }
     
     profile.value = response.data;
-    alert('Vendor intelligence updated successfully.');
+    alert('Supplier profile saved.');
   } catch (err) {
     console.error('Failed to save profile', err);
     alert('Update failure: ' + JSON.stringify(err.response?.data || {}));

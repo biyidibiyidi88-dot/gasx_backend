@@ -20,7 +20,7 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 sm:px-8 py-4 sm:py-5 gap-4">
         <div class="flex items-center space-x-4">
           <div class="w-1.5 h-1.5 sm:w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]"></div>
-          <h1 class="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Registry / <span class="text-white/80">User Management</span></h1>
+          <h1 class="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Users / <span class="text-white/80">Manage users</span></h1>
         </div>
         
         <button 
@@ -30,7 +30,7 @@
           <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
           </svg>
-          Establish Node
+          Add user
         </button>
       </div>
     </header>
@@ -51,7 +51,7 @@
             <input 
               v-model="searchQuery"
               type="text" 
-              placeholder="IDENTIFY NODE BY NAME OR ALIAS..."
+              placeholder="Search by name or email..."
               class="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/5 rounded-2xl focus:border-teal-400/50 focus:bg-white/[0.08] focus:outline-none transition-all duration-500 text-white placeholder:text-white/10 text-[10px] font-black tracking-[0.2em] uppercase italic"
             >
           </div>
@@ -96,9 +96,9 @@
             <thead>
               <tr class="bg-white/[0.01] border-b border-white/5">
                 <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Identity</th>
-                <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Privilege Level</th>
-                <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Logic Status</th>
-                <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Last Uplink</th>
+                <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Account type</th>
+                <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Account status</th>
+                <th class="px-5 sm:px-8 py-4 sm:py-6 text-left text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Last active</th>
                 <th class="px-5 sm:px-8 py-4 sm:py-6 text-right text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Commands</th>
               </tr>
             </thead>
@@ -134,20 +134,20 @@
                 </td>
                 <td class="px-8 py-6 whitespace-nowrap text-right">
                   <div class="flex items-center justify-end gap-3 translate-x-2 group-hover:translate-x-0 transition-transform">
-                    <button @click="editUser(user)" class="p-2 text-white/20 hover:text-teal-400 hover:bg-teal-400/10 rounded-xl transition-all" title="Edit Logic">
+                    <button @click="editUser(user)" class="p-2 text-white/20 hover:text-teal-400 hover:bg-teal-400/10 rounded-xl transition-all" title="Edit user">
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
                     <button 
                       @click="confirmUserAction(user, user.status === 'active' ? 'suspend' : 'activate')"
                       class="p-2 text-white/20 hover:text-yellow-400 hover:bg-yellow-400/10 rounded-xl transition-all"
-                      :title="user.status === 'active' ? 'Suspend Node' : 'Initialize Node'"
+                      :title="user.status === 'active' ? 'Suspend user' : 'Activate user'"
                     >
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path v-if="user.status === 'active'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </button>
-                    <button @click="confirmUserAction(user, 'delete')" class="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all" title="Purge Node">
+                    <button @click="confirmUserAction(user, 'delete')" class="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all" title="Delete user">
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
                   </div>
@@ -155,7 +155,7 @@
               </tr>
               <tr v-if="filteredUsers.length === 0">
                 <td colspan="5" class="px-8 py-20 text-center">
-                  <div class="text-[10px] font-black uppercase tracking-[0.4em] text-white/10 italic animate-pulse">ZERO_NODES_IDENTIFIED_IN_SEARCH_PROTOCOL</div>
+                  <div class="text-[10px] font-black uppercase tracking-[0.4em] text-white/10 italic animate-pulse">No users found.</div>
                 </td>
               </tr>
             </tbody>
@@ -165,7 +165,7 @@
         <!-- Pagination Command -->
         <div class="px-8 py-6 bg-white/[0.01] border-t border-white/5 flex items-center justify-between">
           <div class="text-[9px] font-black uppercase tracking-widest text-white/20 italic">
-            Visualizing <span class="text-white/60">{{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, filteredUsers.length) }}</span> // Aggregate <span class="text-white/60">{{ filteredUsers.length }}</span> Nodes
+            Showing <span class="text-white/60">{{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, filteredUsers.length) }}</span> of <span class="text-white/60">{{ filteredUsers.length }}</span> users
           </div>
           
           <div class="flex items-center gap-1.5">
@@ -209,11 +209,11 @@
         <div v-if="showInviteModal" @click.stop class="bg-gray-900 border border-white/5 rounded-2xl sm:rounded-[3rem] p-6 sm:p-10 max-w-md w-full relative group/modal overflow-hidden">
           <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-teal-500/5 to-transparent pointer-events-none"></div>
           <div class="relative z-10 space-y-8">
-            <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Initialize Node</h2>
+            <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Add a user</h2>
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Node Uplink Identifier / Email</label>
-                <input v-model="inviteEmail" type="email" placeholder="node@protocol.ai" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic placeholder:text-white/10">
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">User email</label>
+                <input v-model="inviteEmail" type="email" placeholder="name@example.com" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold italic placeholder:text-white/10">
               </div>
               <div class="space-y-2">
                 <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Account type</label>
@@ -221,8 +221,8 @@
                 <p class="ml-4 text-xs text-white/35">Supplier and delivery accounts apply in the mobile app and require document review.</p>
               </div>
               <div class="pt-6 flex gap-4">
-                <button @click="showInviteModal = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Abort</button>
-                <button @click="sendInvite" class="flex-1 py-5 bg-teal-400 text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 rounded-2xl hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">Transmit Invite</button>
+                <button @click="showInviteModal = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Cancel</button>
+                <button @click="sendInvite" class="flex-1 py-5 bg-teal-400 text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 rounded-2xl hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">Send invite</button>
               </div>
             </div>
           </div>
@@ -232,14 +232,14 @@
         <div v-if="showEditModal" @click.stop class="bg-gray-900 border border-white/5 rounded-2xl sm:rounded-[3rem] p-6 sm:p-10 max-w-md w-full relative group/modal overflow-hidden">
           <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-blue-500/5 to-transparent pointer-events-none"></div>
           <div class="relative z-10 space-y-8">
-            <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Modify Node Logic</h2>
+            <h2 class="text-2xl sm:text-3xl font-black text-white italic uppercase tracking-tighter">Edit user details</h2>
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Identity Alias</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Name</label>
                 <input v-model="editingUser.name" type="text" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white font-bold italic">
               </div>
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Digital Identifier</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/20 ml-4 italic">Email address</label>
                 <input v-model="editingUser.email" type="email" class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-blue-400/50 focus:outline-none text-white font-bold italic">
               </div>
               <div class="grid grid-cols-2 gap-4">
@@ -247,8 +247,8 @@
                 <div class="rounded-xl border border-white/10 bg-white/[0.03] p-4"><p class="text-[9px] uppercase tracking-widest text-white/30">Status</p><p class="mt-2 text-xs font-bold text-white">{{ formatStatus(editingUser.status) }}</p></div>
               </div>
               <div class="pt-6 flex gap-4">
-                <button @click="showEditModal = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Abort</button>
-                <button @click="saveUser" class="flex-1 py-5 bg-gradient-to-r from-teal-400 to-blue-500 text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 rounded-2xl hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">Commit Logic</button>
+                <button @click="showEditModal = false" class="flex-1 py-5 border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/40 hover:bg-white/5 rounded-2xl transition-all">Cancel</button>
+                <button @click="saveUser" class="flex-1 py-5 bg-gradient-to-r from-teal-400 to-blue-500 text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 rounded-2xl hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">Save changes</button>
               </div>
             </div>
           </div>
@@ -261,7 +261,7 @@
               <svg class="h-8 w-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </div>
             <div>
-              <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-red-400 mb-2 italic">Security Protocol</h3>
+              <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-red-400 mb-2 italic">Confirm this action</h3>
               <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">{{ confirmTitle }}</h2>
             </div>
             <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic leading-relaxed">{{ confirmMessage }}</p>
@@ -387,14 +387,14 @@ const visiblePages = computed(() => {
 })
 
 const formatRole = (role) => availableRoles.find(r => r.value === role)?.label || role
-const formatStatus = (status) => ({ active: 'Active Pulse', pending: 'Awaiting Logic', suspended: 'Purged' }[status] || status)
+const formatStatus = (status) => ({ active: 'Active', pending: 'Waiting for approval', suspended: 'Suspended' }[status] || status)
 const statusClass = (status) => ({
   active: 'text-teal-400 border-teal-400/30 bg-teal-400/5',
   pending: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/5',
   suspended: 'text-red-400 border-red-400/30 bg-red-400/5'
 }[status] || 'text-white/20 border-white/10 bg-white/5')
 
-const formatLastActive = (date) => date ? new Date(date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'ZERO_IDLE_CYCLE'
+const formatLastActive = (date) => date ? new Date(date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Not active yet'
 
 const editUser = (user) => { editingUser.value = { ...user }; showEditModal.value = true }
 
@@ -402,9 +402,9 @@ const confirmUserAction = (user, action) => {
   confirmUser.value = user
   confirmAction.value = action
   const map = {
-    delete: { t: 'Purge Identity', m: `Permanently erase Node ${user.name} from the encrypted grid?`, b: 'Confirm Purge' },
-    suspend: { t: 'De-initialize Node', m: `Restrict all logic access for ${user.name}?`, b: 'Suspend' },
-    activate: { t: 'Initialize Node', m: `Re-establish neural link for ${user.name}?`, b: 'Activate' }
+    delete: { t: 'Delete account', m: `Delete ${user.name}'s account? This cannot be undone.`, b: 'Confirm delete' },
+    suspend: { t: 'Suspend account', m: `Suspend ${user.name}'s account?`, b: 'Suspend' },
+    activate: { t: 'Activate user', m: `Restore ${user.name}'s account?`, b: 'Activate' }
   }[action]
   confirmTitle.value = map.t; confirmMessage.value = map.m; confirmButtonText.value = map.b
   showConfirmModal.value = true
@@ -424,7 +424,7 @@ const fetchUsers = async () => {
       status: u.status,
       lastActive: u.last_active
     }))
-  } catch (e) { showNotificationMessage('Uplink failed: Access denied', 'error') }
+  } catch (e) { showNotificationMessage('Could not connect. Access denied.', 'error') }
   finally { isLoading.value = false }
 }
 
@@ -432,10 +432,10 @@ const sendInvite = async () => {
   try {
     const res = await api.post('/users/invite/', { email: inviteEmail.value, first_name: inviteEmail.value.split('@')[0], account_type: 'client' })
     users.value.push({ id: res.data.id, name: inviteEmail.value.split('@')[0], email: inviteEmail.value, avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inviteEmail.value)}&background=random`, role: 'user', status: 'pending', lastActive: null })
-    showNotificationMessage('Transmission binary sent')
+    showNotificationMessage('Invite sent.')
     showInviteModal.value = false
     inviteEmail.value = ''
-  } catch (e) { showNotificationMessage('Signal interference', 'error') }
+  } catch (e) { showNotificationMessage('Could not send invite.', 'error') }
 }
 
 const saveUser = async () => {
@@ -443,9 +443,9 @@ const saveUser = async () => {
     const res = await api.patch(`/users/${editingUser.value.id}/`, { first_name: editingUser.value.name.split(' ')[0], last_name: editingUser.value.name.split(' ')[1] || '', email: editingUser.value.email, is_admin: editingUser.value.role === 'admin' })
     const idx = users.value.findIndex(u => u.id === editingUser.value.id)
     if (idx !== -1) users.value[idx] = { ...users.value[idx], name: `${res.data.first_name} ${res.data.last_name}`, email: res.data.email, role: res.data.role, status: res.data.status }
-    showNotificationMessage('Node logic re-written')
+    showNotificationMessage('User details updated.')
     showEditModal.value = false
-  } catch (e) { showNotificationMessage('Write error: Permission denied', 'error') }
+  } catch (e) { showNotificationMessage('Could not save changes. Permission denied.', 'error') }
 }
 
 const executeUserAction = async () => {
@@ -453,15 +453,15 @@ const executeUserAction = async () => {
     if (confirmAction.value === 'delete') {
       await api.delete(`/users/${confirmUser.value.id}/`)
       users.value = users.value.filter(u => u.id !== confirmUser.value.id)
-      showNotificationMessage('Identity purged')
+      showNotificationMessage('Account deleted.')
     } else {
       const active = confirmAction.value === 'activate'
       await api.patch(`/users/${confirmUser.value.id}/status/`, { is_active: active })
       const idx = users.value.findIndex(u => u.id === confirmUser.value.id)
       if (idx !== -1) { users.value[idx].status = active ? 'active' : 'suspended'; if (active) users.value[idx].lastActive = new Date().toISOString() }
-      showNotificationMessage(`Status: ${active ? 'Pulse Active' : 'Offline'}`)
+      showNotificationMessage(`Status: ${active ? 'Active' : 'Suspended'}`)
     }
-  } catch (e) { showNotificationMessage('Security override failed', 'error') }
+  } catch (e) { showNotificationMessage('Could not update the account.', 'error') }
   finally { showConfirmModal.value = false }
 }
 

@@ -18,7 +18,7 @@
             </span>
           </router-link>
           <p class="text-gray-400 text-sm leading-relaxed max-w-xs">
-            Next-generation gas monitoring for institutional and residential intelligence. Capture, structure, and leverage your energy data at scale.
+            Monitor your gas, receive safety alerts, and see your gas use in one place.
           </p>
           <div class="flex space-x-6">
             <a v-for="social in socialLinks" :key="social.label" :href="social.path" class="text-gray-500 hover:text-teal-400 transition-colors duration-300">
@@ -108,7 +108,7 @@ const linkGroups = [
     links: [
       { path: '/features', label: 'Features' },
       { path: '/pricing', label: 'Pricing' },
-      { path: '/how-it-works', label: 'Intelligence' },
+      { path: '/how-it-works', label: 'How it works' },
       { path: '/integrations', label: 'Network' }
     ]
   },

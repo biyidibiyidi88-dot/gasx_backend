@@ -7,7 +7,7 @@
       <div class="flex items-center justify-between px-6 py-4">
         <div class="flex items-center space-x-4">
            <div class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_10px_rgba(45,212,191,0.5)]"></div>
-           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Vendor Module / <span class="text-white/80">Inventory Management</span></h1>
+           <h1 class="text-xs font-black uppercase tracking-[0.3em] text-white/40 italic">Supplier / <span class="text-white/80">Stock</span></h1>
         </div>
       </div>
     </header>
@@ -16,7 +16,7 @@
        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
          <div>
            <h2 class="text-3xl font-black text-white italic uppercase tracking-tighter">Gas Bottle Stock</h2>
-           <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mt-1 italic">Manage your available inventory and pricing. Add a separate entry for every brand and bottle size you sell.</p>
+           <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mt-1 italic">Add each gas brand and bottle size you sell, with its price and stock amount.</p>
          </div>
          <button v-if="applicationStatus === 'APPROVED'" @click="showAddModal = true" class="px-6 py-3 bg-gradient-to-r from-teal-400 to-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_30px_rgba(45,212,191,0.4)] transition-all">
            + Add New Stock
@@ -34,7 +34,7 @@
          <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/10 mb-6">
            <svg class="w-8 h-8 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
          </div>
-         <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic mb-2">{{ applicationStatus === 'APPROVED' ? 'No Gas Bottles In Stock' : 'Inventory unavailable while verification is pending' }}</p>
+         <p class="text-sm font-bold text-white/40 uppercase tracking-widest italic mb-2">{{ applicationStatus === 'APPROVED' ? 'No gas bottles in stock' : 'Stock is hidden until your account is approved' }}</p>
          <p class="text-[10px] text-white/20 uppercase tracking-[0.2em] max-w-sm text-center">Approved suppliers can add gas bottles to their inventory here.</p>
        </div>
 
@@ -57,18 +57,18 @@
            
            <div class="relative z-10 space-y-4">
              <div class="flex justify-between items-end border-b border-white/5 pb-2 border-dashed">
-               <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Size Category</span>
+               <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Bottle size</span>
                <span class="text-sm font-bold text-white/90 italic tracking-tight">{{ bottle.size_display || bottle.size }}</span>
              </div>
              <div class="flex justify-between items-end border-b border-white/5 pb-2 border-dashed">
-               <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Fixed Price (FCFA)</span>
+               <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Price (FCFA)</span>
                <span class="text-base font-black text-teal-400 italic tracking-tight tabular-nums">{{ bottle.price }} FCFA</span>
              </div>
              <div class="flex justify-between items-end pt-2">
-               <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Stock Availability</span>
+               <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Bottles in stock</span>
                <div class="flex items-center space-x-2">
                  <span class="w-1.5 h-1.5 rounded-full" :class="bottle.stock_quantity > 0 ? 'bg-teal-400 animate-pulse' : 'bg-red-500'"></span>
-                 <span class="text-lg font-black text-white italic tracking-tight tabular-nums" :class="bottle.stock_quantity > 0 ? 'text-white' : 'text-red-400'">{{ bottle.stock_quantity }} Unit(s)</span>
+                 <span class="text-lg font-black text-white italic tracking-tight tabular-nums" :class="bottle.stock_quantity > 0 ? 'text-white' : 'text-red-400'">{{ bottle.stock_quantity }} bottle(s)</span>
                </div>
              </div>
            </div>
@@ -84,7 +84,7 @@
           <div class="relative z-10">
             <div class="flex justify-between items-center mb-8">
               <div>
-                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 mb-1 italic">Stock Registration</h3>
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 mb-1 italic">Add stock</h3>
                 <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Add New Bottle</h2>
               </div>
               <button @click="showAddModal = false" class="p-2 text-white/20 hover:text-white transition-colors bg-white/5 rounded-full">
@@ -94,7 +94,7 @@
 
             <form @submit.prevent="addBottle" class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Gas Brand Partner</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Gas brand</label>
                 <select v-model="newBottle.brand" required class="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white/80 font-bold italic appearance-none cursor-pointer">
                   <option value="" disabled class="bg-gray-900 text-white/50">Select a brand</option>
                   <option v-for="b in brands" :key="b.value" :value="b.value" class="bg-gray-900 text-white">{{ b.label }}</option>
@@ -102,7 +102,7 @@
               </div>
 
               <div class="space-y-2">
-                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Bottle Size / Capacity</label>
+                <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Bottle size</label>
                 <select v-model="newBottle.size" required class="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white/80 font-bold italic appearance-none cursor-pointer">
                   <option value="" disabled class="bg-gray-900 text-white/50">Select a size</option>
                   <option v-for="s in sizes" :key="s.value" :value="s.value" class="bg-gray-900 text-white">{{ s.label }}</option>
@@ -115,7 +115,7 @@
                   <input type="number" v-model="newBottle.price" required min="1000" class="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold tabular-nums italic placeholder-white/20" placeholder="0.00">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Stock Volume</label>
+                  <label class="text-[9px] font-black uppercase tracking-widest text-white/30 ml-2 italic">Number of bottles</label>
                   <input type="number" v-model="newBottle.stock_quantity" required min="0" class="w-full px-5 py-3.5 bg-white/5 border border-white/10 rounded-2xl focus:border-teal-400/50 focus:outline-none text-white font-bold tabular-nums italic placeholder-white/20" placeholder="0">
                 </div>
               </div>
@@ -123,7 +123,7 @@
               <div class="pt-4">
                 <button type="submit" class="w-full py-4 bg-gradient-to-r from-teal-400 to-blue-500 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 hover:shadow-[0_0_40px_rgba(45,212,191,0.5)] transition-all flex items-center justify-center">
                   <span v-if="loading">Processing...</span>
-                  <span v-else>Commit Record</span>
+                  <span v-else>Save</span>
                 </button>
               </div>
             </form>
