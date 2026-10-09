@@ -1,26 +1,21 @@
-import requests
 import json
 import re
 import time
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 import logging
 from requests.exceptions import RequestException
 from datetime import datetime, timedelta
 from django.utils import timezone
+from .openrouter_service import OpenRouterService
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 class AIPredictionService:
-    API_URL = "https://openrouter.ai/api/v1/chat/completions"
-    API_KEY = "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"
     DEFAULT_BOTTLE_CAPACITY = 12.50
 
-    # Available models with fallback order
-    MODEL_PRIORITY = [
-        "anthropic/claude-3-haiku",
-        "mistralai/mistral-7b-instruct:free"
-    ]
+    MODEL_PRIORITY = OpenRouterService.models()
 
     @classmethod
     def _debug_log(cls, message, level='debug'):
@@ -125,8 +120,8 @@ class AIPredictionService:
         bottle_capacity = float(bottle_capacity)
         """Predict remaining gas days with robust error handling"""
         try:
-            if not cls.API_KEY:
-                raise ImproperlyConfigured("API_KEY is not set")
+            if not settings.OPENROUTER_API_KEY:
+                raise ImproperlyConfigured("OPENROUTER_API_KEY is not set")
 
             metrics = cls._calculate_metrics(history_data)
             cls._debug_log(f"Metrics: {metrics}", level='info')
@@ -138,12 +133,6 @@ class AIPredictionService:
             
             current_remaining_kg = float(current_remaining_kg)
             cls._debug_log(f"Current remaining gas: {current_remaining_kg}kg", level='info')
-
-            headers = {
-                "Authorization": f"Bearer {cls.API_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "http://localhost:8000"
-            }
 
             prompt = f"""Act as a precise gas consumption analyzer. Follow strictly:
 
@@ -181,21 +170,16 @@ class AIPredictionService:
                     }
 
                     start_time = time.time()
-                    response = requests.post(
-                        cls.API_URL,
-                        headers=headers,
-                        json=payload,
-                        timeout=20
+                    result = OpenRouterService.create_completion(
+                        payload["messages"],
+                        model=model,
+                        temperature=payload["temperature"],
+                        response_format=payload["response_format"],
+                        max_tokens=payload["max_tokens"],
+                        timeout=20,
                     )
                     response_time = time.time() - start_time
-
-                    cls._debug_log(f"API response ({response.status_code}) in {response_time:.2f}s", level='info')
-                    
-                    if response.status_code != 200:
-                        cls._debug_log(f"API error for {model}: {response.text[:200]}", level='error')
-                        continue
-
-                    result = response.json()
+                    cls._debug_log(f"API response received in {response_time:.2f}s", level='info')
                     content = result['choices'][0]['message']['content']
                     cls._debug_log(f"Raw API response for {model}: {content[:500]}...", level='debug')
                     

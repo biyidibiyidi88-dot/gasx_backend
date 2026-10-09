@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:printing/printing.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/location/current_device_location.dart';
 import '../../core/theme/app_theme.dart';
@@ -113,6 +114,23 @@ class _DeliveryWorkspaceScreenState
       }
     } finally {
       if (mounted) setState(() => _checkingPaymentId = null);
+    }
+  }
+
+  Future<void> _downloadInvoice(int orderId) async {
+    try {
+      final bytes = await ref
+          .read(vendorRepositoryProvider)
+          .downloadInvoice(orderId);
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'GasX-Invoice-$orderId.pdf',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not download the invoice. Try again.')),
+      );
     }
   }
 
@@ -466,6 +484,24 @@ class _DeliveryWorkspaceScreenState
                   style: TextStyle(color: Colors.amber, fontSize: 11),
                 ),
               ),
+          ],
+          if (!_isSupplier && !_isDriver && paymentStatus == 'PAID') ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _checkingPaymentId == order['id']
+                    ? null
+                    : () {
+                        final orderId = int.tryParse(
+                          order['id']?.toString() ?? '',
+                        );
+                        if (orderId != null) _downloadInvoice(orderId);
+                      },
+                icon: const Icon(Icons.download_outlined),
+                label: const Text('DOWNLOAD INVOICE PDF'),
+              ),
+            ),
           ],
           if (nextStatus != null) ...[
             const SizedBox(height: 14),

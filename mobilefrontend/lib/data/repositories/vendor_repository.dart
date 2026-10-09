@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import '../models/vendor_models.dart';
 
@@ -47,6 +49,14 @@ class VendorRepository {
   Future<Map<String, dynamic>> checkPaymentStatus(int orderId) async {
     final response = await _dio.post('payments/$orderId/status/');
     return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<Uint8List> downloadInvoice(int orderId) async {
+    final response = await _dio.get(
+      'payments/$orderId/invoice/',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(List<int>.from(response.data as List));
   }
 
   Future<List<Map<String, dynamic>>> getMyInventory() async {

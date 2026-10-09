@@ -32,7 +32,7 @@ const LOCAL_API_BASE_URL = getLocalFallbackBaseUrl();
 
 const isPaymentInitiation = (config) =>
   config?.method?.toLowerCase() === 'post' &&
-  /(?:^|\/)payments\/initiate\/?(?:\?|$)/i.test(config.url || '');
+  /(?:^|\/)payments\/(?:initiate|subscriptions\/initiate)\/?(?:\?|$)/i.test(config.url || '');
 
 const isSafeRead = (config) =>
   ['get', 'head', 'options'].includes((config?.method || 'get').toLowerCase());

@@ -53,7 +53,13 @@ class _BackendFailoverInterceptor extends Interceptor {
     final isSafeRead = const {'GET', 'HEAD', 'OPTIONS'}.contains(method);
     final isPaymentInitiation =
         method == 'POST' &&
-        RegExp(r'(?:^|/)payments/initiate/?$').hasMatch(request.path);
+        RegExp(
+          r'(?:^|/)payments/(?:initiate|subscriptions/initiate)/?$',
+        ).hasMatch(request.path);
+    // Payment and AI requests must be handled by the hosted Railway service.
+    // Never redirect these requests to a developer's local server.
+    final isRailwayOnlyRequest =
+        request.path.startsWith('payments/') || request.path == 'ai/chat/';
     final onlineUri = Uri.parse(ApiConstants.onlineBaseUrl);
     final requestUri = request.uri;
     final isOnlineRequest =
@@ -71,6 +77,7 @@ class _BackendFailoverInterceptor extends Interceptor {
         isOnlineRequest &&
         ApiConstants.localBaseUrl != ApiConstants.onlineBaseUrl &&
         request.extra[_fallbackAttemptedKey] != true &&
+        !isRailwayOnlyRequest &&
         !isPaymentInitiation &&
         (isConnectionFailure || isReadTimeout);
 

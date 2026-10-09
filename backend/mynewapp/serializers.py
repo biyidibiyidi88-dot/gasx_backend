@@ -1207,6 +1207,22 @@ class PaymentInitiateSerializer(DeliveryOrderCreateSerializer):
         return f"237{digits}"
 
 
+class SubscriptionPaymentInitiateSerializer(serializers.Serializer):
+    plan = serializers.ChoiceField(choices=("basic", "pro"))
+    payment_operator = serializers.ChoiceField(choices=Delivery.PAYMENT_OPERATOR_CHOICES)
+    payer_phone = serializers.CharField(max_length=16)
+
+    def validate_payer_phone(self, value):
+        if any(not (character.isdigit() or character in "+-() ") for character in value):
+            raise serializers.ValidationError("Enter a valid Cameroon mobile number.")
+        digits = "".join(character for character in value if character.isdigit())
+        if digits.startswith("237"):
+            digits = digits[3:]
+        if len(digits) != 9:
+            raise serializers.ValidationError("Enter a Cameroon mobile number with 9 digits.")
+        return f"237{digits}"
+
+
 class PublicVendorProfileSerializer(serializers.ModelSerializer):
     gas_bottles = GasBottleSerializer(many=True, read_only=True)
     user_name = serializers.CharField(source="user.get_full_name", read_only=True)

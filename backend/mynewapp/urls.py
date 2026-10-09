@@ -46,8 +46,19 @@ from .views import (
     SensorDeviceCommandView,
 )
 from .payment_views import PaymentInitiateView, PaymentStatusView
+from .invoice_views import GasOrderInvoiceView
+from .ai_views import AIChatView
+from .subscription_payment_views import (
+    SubscriptionPaymentInitiateView,
+    SubscriptionPaymentStatusView,
+    SubscriptionView,
+)
 
 urlpatterns = [
+    path("ai/chat/", AIChatView.as_view(), name="ai-chat"),
+    path("subscription/", SubscriptionView.as_view(), name="subscription"),
+    path("payments/subscriptions/initiate/", SubscriptionPaymentInitiateView.as_view(), name="subscription-payment-initiate"),
+    path("payments/subscriptions/<int:payment_id>/status/", SubscriptionPaymentStatusView.as_view(), name="subscription-payment-status"),
     path("admin/overview/", AdminOverviewView.as_view(), name="admin-overview"),
     path("admin/reports/", AdminReportView.as_view(), name="admin-report"),
     path("admin/delivery-applications/", AdminDeliveryApplicationListView.as_view(), name="admin-delivery-applications"),
@@ -148,6 +159,7 @@ urlpatterns = [
     # Delivery endpoints
     path("payments/initiate/", PaymentInitiateView.as_view(), name="payment-initiate"),
     path("payments/<int:order_id>/status/", PaymentStatusView.as_view(), name="payment-status"),
+    path("payments/<int:order_id>/invoice/", GasOrderInvoiceView.as_view(), name="payment-invoice"),
     path("deliveries/", DeliveryListCreateView.as_view(), name="delivery-list"),
     path("deliveries/<int:pk>/", DeliveryDetailUpdateView.as_view(), name="delivery-detail"),
 ]

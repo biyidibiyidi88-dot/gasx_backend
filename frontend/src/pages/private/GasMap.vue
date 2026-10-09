@@ -78,7 +78,7 @@ let map = null;
 let markers = [];
 
 // JAWG ACCESS TOKEN
-const JAWG_TOKEN = 'QWSZT4r4RnGLINur1NGRr2YTcTCLVbIPPbijitdYg4K5imZqo0dqSzPajpWqMPWB';
+const JAWG_TOKEN = import.meta.env.VITE_JAWG_TOKEN || ''
 
 const loadVendors = async () => {
   try {

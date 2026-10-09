@@ -17,6 +17,19 @@ ALLOW_MOCK_PAYMENTS = os.getenv("ALLOW_MOCK_PAYMENTS", "false").strip().lower() 
     "1", "true", "yes", "on"
 }
 
+# OpenRouter is only called by Django. Never expose this key to client builds.
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-3-haiku").strip()
+OPENROUTER_FALLBACK_MODELS = [
+    model.strip()
+    for model in os.getenv(
+        "OPENROUTER_FALLBACK_MODELS", "mistralai/mistral-7b-instruct:free"
+    ).split(",")
+    if model.strip()
+]
+OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "https://gasx.app").strip()
+OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME", "GasX").strip()
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -223,6 +236,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email configuration using Resend API
-RESEND_API_KEY = os.getenv('RESEND_API_KEY', 're_EhDLtAvk_AUHG11h85KoyJjR155ifQPCM')
-DEFAULT_FROM_EMAIL = 'Gas Monitor <onboarding@resend.dev>'  # Using Resend's verified domain
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '').strip()
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL', 'Gas Monitor <onboarding@resend.dev>'
+).strip()
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development

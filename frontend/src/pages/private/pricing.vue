@@ -133,22 +133,37 @@
 
               <button 
                 @click="handlePayment" 
-                :disabled="isProcessing || !phoneNumber"
+                :disabled="isProcessing || !phoneNumber || paymentStatus === 'pending' || paymentStatus === 'unknown'"
                 class="w-full py-5 bg-teal-400 hover:bg-teal-300 disabled:bg-white/5 disabled:text-white/20 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-gray-950 transition-all hover:shadow-[0_0_40px_rgba(45,212,191,0.4)] relative z-10 overflow-hidden"
               >
                  <span v-if="isProcessing">{{ paymentStatus === 'pending' ? 'Waiting for you to approve the payment...' : 'Confirming payment...' }}</span>
+                 <span v-else-if="paymentStatus === 'pending'">Payment pending</span>
+                 <span v-else-if="paymentStatus === 'unknown'">Payment needs support</span>
                  <span v-else>Start payment</span>
               </button>
             </div>
           </div>
 
           <!-- Status Alerts -->
-          <div v-if="paymentStatus === 'success'" class="bg-teal-400/10 border border-teal-400/20 p-6 rounded-3xl flex items-center gap-6 animate-pulse">
+          <div v-if="paymentStatus === 'paid'" class="bg-teal-400/10 border border-teal-400/20 p-6 rounded-3xl flex items-center gap-6 animate-pulse">
             <div class="w-12 h-12 rounded-2xl bg-teal-400/20 flex items-center justify-center text-teal-400"><svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>
             <div>
               <h4 class="text-[11px] font-black text-teal-400 uppercase tracking-widest italic">Payment complete</h4>
               <p class="text-[9px] font-bold text-white/40 uppercase tracking-widest italic leading-relaxed">Your plan is active. Payment reference: {{ transactionRef }}.</p>
             </div>
+          </div>
+          <div v-else-if="paymentStatus === 'pending'" class="bg-amber-400/10 border border-amber-400/20 p-6 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h4 class="text-[11px] font-black text-amber-200 uppercase tracking-widest">Payment is pending</h4>
+              <p class="mt-2 text-sm text-white/60">{{ statusMessage || 'Approve the DigiPay prompt on your phone.' }}</p>
+              <p v-if="transactionRef" class="mt-2 text-xs text-white/40">Reference: {{ transactionRef }}</p>
+            </div>
+            <button @click="checkPaymentStatus" :disabled="statusChecking" class="rounded-xl border border-amber-200/30 px-4 py-3 text-xs font-bold text-amber-100 disabled:opacity-50">{{ statusChecking ? 'Checking…' : 'Check payment' }}</button>
+          </div>
+          <div v-else-if="paymentStatus === 'failed' || paymentStatus === 'unknown'" class="bg-red-400/10 border border-red-400/20 p-6 rounded-3xl">
+            <h4 class="text-[11px] font-black text-red-200 uppercase tracking-widest">{{ paymentStatus === 'failed' ? 'Payment failed' : 'Payment needs support' }}</h4>
+            <p class="mt-2 text-sm text-white/60">{{ statusMessage }}</p>
+            <button v-if="paymentStatus === 'unknown' && paymentId && transactionRef" @click="checkPaymentStatus" :disabled="statusChecking" class="mt-4 rounded-xl border border-red-200/30 px-4 py-3 text-xs font-bold text-red-100 disabled:opacity-50">{{ statusChecking ? 'Checking…' : 'Check payment' }}</button>
           </div>
         </div>
       </div>
@@ -158,17 +173,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useTheme } from '../../composables/useTheme'
-import axios from 'axios'
+import api from '../../config/api'
 
-const CAMPAY_BASE_URL = 'https://demo.campay.net/api'
-const CAMPAY_ACCESS_TOKEN = '81306ed002da31cea33d6d04ce2c7ccbc08b6aa5'
+const { isDark, toggleTheme, themeClasses } = useTheme()
 
 const membershipPlans = [
-  { id: 'basic', name: 'Basic', displayPrice: 9990, apiPrice: 99, sensors: 1, features: ['1 gas sensor', 'Email alerts', 'Gas readings'], popular: false },
-  { id: 'pro', name: 'Professional', displayPrice: 19990, apiPrice: 199, sensors: 5, features: ['5 gas sensors', 'App, email, and text alerts', 'Gas use reports'], popular: true }
+  { id: 'basic', name: 'Basic', displayPrice: 9990, sensors: 1, features: ['1 gas sensor', 'Email alerts', 'Gas readings'], popular: false },
+  { id: 'pro', name: 'Professional', displayPrice: 19990, sensors: 5, features: ['5 gas sensors', 'App, email, and text alerts', 'Gas use reports'], popular: true }
 ]
 
 const paymentMethods = [
@@ -176,7 +189,6 @@ const paymentMethods = [
   { id: 'mtn', name: 'MTN', icon: '🟡' }
 ]
 
-const { isDark, toggleTheme, themeClasses } = useTheme()
 const activeTab = ref('plans')
 const userPlan = ref('free')
 const selectedPlan = ref(null)
@@ -185,45 +197,106 @@ const phoneNumber = ref('')
 const isProcessing = ref(false)
 const paymentStatus = ref(null)
 const transactionRef = ref('')
+const paymentId = ref(null)
+const statusMessage = ref('')
+const statusChecking = ref(false)
+let pollTimer = null
 
-const currentPlan = computed(() => ({ free: { name: 'Free' }, basic: { name: 'Basic' }, pro: { name: 'Pro' } }[userPlan.value]))
+const currentPlan = computed(() =>
+  ({ free: { name: 'Free' }, basic: { name: 'Basic' }, pro: { name: 'Pro' } }[userPlan.value])
+)
 
 const selectPlan = (id) => {
-  selectedPlan.value = membershipPlans.find(p => p.id === id)
+  if (['pending', 'unknown'].includes(paymentStatus.value)) return
+  clearTimeout(pollTimer)
+  selectedPlan.value = membershipPlans.find((plan) => plan.id === id)
+  paymentStatus.value = null
+  paymentId.value = null
+  transactionRef.value = ''
+  statusMessage.value = ''
   activeTab.value = 'payment'
 }
 
+const loadCurrentPlan = async () => {
+  try {
+    const { data } = await api.get('subscription/')
+    userPlan.value = data.plan || 'free'
+  } catch (_) {
+    // The plans page remains usable when the account summary is unavailable.
+  }
+}
+
+const pollStatus = async (retries = 0) => {
+  if (!paymentId.value || statusChecking.value) return
+  statusChecking.value = true
+  let shouldRetry = false
+  try {
+    const { data } = await api.post('payments/subscriptions/' + paymentId.value + '/status/')
+    paymentStatus.value = String(data.payment_status || 'UNKNOWN').toLowerCase()
+    statusMessage.value = data.message || ''
+    transactionRef.value = data.transaction_id || transactionRef.value
+    if (paymentStatus.value === 'paid') {
+      isProcessing.value = false
+      await loadCurrentPlan()
+    } else if (paymentStatus.value === 'failed') {
+      isProcessing.value = false
+    } else {
+      shouldRetry = retries > 0 && Boolean(transactionRef.value)
+    }
+  } catch (error) {
+    statusMessage.value = error.response?.data?.message || 'Could not check the DigiPay payment yet.'
+    shouldRetry = retries > 0 && Boolean(transactionRef.value)
+  } finally {
+    statusChecking.value = false
+  }
+
+  if (shouldRetry) {
+    pollTimer = setTimeout(() => pollStatus(retries - 1), 5000)
+  } else if (paymentStatus.value !== 'paid' && paymentStatus.value !== 'failed') {
+    isProcessing.value = false
+  }
+}
+
+const checkPaymentStatus = () => pollStatus(0)
+
 const handlePayment = async () => {
-  if (!selectedPlan.value || !phoneNumber.value) return
+  if (!selectedPlan.value || !phoneNumber.value || isProcessing.value || ['pending', 'unknown'].includes(paymentStatus.value)) return
   isProcessing.value = true
   paymentStatus.value = 'processing'
-  let phone = phoneNumber.value.trim().replace(/^\+?237?/, '')
-  if (!phone.startsWith('237')) phone = '237' + phone
+  statusMessage.value = ''
+  transactionRef.value = ''
+  paymentId.value = null
 
   try {
-    const res = await axios.post(`${CAMPAY_BASE_URL}/collect/`, {
-      amount: selectedPlan.value.apiPrice, currency: 'XAF', from: phone,
-      description: `GaSX ${selectedPlan.value.name} Tier Sync`,
-      external_reference: `BIAS-${Date.now()}`
-    }, { headers: { 'Authorization': `Token ${CAMPAY_ACCESS_TOKEN}`, 'Content-Type': 'application/json' }})
-    transactionRef.value = res.data.reference
-    paymentStatus.value = 'pending'
-    pollStatus(res.data.reference)
-  } catch (e) { paymentStatus.value = 'failed'; isProcessing.value = false }
-}
-
-const pollStatus = async (ref) => {
-  try {
-    const res = await axios.get(`${CAMPAY_BASE_URL}/transaction/${ref}/`, {
-      headers: { 'Authorization': `Token ${CAMPAY_ACCESS_TOKEN}`, 'Content-Type': 'application/json' }
+    const { data } = await api.post('payments/subscriptions/initiate/', {
+      plan: selectedPlan.value.id,
+      payment_operator: selectedPaymentMethod.value.id === 'orange' ? 'ORANGE_MONEY' : 'MTN_MOMO',
+      payer_phone: phoneNumber.value.trim()
     })
-    if (res.data.status === 'SUCCESSFUL') {
-      paymentStatus.value = 'success'; isProcessing.value = false; userPlan.value = selectedPlan.value.id
-    } else if (res.data.status === 'FAILED') {
-      paymentStatus.value = 'failed'; isProcessing.value = false
-    } else setTimeout(() => pollStatus(ref), 5000)
-  } catch (e) { paymentStatus.value = 'failed'; isProcessing.value = false }
+    paymentId.value = data.payment_id
+    transactionRef.value = data.transaction_id || ''
+    statusMessage.value = data.message || ''
+    paymentStatus.value = String(data.payment_status || 'UNKNOWN').toLowerCase()
+
+    if (paymentStatus.value === 'paid') {
+      await loadCurrentPlan()
+      isProcessing.value = false
+    } else if (paymentStatus.value === 'pending') {
+      pollStatus(12)
+    } else {
+      isProcessing.value = false
+    }
+  } catch (error) {
+    paymentStatus.value = 'failed'
+    statusMessage.value = error.response?.data?.detail ||
+      error.response?.data?.payer_phone?.[0] ||
+      'Could not start the DigiPay payment.'
+    isProcessing.value = false
+  }
 }
+
+onMounted(loadCurrentPlan)
+onBeforeUnmount(() => clearTimeout(pollTimer))
 </script>
 
 <style scoped>

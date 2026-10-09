@@ -40,13 +40,7 @@
               <span class="text-[9px] font-black uppercase tracking-widest text-white/30 block mb-0.5">Engine</span>
               <span class="text-xs font-black text-teal-400 uppercase italic">Active</span>
             </div>
-            <select 
-              v-model="selectedModel"
-              class="bg-transparent text-[10px] sm:text-xs font-black text-white uppercase tracking-widest px-3 sm:px-6 py-2 focus:outline-none appearance-none cursor-pointer"
-            >
-              <option value="anthropic/claude-3-haiku" class="bg-gray-900">Claude 3 Haiku</option>
-              <option value="mistralai/mistral-7b-instruct:free" class="bg-gray-900">Mistral 7B (Free)</option>
-            </select>
+            <span class="px-4 py-2 text-xs font-black text-teal-400 uppercase">Ready</span>
           </div>
         </div>
       </div>
@@ -200,21 +194,19 @@
 <script setup>
 import { ref, nextTick, onMounted, watch, computed } from 'vue'
 import { useTheme } from '../composables/useTheme'
+import api from '../config/api'
 
 const { isDark, themeClasses } = useTheme()
 
 const messages = ref([])
 const newMessage = ref('')
 const isLoading = ref(false)
-const selectedModel = ref('anthropic/claude-3-haiku')
 const messagesContainer = ref(null)
 const messageInput = ref(null)
 const showNotification = ref(false)
 const notificationMessage = ref('')
 const notificationType = ref('success')
 
-const API_URL = "https://openrouter.ai/api/v1/chat/completions"
-const API_KEY = "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"
 
 const quickActions = [
   { label: "System Status", text: "What's the current status of my gas monitoring system?" },
@@ -279,34 +271,13 @@ const sendMessage = async () => {
   scrollToBottom()
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-        'HTTP-Referer': window.location.href,
-        'X-Title': 'GaSX Bipsync AI'
-      },
-      body: JSON.stringify({
-        model: selectedModel.value,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are the GasX assistant. Help people understand their gas readings, safety alerts, and orders. Use short sentences and common words. Explain technical terms in simple English.'
-          },
-          ...messages.value.map(m => ({ role: m.role, content: m.content }))
-        ],
-        temperature: 0.1,
-        max_tokens: 1000
-      })
+    const { data } = await api.post('ai/chat/', {
+      messages: messages.value.slice(-20).map(({ role, content }) => ({ role, content }))
     })
-
-    if (!response.ok) throw new Error('Could not reach the assistant')
-    const data = await response.json()
     
     messages.value.push({
       role: 'assistant',
-      content: data.choices[0].message.content,
+      content: data.reply,
       timestamp: new Date().toISOString()
     })
     

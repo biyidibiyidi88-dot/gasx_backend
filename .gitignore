@@ -35,6 +35,7 @@ db.sqlite3-journal
 .env.development.local
 .env.test.local
 .env.production.local
+/RAILWAY_ENV_VARIABLES.txt
 
 # ESP32 API credentials are included only in local firmware builds.
 /esp32_gas_sensor/secrets.h

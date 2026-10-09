@@ -16,6 +16,7 @@
         </div>
         <p v-if="order.payment_status === 'UNKNOWN'" class="mt-3 text-sm text-amber-200">Payment needs support review. Do not submit another payment for this order.</p>
         <button v-if="['PENDING', 'UNKNOWN'].includes(order.payment_status) && order.payment_transaction_id" @click="checkPayment(order)" :disabled="checkingPaymentId === order.id" class="mt-4 rounded-xl border border-teal-300/25 bg-teal-300/10 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-teal-100 disabled:opacity-50">{{ checkingPaymentId === order.id ? 'Checking payment…' : 'Check payment status' }}</button>
+        <button v-if="order.payment_status === 'PAID'" @click="downloadInvoice(order.id)" :disabled="downloadingInvoiceId === order.id" class="mt-4 rounded-xl bg-teal-400 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-gray-950 disabled:opacity-50">{{ downloadingInvoiceId === order.id ? 'Preparing invoice…' : 'Download invoice PDF' }}</button>
         <button v-if="order.status === 'PENDING' && (!order.payment_status || order.payment_status === 'PAID') && !order.payment_transaction_id" @click="cancelOrder(order)" class="mt-4 rounded-xl border border-red-400/25 bg-red-400/10 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-red-200">Cancel order</button>
       </article>
     </div>
@@ -30,6 +31,7 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref('')
 const checkingPaymentId = ref(null)
+const downloadingInvoiceId = ref(null)
 const confirmingId = ref(null)
 const statusClass = (status) => status === 'DELIVERED' || status === 'PICKED_UP' ? 'bg-teal-400/10 text-teal-200' : status === 'CANCELLED' ? 'bg-red-400/10 text-red-200' : status === 'PENDING' ? 'bg-amber-400/10 text-amber-200' : 'bg-blue-400/10 text-blue-200'
 async function load() { loading.value = true; error.value = ''; try { orders.value = (await api.get('deliveries/')).data } catch (e) { error.value = e.response?.data?.detail || 'Could not load your orders.' } finally { loading.value = false } }
@@ -59,6 +61,25 @@ async function checkPayment(order) {
     error.value = e.response?.data?.message || 'Could not check payment status. Try again shortly.'
   } finally {
     checkingPaymentId.value = null
+  }
+}
+async function downloadInvoice(orderId) {
+  downloadingInvoiceId.value = orderId
+  error.value = ''
+  try {
+    const response = await api.get(`payments/${orderId}/invoice/`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `GasX-Invoice-${orderId}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+  } catch (e) {
+    error.value = e.response?.data?.detail || 'Could not download the invoice.'
+  } finally {
+    downloadingInvoiceId.value = null
   }
 }
 onMounted(load)

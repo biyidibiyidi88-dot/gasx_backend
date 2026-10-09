@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -126,6 +127,7 @@ class PaymentInitiateView(APIView):
                 payment_amount=payment_amount,
                 payment_status="INITIATING",
                 payment_operator=operator,
+                payer_phone=phone,
                 stock_deducted=True,
             )
 
@@ -254,7 +256,14 @@ class PaymentStatusView(APIView):
                     return _order_response(order, request)
                 if order.payment_status != "PAID":
                     order.payment_status = "PAID"
-                    order.save(update_fields=["payment_status", "updated_at"])
+                    order.payment_confirmed_at = timezone.now()
+                    order.save(
+                        update_fields=[
+                            "payment_status",
+                            "payment_confirmed_at",
+                            "updated_at",
+                        ]
+                    )
         elif provider_status in {
             "failed", "declined", "rejected", "cancelled", "canceled", "expired"
         }:

@@ -15,7 +15,7 @@ class AIChatScreen extends ConsumerStatefulWidget {
 class _AIChatScreenState extends ConsumerState<AIChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  String _selectedModel = 'anthropic/claude-3-haiku';
+
 
   @override
   void dispose() {
@@ -115,35 +115,11 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
               const Text('AI ASSISTANT', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, letterSpacing: -1, color: Colors.white)),
             ],
           ),
-          _buildModelSelector(),
         ],
       ),
     );
   }
 
-  Widget _buildModelSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedModel,
-          dropdownColor: const Color(0xFF0F172A),
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppTheme.accentTeal),
-          icon: const Icon(Icons.keyboard_arrow_down, size: 14, color: Colors.white24),
-          items: const [
-            DropdownMenuItem(value: 'anthropic/claude-3-haiku', child: Text('CLAUDE 3 HAIKU')),
-            DropdownMenuItem(value: 'mistralai/mistral-7b-instruct:free', child: Text('MISTRAL 7B')),
-          ],
-          onChanged: (v) => setState(() => _selectedModel = v!),
-        ),
-      ),
-    );
-  }
 
   Widget _buildWelcomeState() {
     return Center(
@@ -278,7 +254,7 @@ class _AIChatScreenState extends ConsumerState<AIChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     _controller.clear();
-    await ref.read(chatProvider.notifier).sendMessage(text, _selectedModel);
+    await ref.read(chatProvider.notifier).sendMessage(text);
     _scrollToBottom();
   }
 }

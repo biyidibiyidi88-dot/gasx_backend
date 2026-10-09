@@ -54,6 +54,15 @@ class CustomUser(AbstractUser, PermissionsMixin):
     newsletter_subscription = models.BooleanField(
         _("newsletter subscribed"), default=False
     )
+    SUBSCRIPTION_PLAN_CHOICES = (
+        ("free", "Free"),
+        ("basic", "Basic"),
+        ("pro", "Professional"),
+    )
+    subscription_plan = models.CharField(
+        max_length=12, choices=SUBSCRIPTION_PLAN_CHOICES, default="free"
+    )
+    subscription_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
@@ -778,6 +787,8 @@ class Delivery(models.Model):
         max_length=20, choices=PAYMENT_OPERATOR_CHOICES, blank=True, default=""
     )
     payment_transaction_id = models.CharField(max_length=120, blank=True, default="")
+    payer_phone = models.CharField(max_length=16, blank=True, default="")
+    payment_confirmed_at = models.DateTimeField(null=True, blank=True)
     stock_deducted = models.BooleanField(default=False)
     delivery_address = models.CharField(max_length=255)
     latitude = models.FloatField(null=True, blank=True)
@@ -794,6 +805,42 @@ class Delivery(models.Model):
 
     def __str__(self):
         return f"Delivery {self.id} for {self.client.email} ({self.status})"
+
+
+class SubscriptionPayment(models.Model):
+    PLAN_CHOICES = (
+        ("basic", "Basic"),
+        ("pro", "Professional"),
+    )
+    PAYMENT_STATUS_CHOICES = (
+        ("INITIATING", "Starting payment"),
+        ("PENDING", "Waiting for payment"),
+        ("PAID", "Paid"),
+        ("FAILED", "Payment failed"),
+        ("UNKNOWN", "Payment status unknown"),
+    )
+
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="subscription_payments"
+    )
+    plan = models.CharField(max_length=12, choices=PLAN_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_operator = models.CharField(
+        max_length=20, choices=Delivery.PAYMENT_OPERATOR_CHOICES
+    )
+    payer_phone = models.CharField(max_length=16)
+    payment_status = models.CharField(
+        max_length=12, choices=PAYMENT_STATUS_CHOICES, default="INITIATING", db_index=True
+    )
+    transaction_id = models.CharField(max_length=120, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.get_plan_display()} plan payment for {self.user.email} ({self.payment_status})"
 
 
 from django.db.models.signals import post_save

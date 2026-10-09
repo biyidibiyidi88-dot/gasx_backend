@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import '../../data/models/chat_models.dart';
 import '../../data/repositories/chat_repository.dart';
+import 'dio_provider.dart';
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
-  return ChatRepository(Dio());
+  return ChatRepository(ref.watch(dioProvider));
 });
 
 class ChatState {
@@ -28,7 +28,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   ChatNotifier(this._repository) : super(ChatState());
 
-  Future<void> sendMessage(String text, String model) async {
+  Future<void> sendMessage(String text) async {
     final userMessage = ChatMessage(role: 'user', content: text, timestamp: DateTime.now());
     state = state.copyWith(
       messages: [...state.messages, userMessage],
@@ -37,7 +37,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
 
     try {
-      final response = await _repository.sendMessage(state.messages, model);
+      final response = await _repository.sendMessage(state.messages);
       final aiMessage = ChatMessage(role: 'assistant', content: response, timestamp: DateTime.now());
       state = state.copyWith(
         messages: [...state.messages, aiMessage],

@@ -149,9 +149,10 @@
           <p v-if="paymentOrderId" class="mt-3 break-all text-xs text-white/45">Order #{{ paymentOrderId }}<span v-if="paymentTransactionId"> · DigiPay reference {{ paymentTransactionId }}</span></p>
           <p v-if="paymentMessage" class="mt-3 text-sm" :class="paymentError ? 'text-red-200' : 'text-amber-200'">{{ paymentMessage }}</p>
           <div class="mt-4 flex flex-wrap gap-3">
-            <button v-if="paymentOrderId && paymentTransactionId" @click="checkPaymentStatus(false)" :disabled="paymentBusy || statusChecking" class="rounded-xl border border-teal-300/30 px-5 py-3 text-sm font-black text-teal-200 disabled:opacity-50">{{ statusChecking ? 'Checking…' : 'Check payment status' }}</button>
+            <button v-if="paymentOrderId && paymentTransactionId && !invoiceOrderId" @click="checkPaymentStatus(false)" :disabled="paymentBusy || statusChecking" class="rounded-xl border border-teal-300/30 px-5 py-3 text-sm font-black text-teal-200 disabled:opacity-50">{{ statusChecking ? 'Checking…' : 'Check payment status' }}</button>
             <button v-else-if="!paymentOrderId" @click="submitPayment" :disabled="paymentBusy || !paymentOperator || payerPhone.replace(/\D/g, '').length !== 9" class="rounded-xl bg-teal-400 px-5 py-3 text-sm font-black text-gray-950 disabled:opacity-50">{{ paymentBusy ? 'Starting…' : `Pay ${checkoutTotal.toLocaleString()} FCFA` }}</button>
-            <p v-else class="text-sm font-bold text-amber-200">Contact support with this order number before trying another payment.</p>
+            <p v-else-if="!invoiceOrderId" class="text-sm font-bold text-amber-200">Contact support with this order number before trying another payment.</p>
+            <button v-if="invoiceOrderId" @click="downloadInvoice(invoiceOrderId)" :disabled="invoiceDownloadBusy" class="rounded-xl bg-teal-400 px-5 py-3 text-sm font-black text-gray-950 disabled:opacity-50">{{ invoiceDownloadBusy ? 'Preparing invoice…' : 'Download invoice PDF' }}</button>
           </div>
         </div>
       </section>
@@ -222,9 +223,6 @@
 import { computed, ref, onMounted } from 'vue'
 import api from '../../config/api'
 import { useTheme } from '../../composables/useTheme'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
 const { isDark, themeClasses } = useTheme()
 
 const stations = ref([])
@@ -248,6 +246,8 @@ const checkoutBottle = ref(null)
 const checkoutMethod = ref('PICKUP')
 const checkoutAddress = ref('')
 const paymentOrderId = ref(null)
+const invoiceOrderId = ref(null)
+const invoiceDownloadBusy = ref(false)
 const paymentTransactionId = ref('')
 const paymentAmount = ref(null)
 const paymentMessage = ref('')
@@ -341,6 +341,7 @@ const startCheckout = () => {
   paymentOperator.value = ''
   payerPhone.value = ''
   paymentOrderId.value = null
+  invoiceOrderId.value = null
   paymentTransactionId.value = ''
   paymentAmount.value = null
   paymentMessage.value = ''
@@ -448,12 +449,33 @@ const checkPaymentStatus = async (poll = false) => {
 
 const finishPaidOrder = (order) => {
   if (!order) return
+  invoiceOrderId.value = Number(order.id || paymentOrderId.value)
   const purchasedBottle = selectedStation.value?.inventory.find(item => item.id === checkoutBottle.value?.id)
   if (purchasedBottle) purchasedBottle.quantity = Math.max(0, Number(purchasedBottle.quantity) - 1)
   orderMessage.value = `Payment confirmed. Order #${order.id} placed.`
   paymentMessage.value = orderMessage.value
   paymentError.value = false
-  setTimeout(() => router.push('/admin/client-orders'), 1000)
+}
+
+const downloadInvoice = async (orderId) => {
+  invoiceDownloadBusy.value = true
+  try {
+    const response = await api.get(`payments/${orderId}/invoice/`, { responseType: 'blob' })
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `GasX-Invoice-${orderId}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+    paymentMessage.value = 'Invoice downloaded. You can find it in your downloads.'
+  } catch (error) {
+    paymentError.value = true
+    paymentMessage.value = error.response?.data?.detail || 'Could not download the invoice. Try again from My gas orders.'
+  } finally {
+    invoiceDownloadBusy.value = false
+  }
 }
 
 onMounted(loadVendors)

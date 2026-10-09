@@ -9,6 +9,7 @@ import '../../data/models/vendor_models.dart';
 import '../../domain/providers/auth_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:printing/printing.dart';
 import '../../core/location/current_device_location.dart';
 import '../../domain/providers/chat_provider.dart';
 
@@ -613,9 +614,19 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
           );
         }
         ref.invalidate(vendorsProvider);
+        final orderId = int.tryParse(paidOrder['id']?.toString() ?? '');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Payment confirmed for order #${paidOrder['id']}.'),
+            duration: const Duration(seconds: 12),
+            action: orderId == null
+                ? null
+                : SnackBarAction(
+                    label: 'INVOICE PDF',
+                    onPressed: () {
+                      _downloadInvoice(orderId);
+                    },
+                  ),
           ),
         );
       }
@@ -635,6 +646,27 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
     }
   }
 
+  Future<void> _downloadInvoice(int orderId) async {
+    try {
+      final bytes = await ref
+          .read(vendorRepositoryProvider)
+          .downloadInvoice(orderId);
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: 'GasX-Invoice-$orderId.pdf',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not download the invoice. Try again from My orders.',
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _launchNavigation(Vendor v) async {
     if (v.latitude == null || v.longitude == null) return;
     final url =
@@ -645,63 +677,73 @@ class _BuyGasScreenState extends ConsumerState<BuyGasScreen>
   }
 
   Future<void> _getAIRecommendation(List<Vendor> vendors) async {
+    late final Position position;
     try {
-      // 1. Pre-flight checks (no UI impact yet)
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied');
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied.');
-      }
-
-      // 2. Show Loading Node (Top Level)
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        useRootNavigator: true,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(color: AppTheme.accentTeal),
-        ),
-      );
-
-      String recommendation;
-      try {
-        final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-        );
-        final chatRepo = ref.read(chatRepositoryProvider);
-        recommendation = await chatRepo.getVendorRecommendation(
-          position,
-          vendors,
-        );
-      } finally {
-        // 3. SECURE POP: Always remove the loader before showing results or errors
-        if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-        }
-      }
-
-      if (mounted) {
-        _showRecommendationDialog(recommendation);
-      }
-    } catch (e) {
+      position = await getCurrentDevicePosition();
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not connect to the app: $e')),
+          const SnackBar(
+            content: Text(
+              'Could not get your location. Allow location access and try again.',
+            ),
+          ),
         );
       }
+      return;
     }
+
+    // Send the recommendation request to the hosted Railway API after location
+    // is available; location plugin errors are reported separately above.
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: AppTheme.accentTeal),
+      ),
+    );
+
+    String? recommendation;
+    String? failureMessage;
+    try {
+      final chatRepo = ref.read(chatRepositoryProvider);
+      recommendation = await chatRepo.getVendorRecommendation(
+        position,
+        vendors.map((vendor) => vendor.id).toList(),
+      );
+    } on DioException catch (error) {
+      failureMessage = _recommendationErrorMessage(error);
+    } catch (_) {
+      failureMessage = 'Supplier suggestions are unavailable. Try again.';
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+    }
+
+    if (!mounted) return;
+    if (recommendation != null) {
+      _showRecommendationDialog(recommendation);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failureMessage!)));
+    }
+  }
+
+  String _recommendationErrorMessage(DioException error) {
+    final data = error.response?.data;
+    if (data is Map) {
+      final message = data['error'] ?? data['detail'] ?? data['message'];
+      if (message != null) return message.toString();
+    }
+    final statusCode = error.response?.statusCode;
+    if (statusCode != null) {
+      return 'Railway supplier suggestions returned error $statusCode.';
+    }
+    return 'Could not reach supplier suggestions on Railway. Check your internet and try again.';
   }
 
   void _showRecommendationDialog(String recommendation) {
@@ -1103,7 +1145,7 @@ class _PaymentFormSheetState extends State<_PaymentFormSheet> {
             'Payment could not be started. Please try again.';
       }
     }
-    return 'Payment service could not be reached. Check your connection and try again.';
+    return 'Could not reach the Railway payment service. Check your connection and try again.';
   }
 
   Widget _paymentMethodTile({
