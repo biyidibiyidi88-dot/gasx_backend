@@ -14,6 +14,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <math.h>
+#include "secrets.h"
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -46,14 +47,15 @@ const int GAS_WARNING_THRESHOLD = 400;
 const int GAS_CRITICAL_THRESHOLD = 600;
 
 // Timing
-const unsigned long READING_INTERVAL = 10000;
-const unsigned long WEIGHT_READING_INTERVAL = 10000;
-const unsigned long DEVICE_COMMAND_POLL_INTERVAL = 3000;
-const unsigned long ALERT_COOLDOWN = 10000;
+const unsigned long READING_INTERVAL = 5000;
+const unsigned long WEIGHT_READING_INTERVAL = 5000;
+const unsigned long DEVICE_COMMAND_POLL_INTERVAL = 1000;
+const unsigned long ALERT_COOLDOWN = 30000;
 const unsigned long GAS_SAFE_RESET_MS = 10000;
 const unsigned long BUTTON_DEBOUNCE = 500;
 const unsigned long WIFI_CHECK_INTERVAL = 10000;
 const unsigned long LCD_REFRESH_INTERVAL = 500; // 500ms non-blocking refresh rate
+const unsigned long DEVICE_COMMAND_RETRY_INTERVAL = 5000;
 
 // Continuous-rotation servo: 60 RPM is about 1000 ms per turn; calibrate for this unit.
 const int SERVO_OPEN_SPEED_US = 1000;
@@ -76,6 +78,7 @@ WiFiManager wifiManager;
 Servo valveServo;
 HTTPClient http;
 String deviceApiToken;
+volatile bool valveButtonPressed = false;
 
 // State Variables
 struct {
@@ -87,14 +90,20 @@ struct {
   unsigned long lastValveButtonPress = 0;
   unsigned long lastWiFiCheck = 0;
   unsigned long lastLCDUpdate = 0;
+  unsigned long deviceCommandPollInterval = DEVICE_COMMAND_POLL_INTERVAL;
   bool wifiConnected = false;
   bool scaleCalibrated = false;
   bool scaleReadingValid = false;
   bool valveClosed = false;
+  bool valveServoMoving = false;
+  bool valveMoveTargetClosed = false;
+  bool localValveChangePending = false;
   bool gasSafetyLockout = false;
-  bool alarmArmed = true;
   bool alarmActive = false;
+  bool alarmArmed = true;
   bool buzzerOutputOn = false;
+  bool leakAlertSent = false;
+  unsigned long valveMoveStartedAt = 0;
   unsigned long lastAlarmToggle = 0;
   unsigned long safeGasSince = 0;
   float currentWeight = 0.0;
@@ -104,13 +113,28 @@ struct {
   GasSeverity currentSeverity = GAS_LOW;
 } state;
 
-void syncValveStateToBackend();
+void updateValveServo();
+void updateAlarmOutput();
+void startValveMovement(bool targetClosed);
+bool sendGasLeakAlert(int gasLevel, String severity);
+
+void IRAM_ATTR onValveButtonInterrupt() {
+  valveButtonPressed = true;
+}
 
 void setup() {
   Serial.begin(115200);
   Serial.println("\n=== ESP32 Gas Monitor - Quality Version ===");
 
   preferences.begin("gas_monitor", false);
+  deviceApiToken = preferences.getString("api_token", "");
+  if (deviceApiToken.length() == 0 && String(GASX_API_TOKEN).length() == 40) {
+    deviceApiToken = GASX_API_TOKEN;
+    preferences.putString("api_token", deviceApiToken);
+  }
+  Serial.println(deviceApiToken.length() == 0
+                     ? "⚠️ API token missing; provision it with set_token <token>"
+                     : "✅ API token loaded from device storage");
 
   // Initialize LCD
   Wire.begin(21, 22); // SDA=21, SCL=22 for ESP32
@@ -132,15 +156,13 @@ void setup() {
   pinMode(CONFIG_BUTTON_PIN, INPUT_PULLUP);
   pinMode(ALARM_SILENCE_PIN, INPUT_PULLUP);
   pinMode(VALVE_CONTROL_BUTTON_PIN, INPUT_PULLUP);  // New valve control button
+  attachInterrupt(digitalPinToInterrupt(VALVE_CONTROL_BUTTON_PIN),
+                  onValveButtonInterrupt, FALLING);
 
   // Restore saved valve state from flash storage (do NOT move motor on boot!)
   state.valveClosed = preferences.getBool("valve_closed", false);
   state.gasSafetyLockout = preferences.getBool("gas_lockout", false);
-  deviceApiToken = preferences.getString("api_token", "");
   Serial.printf("ℹ️ Valve boot state loaded: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
-  Serial.println(deviceApiToken.length() > 0
-                     ? "✅ API token loaded from device storage"
-                     : "⚠️ API token missing; provision it once with: set_token <token>");
 
   testLEDs();
   initializeLoadCell();
@@ -165,13 +187,14 @@ void setup() {
 void loop() {
   handleWiFiConnection();
   handleButtons();
+  updateValveServo();
   monitorGas();
   updateAlarmOutput();
   monitorWeight();
   handleLCDRefresh();
-  if (millis() - state.lastDeviceCommandPollTime >= DEVICE_COMMAND_POLL_INTERVAL) {
-    state.lastDeviceCommandPollTime = millis();
+  if (millis() - state.lastDeviceCommandPollTime >= state.deviceCommandPollInterval) {
     pollDeviceCommands();
+    state.lastDeviceCommandPollTime = millis();
   }
   sendRegularReadings();
   handleSerialCommands();
@@ -214,24 +237,23 @@ void handleButtons() {
     Serial.println("🔇 Alarm silenced by button");
   }
 
-  // Valve control button - NEW FEATURE
-  if (digitalRead(VALVE_CONTROL_BUTTON_PIN) == LOW && 
-      millis() - state.lastValveButtonPress > BUTTON_DEBOUNCE) {
+  bool wasValveButtonPressed = false;
+  noInterrupts();
+  wasValveButtonPressed = valveButtonPressed;
+  valveButtonPressed = false;
+  interrupts();
+
+  // The interrupt remembers short presses while a network request is running.
+  if (wasValveButtonPressed &&
+      millis() - state.lastValveButtonPress > BUTTON_DEBOUNCE &&
+      !state.valveServoMoving) {
     state.lastValveButtonPress = millis();
     bool wasClosed = state.valveClosed;
     toggleValve();
     Serial.printf("🔧 Valve toggled: %s\n", state.valveClosed ? "CLOSED" : "OPEN");
     if (state.valveClosed != wasClosed) {
-      syncValveStateToBackend();
+      state.localValveChangePending = true;
     }
-    
-    // Update LCD to show valve status
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Valve Status:");
-    lcd.setCursor(0, 1);
-    lcd.print(state.valveClosed ? "CLOSED" : "OPEN");
-    delay(800);
     updateLCDDisplay();
   }
 
@@ -242,29 +264,6 @@ void handleButtons() {
       enterConfigurationMode();
     }
   }
-}
-
-void syncValveStateToBackend() {
-  if (!state.wifiConnected || deviceApiToken.length() == 0) return;
-
-  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) + "/control-valve/");
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", "Token " + deviceApiToken);
-
-  StaticJsonDocument<128> doc;
-  doc["command"] = state.valveClosed ? "CLOSE" : "OPEN";
-  String payload;
-  serializeJson(doc, payload);
-
-  int code = http.POST(payload);
-  if (code == 200) {
-    Serial.println("☁️ Local valve state synced to backend");
-  } else {
-    Serial.printf("⚠️ Could not sync local valve state: HTTP %d\n", code);
-    if (code > 0) Serial.println(http.getString());
-  }
-  http.end();
 }
 
 void monitorGas() {
@@ -288,18 +287,20 @@ void monitorGas() {
     state.safeGasSince = 0;
     handleGasAlert(gasLevel, newSeverity);
   } else if (state.gasSafetyLockout) {
-    if (state.alarmActive) stopAlarmOutput();
     // Require a continuous safe reading before allowing an intentional reopen.
     if (state.safeGasSince == 0) state.safeGasSince = millis();
     if (millis() - state.safeGasSince >= GAS_SAFE_RESET_MS) {
       state.gasSafetyLockout = false;
       preferences.putBool("gas_lockout", false);
       state.safeGasSince = 0;
+      state.leakAlertSent = false;
+      if (state.alarmActive) silenceAlarm();
       Serial.println("✅ Gas level stayed safe; valve can be opened manually or remotely");
     }
   } else {
-    if (state.alarmActive) stopAlarmOutput();
     state.safeGasSince = 0;
+    state.leakAlertSent = false;
+    if (state.alarmActive) silenceAlarm();
   }
 }
 
@@ -386,11 +387,9 @@ bool saveCalibration(float calibrationFactor) {
   const bool savedDone = preferences.getBool("cal_done", false);
   const bool saved = factorBytes == sizeof(float) && doneBytes > 0 && savedDone &&
                      isfinite(savedFactor) && fabsf(savedFactor - calibrationFactor) < 0.000001f;
-  if (saved) {
-    Serial.println("💾 Calibration saved to ESP32 flash and verified");
-  } else {
-    Serial.println("❌ Calibration could not be verified in ESP32 flash");
-  }
+  Serial.println(saved
+                     ? "💾 Calibration saved to ESP32 flash and verified"
+                     : "❌ Calibration could not be verified in ESP32 flash");
   return saved;
 }
 
@@ -488,18 +487,28 @@ void processDeviceCommands(JsonObject doc) {
 void pollDeviceCommands() {
   if (!state.wifiConnected || deviceApiToken.length() == 0) return;
 
-  http.begin(String(api_base_url) + "/sensors/" + String(SENSOR_ID) +
-             "/device-command/?current_valve=" + (state.valveClosed ? "CLOSE" : "OPEN"));
+  String commandUrl = String(api_base_url) + "/sensors/" + String(SENSOR_ID) +
+                      "/device-command/?current_valve=" +
+                      (state.valveClosed ? "CLOSE" : "OPEN");
+  const bool reportingLocalChange = state.localValveChangePending;
+  if (reportingLocalChange) commandUrl += "&local_override=1";
+
+  http.begin(commandUrl);
+  http.setTimeout(2000);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Authorization", "Token " + deviceApiToken);
 
   int code = http.GET();
   if (code == 200) {
+    state.deviceCommandPollInterval = DEVICE_COMMAND_POLL_INTERVAL;
     String responseStr = http.getString();
     StaticJsonDocument<512> resDoc;
     if (!DeserializationError(deserializeJson(resDoc, responseStr))) {
+      if (reportingLocalChange) state.localValveChangePending = false;
       processDeviceCommands(resDoc.as<JsonObject>());
     }
+  } else {
+    state.deviceCommandPollInterval = DEVICE_COMMAND_RETRY_INTERVAL;
   }
   http.end();
 }
@@ -513,6 +522,7 @@ bool sendWeightReading() {
   }
   
   http.begin(String(api_base_url) + "/gas-readings/create/");
+  http.setTimeout(2000);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + deviceApiToken);
@@ -549,8 +559,9 @@ bool sendWeightReading() {
 }
 
 void handleGasAlert(int gasLevel, GasSeverity severity) {
-  // Allow immediate valve closure and alarm activation, but limit API calls
-  bool shouldSendAlert = (millis() - state.lastAlertTime >= ALERT_COOLDOWN);
+  const bool shouldSendAlert = !state.leakAlertSent &&
+      (state.lastAlertTime == 0 ||
+       millis() - state.lastAlertTime >= ALERT_COOLDOWN);
   
   String severityStr;
   switch (severity) {
@@ -560,36 +571,35 @@ void handleGasAlert(int gasLevel, GasSeverity severity) {
     default: severityStr = "LOW"; break;
   }
   
-  Serial.printf("🚨 Gas Alert: %s (Level: %d)\n", severityStr.c_str(), gasLevel);
-  
   if (severity >= GAS_MEDIUM) {
-    // Close the valve and start the alarm immediately after gas detection.
+    // Start the safety actions immediately; motor and alarm patterns run
+    // without blocking sensor and button handling.
     if (!state.gasSafetyLockout) {
       state.gasSafetyLockout = true;
       preferences.putBool("gas_lockout", true);
+      Serial.printf("🚨 Gas Alert: %s (Level: %d)\n", severityStr.c_str(), gasLevel);
     }
     if (!state.valveClosed) {
       closeValve();
-      Serial.printf("🔒 Valve automatically closed due to %s gas level\n", severityStr.c_str());
+      Serial.printf("🔒 Valve automatically closing due to %s gas level\n", severityStr.c_str());
     }
-    if (state.alarmArmed && !state.alarmActive) {
+    if (!state.alarmActive) {
       activateAlarm(severity);
     }
     
-    // Only send API alert if cooldown period has passed
+    // Send one alert for this leak. Retry slowly only if the network fails.
     if (shouldSendAlert) {
-      sendGasLeakAlert(gasLevel, severityStr);
+      state.leakAlertSent = sendGasLeakAlert(gasLevel, severityStr);
       state.lastAlertTime = millis();
     }
   }
-  
-  updateLCDDisplay();
 }
 
-void sendGasLeakAlert(int gasLevel, String severity) {
-  if (!state.wifiConnected || deviceApiToken.length() == 0) return;
+bool sendGasLeakAlert(int gasLevel, String severity) {
+  if (!state.wifiConnected || deviceApiToken.length() == 0) return false;
   
   http.begin(String(api_base_url) + "/alerts/gas-leak/");
+  http.setTimeout(2000);
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Token " + deviceApiToken);
@@ -605,7 +615,8 @@ void sendGasLeakAlert(int gasLevel, String severity) {
   
   int httpResponseCode = http.POST(payload);
   
-  if (httpResponseCode == 201) {
+  const bool sent = httpResponseCode == 201 || httpResponseCode == 200;
+  if (sent) {
     Serial.println("✅ Gas leak alert sent");
   } else {
     Serial.printf("❌ Gas leak alert failed: %d\n", httpResponseCode);
@@ -615,10 +626,12 @@ void sendGasLeakAlert(int gasLevel, String severity) {
   }
   
   http.end();
+  return sent;
 }
 
 // Control Functions
 void toggleValve() {
+  if (state.valveServoMoving) return;
   if (state.valveClosed) {
     openValve();
   } else {
@@ -626,34 +639,48 @@ void toggleValve() {
   }
 }
 
+void startValveMovement(bool targetClosed) {
+  if (state.valveServoMoving && state.valveMoveTargetClosed == targetClosed) return;
+  if (!state.valveServoMoving && state.valveClosed == targetClosed) return;
+
+  if (state.valveServoMoving) {
+    valveServo.writeMicroseconds(SERVO_STOP_US);
+    valveServo.detach();
+    state.valveServoMoving = false;
+  }
+
+  Serial.printf("🔄 Actuating servo to %s...\n", targetClosed ? "CLOSE" : "OPEN");
+  valveServo.attach(SERVO_PIN);
+  valveServo.writeMicroseconds(targetClosed ? SERVO_CLOSE_SPEED_US : SERVO_OPEN_SPEED_US);
+  state.valveMoveTargetClosed = targetClosed;
+  state.valveMoveStartedAt = millis();
+  state.valveServoMoving = true;
+  state.valveClosed = targetClosed;
+  preferences.putBool("valve_closed", targetClosed);
+}
+
+void updateValveServo() {
+  if (!state.valveServoMoving ||
+      millis() - state.valveMoveStartedAt < SERVO_FULL_TURN_MS) {
+    return;
+  }
+
+  valveServo.writeMicroseconds(SERVO_STOP_US);
+  valveServo.detach();
+  state.valveServoMoving = false;
+  Serial.printf("🔒 Valve %s; servo stopped\n", state.valveClosed ? "closed" : "opened");
+}
+
 void openValve() {
   if (state.currentSeverity >= GAS_MEDIUM || state.gasSafetyLockout) {
     Serial.println("⛔ Valve OPEN blocked by gas safety lockout");
     return;
   }
-  Serial.println("🔄 Actuating servo to OPEN...");
-  valveServo.attach(SERVO_PIN);
-  valveServo.writeMicroseconds(SERVO_OPEN_SPEED_US);
-  delay(SERVO_FULL_TURN_MS);
-  valveServo.writeMicroseconds(SERVO_STOP_US);
-  delay(100);
-  valveServo.detach();
-  state.valveClosed = false;
-  preferences.putBool("valve_closed", false);
-  Serial.println("🔓 Valve opened & servo detached");
+  startValveMovement(false);
 }
 
 void closeValve() {
-  Serial.println("🔄 Actuating servo to CLOSE...");
-  valveServo.attach(SERVO_PIN);
-  valveServo.writeMicroseconds(SERVO_CLOSE_SPEED_US);
-  delay(SERVO_FULL_TURN_MS);
-  valveServo.writeMicroseconds(SERVO_STOP_US);
-  delay(100);
-  valveServo.detach();
-  state.valveClosed = true;
-  preferences.putBool("valve_closed", true);
-  Serial.println("🔒 Valve closed & servo detached");
+  startValveMovement(true);
 }
 
 // Buzzer helpers (LEDC PWM)
@@ -696,15 +723,11 @@ void updateAlarmOutput() {
   }
 }
 
-void stopAlarmOutput() {
+void silenceAlarm() {
   buzzerOff();
   state.alarmActive = false;
   state.buzzerOutputOn = false;
   state.lastAlarmToggle = 0;
-}
-
-void silenceAlarm() {
-  stopAlarmOutput();
   Serial.println("🔇 Alarm silenced");
 }
 
@@ -797,7 +820,6 @@ void handleSerialCommands() {
         isValidToken = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
                        (c >= 'A' && c <= 'F');
       }
-
       if (isValidToken) {
         newToken.toLowerCase();
         deviceApiToken = newToken;
@@ -808,7 +830,6 @@ void handleSerialCommands() {
       }
       return;
     }
-
     command = normalizedCommand;
     
     if (command == "calibrate") startWeightCalibration();
@@ -907,6 +928,8 @@ void enterConfigurationMode() {
   Serial.println("Commands: calibrate, info, valve_open, valve_close, valve_toggle, exit");
   
   while (true) {
+    updateValveServo();
+    updateAlarmOutput();
     if (Serial.available()) {
       String command = Serial.readStringUntil('\n');
       command.trim();

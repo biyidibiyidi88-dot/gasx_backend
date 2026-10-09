@@ -18,6 +18,7 @@ class SensorsNotifier extends StateNotifier<AsyncValue<List<GasSensor>>> {
   StreamSubscription? _subscription;
   Timer? _refreshTimer;
   bool _isFetching = false;
+  DateTime? _lastDerivedRefreshAt;
 
   SensorsNotifier(this._repository, this._ref)
     : super(const AsyncValue.loading()) {
@@ -51,19 +52,33 @@ class SensorsNotifier extends StateNotifier<AsyncValue<List<GasSensor>>> {
 
   void _publishSensors(List<GasSensor> sensors) {
     final previous = state.valueOrNull ?? const <GasSensor>[];
-    final changed =
+    if (listEquals(previous, sensors)) return;
+
+    final previousById = {for (final sensor in previous) sensor.id: sensor};
+    final readingChanged =
         previous.length != sensors.length ||
-        List.generate(
-          previous.length,
-          (index) => index,
-        ).any((index) => previous[index] != sensors[index]);
+        sensors.any((sensor) {
+          final old = previousById[sensor.id];
+          return old == null ||
+              old.rawWeight != sensor.rawWeight ||
+              old.currentLevel != sensor.currentLevel ||
+              old.currentGasPercentage != sensor.currentGasPercentage;
+        });
 
     state = AsyncValue.data(sensors);
-    if (!changed) return;
+    if (!readingChanged || previous.isEmpty) return;
 
+    // Sensor updates arrive every few seconds. Refresh heavier derived views
+    // at most every 30 seconds instead of launching several API calls for
+    // every live reading. Recipes do not depend on sensor telemetry.
+    final now = DateTime.now();
+    if (_lastDerivedRefreshAt != null &&
+        now.difference(_lastDerivedRefreshAt!) < const Duration(seconds: 30)) {
+      return;
+    }
+    _lastDerivedRefreshAt = now;
     for (final sensor in sensors) {
       _ref.invalidate(predictionProvider(sensor.id));
-      _ref.invalidate(cookableFoodsProvider(sensor.id));
     }
     _ref.invalidate(dailyReadingsProvider);
   }
@@ -101,12 +116,46 @@ class SensorsNotifier extends StateNotifier<AsyncValue<List<GasSensor>>> {
   }
 
   Future<void> controlValve(int sensorId, String command) async {
+    final sensors = state.valueOrNull;
+    final matchingSensors =
+        sensors?.where((sensor) => sensor.id == sensorId).toList() ??
+        const <GasSensor>[];
+    final previous = matchingSensors.isEmpty ? null : matchingSensors.first;
+    if (previous != null) {
+      _replaceDesiredValveState(sensorId, command);
+    }
+
     try {
       await _repository.controlValve(sensorId, command);
-      await _fetch();
     } catch (e) {
+      if (previous != null) {
+        _replaceDesiredValveState(
+          sensorId,
+          previous.desiredValveState,
+          onlyIfDesiredIs: command,
+        );
+      }
       rethrow;
     }
+  }
+
+  void _replaceDesiredValveState(
+    int sensorId,
+    String desiredState, {
+    String? onlyIfDesiredIs,
+  }) {
+    final sensors = state.valueOrNull;
+    if (sensors == null) return;
+    final index = sensors.indexWhere((sensor) => sensor.id == sensorId);
+    if (index < 0) return;
+    if (onlyIfDesiredIs != null &&
+        sensors[index].desiredValveState.toUpperCase() !=
+            onlyIfDesiredIs.toUpperCase()) {
+      return;
+    }
+    final updated = List<GasSensor>.of(sensors);
+    updated[index] = updated[index].copyWith(desiredValveState: desiredState);
+    state = AsyncValue.data(updated);
   }
 
   @override

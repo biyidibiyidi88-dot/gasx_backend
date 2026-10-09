@@ -36,6 +36,9 @@ db.sqlite3-journal
 .env.test.local
 .env.production.local
 
+# ESP32 API credentials are included only in local firmware builds.
+/esp32_gas_sensor/secrets.h
+
 # Node.js
 node_modules/
 npm-debug.log*

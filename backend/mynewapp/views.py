@@ -978,20 +978,16 @@ class SensorDeviceCommandView(APIView):
             sensor = GasSensor.objects.get(pk=pk, house__user=request.user)
             # Update current state if reported by query params
             reported_valve = request.query_params.get("current_valve")
+            changed_fields = []
             if reported_valve and reported_valve.upper() in ["OPEN", "CLOSE"]:
                 reported_valve = reported_valve.upper()
+                local_override = request.query_params.get("local_override") == "1"
                 if sensor.current_valve_state != reported_valve:
                     sensor.current_valve_state = reported_valve
-                    sensor.save(update_fields=["current_valve_state"])
-                    from channels.layers import get_channel_layer
-                    from asgiref.sync import async_to_sync
-
-                    channel_layer = get_channel_layer()
-                    if channel_layer:
-                        async_to_sync(channel_layer.group_send)(
-                            f"user_{request.user.id}",
-                            {"type": "send_gas_reading"},
-                        )
+                    changed_fields.append("current_valve_state")
+                if local_override and sensor.desired_valve_state != reported_valve:
+                    sensor.desired_valve_state = reported_valve
+                    changed_fields.append("desired_valve_state")
 
             # Keep stale OPEN commands from overriding an unresolved leak.
             active_leak = Alert.objects.filter(
@@ -999,7 +995,19 @@ class SensorDeviceCommandView(APIView):
             ).exists()
             if active_leak and sensor.desired_valve_state != "CLOSE":
                 sensor.desired_valve_state = "CLOSE"
-                sensor.save(update_fields=["desired_valve_state"])
+                changed_fields.append("desired_valve_state")
+
+            if changed_fields:
+                sensor.save(update_fields=list(dict.fromkeys(changed_fields)))
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+
+                channel_layer = get_channel_layer()
+                if channel_layer:
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{request.user.id}",
+                        {"type": "send_gas_reading"},
+                    )
 
             # Send valve commands only until the device reports the target state.
             # This prevents old CLOSE commands from undoing a newer local toggle.

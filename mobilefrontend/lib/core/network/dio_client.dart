@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/api_constants.dart';
 import 'auth_interceptor.dart';
 
@@ -20,16 +21,19 @@ class DioClient {
         'User-Agent': 'GaSX/1.0.0 (Flutter)',
       }
       ..interceptors.add(AuthInterceptor())
-      ..interceptors.add(_BackendFailoverInterceptor(_dio))
-      ..interceptors.add(
+      ..interceptors.add(_BackendFailoverInterceptor(_dio));
+
+    if (kDebugMode) {
+      _dio.interceptors.add(
         LogInterceptor(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
+          requestHeader: false,
+          requestBody: false,
+          responseBody: false,
           responseHeader: false,
-          error: true,
+          error: false,
         ),
       );
+    }
   }
 
   Dio get dio => _dio;
